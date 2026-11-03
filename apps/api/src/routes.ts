@@ -1,0 +1,103 @@
+import type { FastifyInstance, FastifyRequest, FastifyReply, HTTPMethods } from 'fastify';
+import { z } from 'zod';
+import { AppService } from './service.js';
+import { query, one } from './db.js';
+import { ApiError, assert, parse } from './security.js';
+import { limit, uploadFile, readMedia, redis, s3 } from './infrastructure.js';
+import { HeadBucketCommand } from '@aws-sdk/client-s3';
+import { config } from './config.js';
+import { getDraft, saveDraft, publishProfile, createLayoutJob, applyJob } from './profile-layout.js';
+import { job as jobShape } from './shapes.js';
+import type { Row } from './db.js';
+import { registerSeedAssets } from './seed-assets.js';
+import { registerPhotography } from './photography.js';
+
+type Request=FastifyRequest & {actor?:Row};
+const body=(r:Request):any=>r.body??{};
+const params=(r:Request):Record<string,string>=>r.params as Record<string,string>;
+const qs=(r:Request):Record<string,any>=>(r.query??{}) as Record<string,any>;
+const actor=(r:Request):Row=>r.actor!;
+const revisionSchema=z.object({revision:z.number().int().positive()});
+
+export function registerRoutes(server:FastifyInstance,s:AppService):void {
+ registerPhotography(server);
+ const add=(method:HTTPMethods|HTTPMethods[],path:string,level:'none'|'optional'|'user'|'verified'|'admin',handler:(r:Request,reply:FastifyReply)=>Promise<any>|any,rate?:[number,number])=>{
+  server.route({method,url:`/api/v1${path}`,handler:async (raw,reply)=>{
+   const r=raw as Request;const auth=r.headers.authorization;
+   if(level!=='none'&&auth?.startsWith('Bearer '))r.actor=await s.authenticate(auth.slice(7));
+   else if(!['none','optional'].includes(level))throw new ApiError(401,'UNAUTHORIZED','Please sign in');
+   if(level==='verified'||level==='admin')assert(r.actor?.verified,403,'EMAIL_NOT_VERIFIED','Verify your email before using this feature');
+   if(level==='admin')assert(r.actor?.role==='admin',403,'FORBIDDEN','Administrator access is required');
+   if(rate)await limit(`${path}:${r.actor?.id||r.ip}`,rate[0],rate[1]);
+   return handler(r,reply);
+  }});
+ };
+ add('GET','/health','none',()=>({ok:true,service:'ourworld-api'}));
+ add('GET','/ready','none',async()=>{
+  try { await Promise.race([Promise.all([query('SELECT 1 FROM users LIMIT 1'),redis.ping(),s3.send(new HeadBucketCommand({Bucket:config.s3Bucket}))]),new Promise((_,reject)=>{const t=setTimeout(()=>reject(new Error('Dependency timeout')),3000);t.unref();})]);return {ok:true}; }
+  catch{throw new ApiError(503,'NOT_READY','One or more dependencies are unavailable');}
+ });
+ add('POST','/auth/register','none',r=>s.register(body(r)),[10,3600]);
+ add('POST','/auth/login','none',r=>s.login(body(r)),[Number(process.env.AUTH_LOGIN_LIMIT||60),60]);
+ add('POST','/auth/verify','none',r=>s.verify(body(r)),[30,60]);
+ add('POST','/auth/forgot','none',r=>s.forgot(body(r)),[10,3600]);
+ add('POST','/auth/reset','none',r=>s.reset(body(r)),[20,3600]);
+ add('POST','/auth/refresh','none',r=>s.refresh(body(r)),[120,60]);
+ add('POST','/auth/logout','none',r=>s.logout(body(r)));
+ add('GET','/me','user',r=>import('./shapes.js').then(x=>x.user(actor(r),true)));
+ add('PATCH','/me','user',r=>s.editMe(actor(r),body(r)),[30,60]);
+ add('GET','/places','optional',r=>s.places(qs(r)),[300,60]);
+ add('GET','/places/:id','optional',r=>s.getPlace(params(r).id));
+ add('GET','/favorites','user',r=>s.favorites(actor(r)));
+ add('PUT','/favorites/:cityId','verified',r=>s.favorite(actor(r),params(r).cityId,true),[180,60]);
+ add('DELETE','/favorites/:cityId','verified',r=>s.favorite(actor(r),params(r).cityId,false),[180,60]);
+ add('GET','/cities/:cityId/people-feed','optional',r=>s.feed(r.actor,params(r).cityId,qs(r)),[180,60]);
+ add('GET','/users/:id','optional',r=>s.publicProfile(params(r).id));
+ add('GET','/profile/draft','user',r=>getDraft(actor(r).id));
+ add('PUT','/profile/draft','verified',r=>{const b=parse(revisionSchema.extend({layout:z.unknown()}),body(r));return saveDraft(actor(r).id,b.revision,b.layout);},[60,60]);
+ add('POST','/profile/publish','verified',r=>{const b=parse(revisionSchema,body(r));return publishProfile(actor(r).id,b.revision);},[20,60]);
+ add('GET','/profile/history','user',async r=>({items:(await query('SELECT revision,layout,created_at AS "createdAt" FROM profile_history WHERE user_id=$1 ORDER BY revision DESC LIMIT 50',[actor(r).id]))}));
+ add('POST','/profile/restore','verified',async r=>{const b=parse(revisionSchema,body(r));const old=await one('SELECT layout FROM profile_history WHERE user_id=$1 AND revision=$2',[actor(r).id,b.revision]);assert(old,404,'NOT_FOUND','Published version not found');const d=await getDraft(actor(r).id);return saveDraft(actor(r).id,d.revision,old.layout);});
+ add('POST','/profile/jobs','verified',r=>{const b=parse(z.object({prompt:z.string().trim().min(2).max(4000),baseRevision:z.number().int().positive()}),body(r));return createLayoutJob(actor(r),b.prompt,b.baseRevision);},[20,3600]);
+ add('GET','/profile/jobs/:id','user',async r=>{const j=await one('SELECT * FROM layout_jobs WHERE id=$1 AND user_id=$2',[params(r).id,actor(r).id]);assert(j,404,'NOT_FOUND','Layout job not found');return jobShape(j);});
+ add('DELETE','/profile/jobs/:id','user',async r=>{const j=await one("UPDATE layout_jobs SET status='cancelled',updated_at=now() WHERE id=$1 AND user_id=$2 AND status IN ('queued','running','validating') RETURNING *",[params(r).id,actor(r).id]);assert(j,409,'JOB_NOT_ACTIVE','Task is not active');return jobShape(j);});
+ add('POST','/profile/jobs/:id/apply','verified',r=>{const b=parse(revisionSchema,body(r));return applyJob(actor(r).id,params(r).id,b.revision);});
+ add('GET','/packages','optional',r=>s.packages(r.actor,qs(r)));
+ add('POST','/packages','verified',r=>s.savePackage(actor(r),body(r)),[30,60]);
+ add('PATCH','/packages/:id','verified',r=>s.savePackage(actor(r),body(r),params(r).id),[30,60]);
+ add('DELETE','/packages/:id','verified',r=>s.archivePackage(actor(r),params(r).id));
+ add('GET','/verification','user',r=>s.verification(actor(r)));
+ add('POST','/verification','verified',r=>s.submitVerification(actor(r),body(r)),[10,3600]);
+ add('POST','/uploads','verified',async r=>{const part=await r.file();assert(part,400,'FILE_REQUIRED','Choose a file');const bytes=await part.toBuffer();const purpose=(part.fields.purpose as any)?.value||'public';return uploadFile(actor(r),bytes,part.mimetype,purpose);},[60,3600]);
+ const media=async(r:Request,reply:FastifyReply)=>{const file=await readMedia(params(r).id,r.actor,qs(r));reply.header('Content-Type',file.mime).header('X-Content-Type-Options','nosniff').header('Cache-Control',file.private?'private, no-store':'public, max-age=3600');if(file.mime==='application/pdf')reply.header('Content-Disposition','attachment');return reply.send(file.body);};
+ add('GET','/media/:id','optional',media);
+ add('GET','/uploads/:id','optional',media);
+ add('GET','/posts','optional',r=>s.posts(r.actor,qs(r)));
+ add('POST','/posts','verified',r=>s.createPost(actor(r),body(r)),[30,3600]);
+ add('PUT','/posts/:id/like','verified',r=>s.like(actor(r),params(r).id,true));
+ add('DELETE','/posts/:id/like','verified',r=>s.like(actor(r),params(r).id,false));
+ add('GET','/posts/:id/comments','optional',r=>s.comments(params(r).id));
+ add('POST','/posts/:id/comments','verified',r=>s.comment(actor(r),params(r).id,body(r)),[60,3600]);
+ add('POST','/conversations/direct','verified',r=>s.direct(actor(r),body(r)),[60,60]);
+ add('GET','/conversations','user',r=>s.conversations(actor(r)));
+ add('GET','/conversations/:id/messages','user',r=>s.messages(actor(r),params(r).id,qs(r)));
+ add('POST','/conversations/:id/messages','verified',r=>s.sendMessage(actor(r),params(r).id,body(r)),[180,60]);
+ add('PUT','/conversations/:id/read','user',r=>s.read(actor(r),params(r).id,body(r)),[300,60]);
+ add('GET','/conversations/:id/trips','user',r=>s.trips(actor(r),params(r).id));
+ add('POST','/conversations/:id/trips','verified',r=>s.createTrip(actor(r),params(r).id,body(r)),[30,3600]);
+ add('PATCH','/trips/:id','verified',r=>s.amendTrip(actor(r),params(r).id,body(r)),[30,3600]);
+ for(const action of ['accept','confirm-end','cancel'] as const)add('POST',`/trips/:id/${action}`,'verified',r=>s.tripAction(actor(r),params(r).id,action,body(r)));
+ add('POST','/trips/:id/reviews','verified',r=>s.review(actor(r),params(r).id,body(r)),[30,3600]);
+ add('POST','/reports','verified',r=>s.report(actor(r),body(r)),[20,3600]);
+ add('PUT','/blocks/:userId','user',r=>s.block(actor(r),params(r).userId,true));
+ add('DELETE','/blocks/:userId','user',r=>s.block(actor(r),params(r).userId,false));
+ for(const kind of ['overview','users','verifications','reports','trips','posts','places','audit'])add('GET',`/admin/${kind}`,'admin',()=>s.adminList(kind));
+ add('POST','/admin/places','admin',r=>s.savePlace(actor(r),body(r)),[120,60]);
+ add('PATCH','/admin/places/:id','admin',r=>s.savePlace(actor(r),body(r),params(r).id),[120,60]);
+ add('POST','/admin/verifications/:id/decision','admin',r=>s.decideVerification(actor(r),params(r).id,body(r)));
+ add('POST','/admin/reports/:id/resolve','admin',r=>s.resolveReport(actor(r),params(r).id,body(r)));
+ add('POST','/admin/trips/:id/action','admin',r=>s.adminTrip(actor(r),params(r).id,body(r)));
+ add('POST','/admin/users/:id/action','admin',r=>s.adminUser(actor(r),params(r).id,body(r)));
+ add('POST','/admin/posts/:id/action','admin',r=>s.adminPost(actor(r),params(r).id,body(r)));
+ registerSeedAssets(server);
+}

@@ -1,0 +1,13 @@
+{
+  "name": "Deep sea encounters",
+  "colors": {
+    "paper": "#F7F8FA", "surface": "#FFFFFF", "ink": "#20262C",
+    "muted": "#626B74", "line": "#E1E5EA", "accent": "#D92D4F",
+    "soft": "#ECEFF3", "positive": "#31745B", "negative": "#BF4E5F",
+    "night": "#05080D", "nightSurface": "#181C21", "moon": "#E8EDF0", "moonMuted": "#A5AFB8"
+  },
+  "radii": { "card": 24, "control": 24, "field": 12 },
+  "spacing": { "gutter": 16, "gap": 16, "touch": 48 },
+  "type": { "title": 26, "name": 32, "body": 16, "secondary": 14, "caption": 12 },
+  "motion": { "distancePercent": 25, "flingPercent": 8, "flingVelocity": 900, "springStiffness": 400, "springDampingPercent": 82, "exitMin": 180, "exitMax": 280 }
+}

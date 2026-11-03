@@ -1,0 +1,218 @@
+/* User-facing screens only. Administration retains its existing design. */
+body:has(.app-shell){background:#e8e6e2;color:var(--ow-ink)}
+body:has(.app-shell) :is(.app-shell,.modal-backdrop,.toast){--paper:var(--ow-paper);--ink:var(--ow-ink);--coral:var(--ow-accent);--muted:var(--ow-muted);--line:var(--ow-line);--serif:Manrope,"Noto Sans SC",sans-serif;color:var(--ow-ink);font-family:Manrope,"Noto Sans SC",sans-serif}
+.app-shell{background:var(--ow-soft);background-image:none;padding:24px;min-height:100dvh}
+.mobile-app{background:var(--ow-paper);box-shadow:none;border-radius:28px;width:430px;height:min(940px,calc(100dvh - 48px))}
+.mobile-app .paper-page,.mobile-app .full-overlay,.mobile-app .people-overlay{background:var(--ow-paper);color:var(--ow-ink)}
+body:has(.app-shell) :is(h1,h2,h3){font-family:Manrope,"Noto Sans SC",sans-serif;font-style:normal;letter-spacing:-.035em;color:inherit;overflow-wrap:anywhere}
+body:has(.app-shell) :is(p){font-size:16px;line-height:1.65}
+body:has(.app-shell) :is(.eyebrow){font-size:12px;letter-spacing:0;text-transform:none;color:var(--ow-muted)}
+body:has(.app-shell) :is(.page-header .eyebrow,.person-photo-name .eyebrow,.profile-management>.eyebrow){display:none}/* taste-skill-ignore: removes ornamental labels */
+body:has(.app-shell) :is(.muted,.micro-note,.page-lede){font-size:14px;color:var(--ow-muted);letter-spacing:0;line-height:1.55}
+body:has(.app-shell) :is(.button){min-height:48px;border-radius:24px;padding:12px 20px;font-size:14px;font-weight:600;box-shadow:none!important;transform:none!important}
+body:has(.app-shell) :is(.button.primary){background:var(--ow-ink);color:white}
+body:has(.app-shell) :is(.button.primary:hover:not(:disabled)){background:#3c3936}
+body:has(.app-shell) :is(.button.secondary){background:var(--ow-soft);border-color:transparent;color:var(--ow-ink)}
+body:has(.app-shell) :is(.button.ghost){color:var(--ow-muted)}
+body:has(.app-shell) :is(.button.danger,.error-box){background:#f3e6e7;color:#823d46}
+body:has(.app-shell) :is(.icon-button){min-width:44px;min-height:44px}
+body:has(.app-shell) :is(input,textarea,select){font-size:16px;min-height:48px;background:white;color:var(--ow-ink);border-color:var(--ow-line);border-radius:12px}
+body:has(.app-shell) :is(input:focus,textarea:focus,select:focus){border-color:var(--ow-ink);box-shadow:none}
+body:has(.app-shell) :is(button:focus-visible,a:focus-visible){outline:2px solid var(--ow-accent);outline-offset:3px}
+body:has(.app-shell) :is(.form-stack label,.auth-form label,.settings-list label){font-size:14px;color:var(--ow-ink)}
+body:has(.app-shell) :is(.page-header){padding:20px 20px 12px}
+body:has(.app-shell) :is(.page-header h1){font:600 26px/1.25 Manrope,"Noto Sans SC",sans-serif;margin:0;letter-spacing:-.035em}
+body:has(.app-shell) :is(.tags>span){font-size:12px;background:var(--ow-soft);color:var(--ow-muted);border-radius:20px;padding:6px 10px}
+body:has(.app-shell) :is(.modal){background:var(--ow-paper);border-radius:24px;color:var(--ow-ink)}
+body:has(.app-shell) :is(.modal-header h2){font-size:22px}
+body:has(.app-shell) :is(.bottom-sheet){background:var(--ow-paper);color:var(--ow-ink);border-radius:24px 24px 0 0;box-shadow:none}
+body:has(.app-shell) :is(.sheet-handle){background:#aaa49e}
+.mobile-app .bottom-nav{height:calc(72px + env(safe-area-inset-bottom,0px));padding:8px 20px calc(8px + env(safe-area-inset-bottom,0px));background:var(--ow-paper);backdrop-filter:none/* taste-skill-ignore: disables existing blur */;border:0;color:#89847f}
+.mobile-app .bottom-nav .active{color:var(--ow-ink)}
+.mobile-app .bottom-nav .active>span:before{background:var(--ow-soft)}
+.mobile-app .bottom-nav i{background:var(--ow-accent)}
+.mobile-app .tab-panel{height:calc(100% - 72px - env(safe-area-inset-bottom,0px))}
+.mobile-app .home-search{background:#fffffff5;color:var(--ow-muted);border:0;box-shadow:none;min-height:50px}
+.mobile-app .home-search span{font-size:14px}
+.mobile-app .people-overlay{padding:0 0 12px;display:flex;flex-direction:column;gap:0;overflow-y:auto;overflow-x:hidden}
+.mobile-app .people-overlay>.page-header{flex-shrink:0;padding:16px 16px 10px}
+.mobile-app .people-overlay .page-header h1{font-size:24px}
+.mobile-app .random-label{font-size:12px;color:var(--ow-muted);gap:5px;min-height:44px}
+.mobile-app .people-intro{margin:0 20px 12px;font-size:14px;color:var(--ow-muted);flex-shrink:0}
+.mobile-app .person-card{position:relative;display:flex;flex-direction:column;flex:1 0 400px;min-height:400px;margin:0 16px;border-radius:24px;background:white;box-shadow:none;overflow:hidden;touch-action:pan-y;transition:transform .25s ease}
+.mobile-app .person-card.dragging{transition:none}
+.mobile-app .person-photo{position:relative;min-height:270px;height:auto;flex:1;overflow:hidden;background:var(--ow-soft)}
+.mobile-app .person-photo>.cover{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 35%}
+/* taste-skill-ignore: neutral scrim on photography is the contrast exception. */
+.mobile-app .person-photo-shade{/* taste-skill-ignore: neutral photo scrim */position:absolute;inset:40% 0 0;background:linear-gradient(transparent,rgba(0,0,0,.72));pointer-events:none}
+.mobile-app .person-photo-name{position:absolute;left:20px;right:20px;bottom:19px;color:white}
+.mobile-app .person-photo-name h2{font:600 32px/1.15 Manrope,"Noto Sans SC",sans-serif;margin:0 0 8px;color:white;letter-spacing:-.045em}
+.mobile-app .person-photo-name>span{font-size:12px;color:#fff;gap:5px;line-height:1.45}
+.mobile-app .person-location{top:16px;left:16px;font-size:12px;background:#ffffffeb;color:#34312e;border:0;padding:7px 10px;backdrop-filter:none/* taste-skill-ignore: disables existing blur */}
+.mobile-app .person-content{padding:14px 18px 16px;flex-shrink:0;background:white}
+.mobile-app .person-content>p{font-size:14px;line-height:1.55;margin:10px 0;color:var(--ow-muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.mobile-app .person-card-footer{padding-top:10px;border-top:0;gap:8px;align-items:center}
+.mobile-app .person-card-footer>span{font-size:14px;color:var(--ow-ink);min-width:0}
+.mobile-app .person-card-footer button{font-size:12px;min-height:36px;color:var(--ow-ink);flex-shrink:0}
+.mobile-app .people-actions{display:flex;gap:12px;padding:14px 20px 0;margin:0;flex-shrink:0}
+.mobile-app .people-actions>.button{flex:1;font-size:14px;min-height:50px}
+.mobile-app .swipe-guide{font-size:12px;color:var(--ow-muted);padding:8px 22px 0;margin:0;flex-shrink:0}
+.mobile-app .swipe-glow{pointer-events:none;z-index:0}
+.mobile-app .swipe-stamp{font-size:22px;background:#fffef9;color:var(--ow-negative);border:2px solid currentColor;box-shadow:none}
+.mobile-app .swipe-stamp.yes{color:var(--ow-positive)}
+body:has(.app-shell) :is(.cover,.avatar){background:var(--ow-soft)}
+body:has(.app-shell) :is(.no-image,.avatar.placeholder){background:var(--ow-soft);color:var(--ow-muted)}
+body:has(.app-shell) :is(.media-fallback){width:100%;height:100%;min-height:120px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;background:var(--ow-soft);color:var(--ow-muted);font-size:14px}
+body:has(.app-shell) :is(.profile-render){background:var(--ow-paper);color:var(--ow-ink);--profile-accent:var(--ow-accent)}
+body:has(.app-shell) :is(.profile-identity){text-align:left;padding:0 20px 24px;position:relative;background:transparent;border-radius:0}
+body:has(.app-shell) :is(.profile-orbit){display:none}
+body:has(.app-shell) :is(.profile-portrait){height:320px;overflow:hidden;border-radius:24px;margin-bottom:20px;background:var(--ow-soft)}
+body:has(.app-shell) :is(.profile-portrait .cover){height:100%;width:100%;object-position:50% 35%}
+body:has(.app-shell) :is(.profile-identity h2){font-size:30px;line-height:1.2;margin:0 0 12px;font-weight:600}
+body:has(.app-shell) :is(.profile-identity>p){font-size:15px;color:var(--ow-muted);max-width:none;line-height:1.6;margin:0 0 12px}
+body:has(.app-shell) :is(.identity-badges){justify-content:flex-start;flex-wrap:wrap;font-size:12px;color:var(--ow-muted);gap:12px}
+body:has(.app-shell) :is(.profile-block){background:white;border:0;border-radius:16px;box-shadow:none;padding:18px}
+body:has(.app-shell) :is(.profile-block h3){font:600 16px/1.4 Manrope,"Noto Sans SC",sans-serif;color:var(--ow-ink)}
+body:has(.app-shell) :is(.profile-block p){font-size:14px;color:var(--ow-muted)}
+body:has(.app-shell) :is(.profile-management button,.profile-owner-tools button){font-size:14px;color:var(--ow-ink);min-height:48px}
+body:has(.app-shell) :is(.profile-welcome){text-align:left;padding:20px}
+body:has(.app-shell) :is(.profile-welcome-shape){display:none}
+body:has(.app-shell) :is(.profile-welcome h2){font-size:30px;line-height:1.3;margin:0 0 20px}
+body:has(.app-shell) :is(.profile-welcome h2 em){font-style:normal;color:var(--ow-ink)}
+body:has(.app-shell) :is(.profile-welcome>p){font-size:16px;color:var(--ow-muted)}
+body:has(.app-shell) :is(.profile-gallery .cover){border-radius:12px}
+body:has(.app-shell) :is(.chat-page,.conversation-view,.chat-conversation){background:var(--ow-paper)}
+body:has(.app-shell) :is(.conversation-row){border:0;border-radius:0;background:transparent;padding:16px 20px}
+body:has(.app-shell) :is(.conversation-row .avatar){width:54px;height:54px;object-position:50% 30%}
+body:has(.app-shell) :is(.conversation-row strong){font-size:16px;color:var(--ow-ink)}
+body:has(.app-shell) :is(.conversation-row p,.conversation-row small){font-size:14px;color:var(--ow-muted)}
+body:has(.app-shell) :is(.chat-header){background:var(--ow-paper);border:0}
+body:has(.app-shell) :is(.message-bubble){font-size:16px;line-height:1.6;background:white;color:var(--ow-ink);border-radius:18px}
+body:has(.app-shell) :is(.message.mine .message-bubble,.message-row.own .message-bubble,.message-row.mine .message-bubble){background:var(--ow-ink);color:white}
+body:has(.app-shell) :is(.message-meta){font-size:12px;color:var(--ow-muted)}
+body:has(.app-shell) :is(.chat-composer,.composer){background:var(--ow-paper);border:0;padding-bottom:max(12px,env(safe-area-inset-bottom))}
+body:has(.app-shell) :is(.chat-composer textarea,.composer textarea){background:white;border-radius:24px;font-size:16px}
+body:has(.app-shell) :is(.send-button){background:var(--ow-ink);color:white;min-width:44px;min-height:44px}
+body:has(.app-shell) :is(.contact-card,.trip-card,.package-card,.notice,.agent-panel){background:var(--ow-soft);color:var(--ow-ink);border:0;box-shadow:none;border-radius:16px}
+body:has(.app-shell) :is(.notice,.error-box){font-size:14px;line-height:1.5}
+body:has(.app-shell) :is(.city-title-row h2){font-size:30px;font-weight:600;line-height:1.2}
+body:has(.app-shell) :is(.city-title-row .eyebrow){display:block;font-size:14px;letter-spacing:0;text-transform:none;color:var(--ow-muted)}
+body:has(.app-shell) :is(.place-detail-description p){font-size:16px;color:var(--ow-ink);line-height:1.7}
+body:has(.app-shell) :is(.place-result strong){font-size:16px;color:var(--ow-ink)}
+body:has(.app-shell) :is(.place-result small){font-size:13px;color:var(--ow-muted)}
+body:has(.app-shell) :is(.place-detail-cover){border-radius:16px}
+body:has(.app-shell) :is(.empty-orbit){display:none}
+body:has(.app-shell) :is(.empty h3){font:500 22px/1.4 Manrope,"Noto Sans SC",sans-serif}
+body:has(.app-shell) :is(.empty p){font-size:14px;color:var(--ow-muted)}
+body:has(.app-shell) :is(.editor-overlay){background:var(--ow-paper)}
+body:has(.app-shell) :is(.editor-toolbar,.layout-editor-block){background:white;border-color:var(--ow-line);box-shadow:none}
+body:has(.app-shell) :is(.photo-credits){display:block;color:var(--ow-muted);font-size:13px;margin:16px 0}
+@media(max-width:600px){.app-shell{padding:0}.mobile-app{width:100%;height:100dvh;min-height:0;border-radius:0}.mobile-app .person-card{flex-basis:360px;min-height:360px}body:has(.app-shell) .profile-portrait{height:300px}}
+@media(max-height:740px){.mobile-app .people-intro{display:none}.mobile-app .person-card{flex-basis:300px;min-height:300px}.mobile-app .person-photo{min-height:210px}.mobile-app .person-content{padding:10px 16px}.mobile-app .person-content>p{margin:6px 0;-webkit-line-clamp:1}.mobile-app .swipe-guide{display:none}.mobile-app .people-actions{padding-top:10px}}
+@media(prefers-reduced-motion:reduce){body:has(.app-shell) *{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+
+.mobile-app.earth-mode:has(.people-overlay,.stories-page) .bottom-nav{background:var(--ow-paper);color:#89847f;border:0}
+.mobile-app.earth-mode:has(.people-overlay,.stories-page) .bottom-nav .active{color:var(--ow-ink)}
+.mobile-app.earth-mode:has(.people-overlay,.stories-page) .bottom-nav .active>span:before{background:var(--ow-soft)}
+body:has(.app-shell) .mobile-app .profile-render{margin:0;padding:20px}
+body:has(.app-shell) .profile-identity{padding:0 0 24px}
+body:has(.app-shell) .modal .profile-render{margin:0;padding:0;background:transparent}
+body:has(.app-shell) .modal-header{border:0}
+body:has(.app-shell) .profile-portrait{width:100%}
+body:has(.app-shell) .profile-render.theme-ocean{background:#edf0f0}
+body:has(.app-shell) .profile-render.theme-forest{background:#edf0ed}
+body:has(.app-shell) .profile-block h3{color:var(--profile-accent,var(--ow-ink))}
+body:has(.app-shell) .public-profile-actions{background:var(--ow-paper)}
+
+body:has(.app-shell) .thread-header{background:var(--ow-paper);border:0;padding:14px 16px}
+body:has(.app-shell) .thread-person strong{font-size:16px;color:var(--ow-ink)}
+body:has(.app-shell) .thread-person small{font-size:12px;color:var(--ow-muted)}
+body:has(.app-shell) .message-bubble>p{font-size:16px;line-height:1.6}
+body:has(.app-shell) .message-info{font-size:12px;color:var(--ow-muted)}
+body:has(.app-shell) .message-row.mine .message-info{color:#d8d2ce}
+body:has(.app-shell) .thread-composer{background:var(--ow-paper);border:0}
+body:has(.app-shell) .thread-composer input{background:white}
+body:has(.app-shell) .thread-composer button[type=submit]{background:var(--ow-ink);color:white}
+body:has(.app-shell) .profile-identity>p{opacity:1}
+.mobile-app .person-card{max-height:none}
+.mobile-app .person-photo{max-height:none}
+body:has(.app-shell) .identity-badges span{font-size:12px;color:var(--ow-muted);line-height:1.5}
+body:has(.app-shell) .thread-intro{font-size:12px;color:var(--ow-muted);background:var(--ow-soft);padding:10px 20px;letter-spacing:0}
+body:has(.app-shell) .thread-intro svg{display:none}
+body:has(.app-shell) .message-composer{background:var(--ow-paper);border:0}
+body:has(.app-shell) .message-composer>input{font-size:16px;background:white;border-radius:24px;min-height:48px}
+body:has(.app-shell) .message-composer>.icon-button{background:var(--ow-ink);color:white;min-width:44px;min-height:44px}
+body:has(.app-shell) .composer-attach{color:var(--ow-muted)}
+body:has(.app-shell) .thread-footer-links button{font-size:12px;color:var(--ow-muted);min-height:36px}
+body:has(.app-shell) .toast{background:var(--ow-ink);color:white;border:0;font-size:14px;box-shadow:none;backdrop-filter:none/* taste-skill-ignore: disables existing blur */;bottom:calc(150px + env(safe-area-inset-bottom))}
+body:has(.app-shell) .toast svg{color:white}
+
+body:has(.app-shell) small{font-size:12px;line-height:1.5}
+body:has(.app-shell) :is(.thread-intro,.thread-intro span){font-size:12px;color:var(--ow-muted)}
+body:has(.app-shell) :is(.layout-editor-block,.editor-content) button{font-size:14px;min-height:36px}
+body:has(.app-shell) :is(.package-preview,.service-preview,.post-preview) small{font-size:12px}
+.mobile-app .home-search span:first-of-type{font-size:14px;color:var(--ow-muted)}
+.mobile-app .home-search svg{color:var(--ow-muted)}
+body:has(.app-shell) .demo-profile-section{border:0}
+body:has(.app-shell) .demo-profile-section .section-heading h3{font-size:20px;font-weight:600;color:var(--ow-ink)}
+body:has(.app-shell) .demo-profile-section>p{font-size:14px;color:var(--ow-muted)}
+body:has(.app-shell) .demo-profile-grid>button{background:white;border:0;border-radius:16px;min-height:80px;padding:12px}
+body:has(.app-shell) .demo-profile-grid small{font-size:12px;color:var(--ow-muted)}
+body:has(.app-shell) .demo-profile-grid strong{font-size:14px;color:var(--ow-ink);white-space:normal}
+body:has(.app-shell) .demo-profile-grid>button>svg{color:var(--ow-muted)}
+body:has(.app-shell) .modal-backdrop{background:rgba(24,23,22,.48);backdrop-filter:none/* taste-skill-ignore: disables existing modal blur */}
+body:has(.app-shell) .auth-form .auth-symbol{display:none}
+body:has(.app-shell) .auth-form>.eyebrow{display:none}/* taste-skill-ignore: removes a decorative kicker */
+body:has(.app-shell) .auth-form h2{font-size:26px;line-height:1.35;text-align:left;margin:4px 0 12px;color:var(--ow-ink)}
+body:has(.app-shell) .auth-form>p{font-size:16px;line-height:1.6;color:var(--ow-muted);text-align:left}
+body:has(.app-shell) .auth-links button{font-size:14px;color:var(--ow-muted);min-height:44px}
+body:has(.app-shell) .editor-overlay .page-header{background:var(--ow-paper);padding:12px;gap:8px;border:0}
+body:has(.app-shell) .editor-overlay .page-header h1{font-size:24px;line-height:1.25}
+body:has(.app-shell) .editor-overlay .header-actions .button{font-size:12px;min-height:44px;padding:10px 12px;gap:6px}
+body:has(.app-shell) .editor-tabs button{font-size:14px;color:var(--ow-muted);min-height:44px}
+body:has(.app-shell) .editor-tabs button.active{background:var(--ow-soft);color:var(--ow-ink)}
+body:has(.app-shell) .agent-mark{display:none}
+body:has(.app-shell) .agent-panel>.eyebrow{display:none}/* taste-skill-ignore: removes a decorative kicker */
+body:has(.app-shell) .agent-panel h3{font-size:24px;font-weight:600;line-height:1.3;color:var(--ow-ink)}
+body:has(.app-shell) .agent-panel>p{font-size:14px;line-height:1.6;color:var(--ow-muted)}
+body:has(.app-shell) .agent-panel textarea{font-size:16px;background:white}
+body:has(.app-shell) .agent-panel-actions{flex-direction:column;align-items:stretch;gap:12px}
+body:has(.app-shell) .agent-panel-actions small{font-size:12px;color:var(--ow-muted);max-width:none}
+body:has(.app-shell) .agent-panel-actions .button{width:100%;font-size:14px}
+body:has(.app-shell) .theme-swatches{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) 48px;gap:8px}
+body:has(.app-shell) .theme-swatches button{width:auto;min-width:0;min-height:88px;border:0;border-radius:12px;box-shadow:none;padding:10px 6px;font-size:12px;color:var(--ow-ink)}
+body:has(.app-shell) .theme-swatches button.cream{background:var(--ow-paper)}
+body:has(.app-shell) .theme-swatches button.ocean{background:#edf0f0}
+body:has(.app-shell) .theme-swatches button.forest{background:#edf0ed}
+body:has(.app-shell) .theme-swatches button.selected{outline:2px solid var(--ow-ink);outline-offset:-2px}
+body:has(.app-shell) .theme-swatches button :is(span,small){font-size:12px;color:var(--ow-ink);letter-spacing:0}
+body:has(.app-shell) .accent-picker{font-size:12px;color:var(--ow-muted);width:48px}
+body:has(.app-shell) .editor-theme .section-heading,.editor-content>.section-heading{font-size:14px;color:var(--ow-ink)}
+/* The shared satellite globe retains the native dark navigation and search. */
+.mobile-app.earth-mode:not(:has(.people-overlay,.stories-page)) .bottom-nav{background:#030812;color:#b5b5b5}
+.mobile-app.earth-mode:not(:has(.people-overlay,.stories-page)) .bottom-nav .active{color:#f1f3f5}
+.mobile-app.earth-mode:not(:has(.people-overlay,.stories-page)) .bottom-nav .active>span:before{background:transparent}
+.mobile-app .pure-earth .home-search{background:#191919;color:#f1f3f5}
+.mobile-app .pure-earth .home-search span:first-of-type,.mobile-app .pure-earth .home-search svg{color:#c5c5c5}
+body:has(.app-shell) .editor-overlay :is(p,small,span,label,button){font-size:max(12px,1em)}
+body:has(.app-shell) .agent-panel .eyebrow{display:none}/* taste-skill-ignore: removes a decorative kicker */
+body:has(.app-shell) .agent-panel p{font-size:14px;line-height:1.6;color:var(--ow-muted)}
+body:has(.app-shell) .agent-panel-actions :is(span,p,small){font-size:12px;color:var(--ow-muted)}
+body:has(.app-shell) .editor-tabs>span{font-size:12px;color:var(--ow-muted)}
+
+/* Photo-first local discovery: the photo is the entire card, details live in Profile. */
+.mobile-app .people-overlay{padding:0;overflow:hidden;min-height:0}
+.mobile-app .people-overlay>.page-header{padding:2px 8px 4px;min-height:50px;gap:8px}
+.mobile-app .people-overlay .page-header h1{font-size:22px;line-height:1.2;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mobile-app .people-overlay .random-label{display:grid;place-items:center;width:44px;height:44px;padding:0;flex-shrink:0;color:var(--ow-muted);background:transparent;border:0}
+.mobile-app .person-card{flex:1 1 0;min-height:0;max-height:none;margin:0 10px;border:0;border-radius:16px;padding:0;background:var(--ow-soft)}
+.mobile-app .person-photo{position:relative;flex:1 1 0;min-height:0;height:100%;max-height:none}
+.mobile-app .person-photo>.cover{object-position:50% 50%}
+.mobile-app .person-photo-name{left:20px;right:64px;bottom:20px}
+.mobile-app .person-photo-name h2{font-size:32px;line-height:1.12;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.mobile-app .person-photo-name>span{font-size:12px;line-height:1.5}
+.mobile-app .person-details{position:absolute;right:12px;bottom:16px;width:44px;height:44px;display:grid;place-items:center;color:white;background:transparent;border:0;padding:0}
+.mobile-app .people-actions{justify-content:center;align-items:center;gap:32px;padding:8px 12px;min-height:72px}
+.mobile-app .people-actions>.button{flex:0 0 56px;width:56px;min-width:56px;height:56px;min-height:56px;padding:0;border:0;border-radius:50%}
+.mobile-app .people-overlay>.error-box{flex-shrink:0;margin:6px 12px 0;font-size:12px}
+.mobile-app .person-photo-shade{inset:0;background:linear-gradient(180deg,transparent 50%,rgba(0,0,0,.72) 100%)}/* taste-skill-ignore: photo scrim protects white name readability */

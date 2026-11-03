@@ -1,0 +1,26 @@
+* text=auto eol=lf
+
+# Keep the native build wrappers usable on their target platforms.
+*.bat text eol=crlf
+gradlew text eol=lf
+*.sh text eol=lf
+
+# Preserve bundled media, fonts and the Gradle wrapper byte for byte.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+*.ico binary
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+*.jar binary
+*.pdf binary
+
+# Keep upstream license text and generated shader strings unchanged.
+**/fonts/*-OFL.txt -whitespace
+apps/web/public/globe/assets/* linguist-generated=true -whitespace
+apps/android/app/src/main/assets/globe/assets/* linguist-generated=true -whitespace
+apps/ios/Resources/globe/assets/* linguist-generated=true -whitespace

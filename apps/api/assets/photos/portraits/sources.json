@@ -1,0 +1,58 @@
+[
+  {
+    "id": "01",
+    "tool": "built-in image_gen",
+    "fictional": true,
+    "prompt": "Use case: photorealistic-natural. Create one vertical 3:4 editorial lifestyle photograph for a mature travel-and-local-people app's fictional demo profile. Subject: an entirely fictional adult French woman, about 32, chestnut shoulder-length hair, natural skin texture, minimal makeup, relaxed warm closed-mouth smile, wearing a charcoal linen shirt and small silver earrings. Scene: a Paris neighborhood cafe terrace, soft overcast window light, real-looking softly defocused city detail, subtle warm neutral tones. Composition: waist-up, subject centered with head comfortably below top edge, portrait fills frame, room below chest for a UI text overlay. Premium candid travel photography, 50mm lens, understated and approachable, accurate hands and face. No illustration, no cartoon, no beauty retouching, no fake film borders, no text, no watermarks, no UI. The person must be fictional, not a recognizable real individual.",
+    "file": "01.jpg"
+  },
+  {
+    "id": "02",
+    "tool": "built-in image_gen",
+    "fictional": true,
+    "prompt": "Use case: photorealistic-natural. Create one vertical 3:4 premium editorial lifestyle photograph for a mature travel-and-local-people app's fictional demo profile. Subject and scene: an entirely fictional adult Japanese woman about 29, short dark bob, white cotton blouse and charcoal jacket, standing on a quiet Tokyo neighborhood street, soft morning daylight. Relaxed approachable expression and subtle natural smile. Natural visible skin texture and individual facial features. Waist-up composition, one person centered, head comfortably below top edge, room below chest for UI text, softly defocused believable city surroundings. Understated warm neutrals, candid documentary photography, 50mm lens. No text, watermarks, UI, illustrations, cartoon, beauty retouching, fake film borders. Anatomically accurate face and hands. Fictional person, not a recognizable real individual.",
+    "file": "02.jpg"
+  },
+  {
+    "id": "03",
+    "tool": "built-in image_gen",
+    "fictional": true,
+    "prompt": "Use case: photorealistic-natural. Create one vertical 3:4 premium editorial lifestyle photograph for a mature travel-and-local-people app's fictional demo profile. Subject and scene: an entirely fictional adult Chinese man about 31, short textured black hair, dark denim overshirt, seated outside a Shanghai cafe, soft window daylight. Relaxed approachable expression and subtle natural smile. Natural visible skin texture and individual facial features. Waist-up composition, one person centered, head comfortably below top edge, room below chest for UI text, softly defocused believable city surroundings. Understated warm neutrals, candid documentary photography, 50mm lens. No text, watermarks, UI, illustrations, cartoon, beauty retouching, fake film borders. Anatomically accurate face and hands. Fictional person, not a recognizable real individual.",
+    "file": "03.jpg"
+  },
+  {
+    "id": "04",
+    "tool": "built-in image_gen",
+    "fictional": true,
+    "prompt": "Use case: photorealistic-natural. Create one vertical 3:4 premium editorial lifestyle photograph for a mature travel-and-local-people app's fictional demo profile. Subject and scene: an entirely fictional adult Black British man about 34, very short hair, light stubble, warm brown linen shirt, standing on a leafy London street in soft overcast daylight. Relaxed approachable expression and subtle natural smile. Natural visible skin texture and individual facial features. Waist-up composition, one person centered, head comfortably below top edge, room below chest for UI text, softly defocused believable city surroundings. Understated warm neutrals, candid documentary photography, 50mm lens. No text, watermarks, UI, illustrations, cartoon, beauty retouching, fake film borders. Anatomically accurate face and hands. Fictional person, not a recognizable real individual.",
+    "file": "04.jpg"
+  },
+  {
+    "id": "05",
+    "tool": "built-in image_gen",
+    "fictional": true,
+    "prompt": "Use case: photorealistic-natural. Create one vertical 3:4 premium editorial lifestyle photograph for a mature travel-and-local-people app's fictional demo profile. Subject and scene: an entirely fictional adult Italian man about 36, dark curly hair, neat short beard, unbuttoned charcoal overshirt over a plain tee, outdoors on a quiet Roman side street. Relaxed approachable expression and subtle natural smile. Natural visible skin texture and individual facial features. Waist-up composition, one person centered, head comfortably below top edge, room below chest for UI text, softly defocused believable city surroundings. Understated warm neutrals, candid documentary photography, 50mm lens. No text, watermarks, UI, illustrations, cartoon, beauty retouching, fake film borders. Anatomically accurate face and hands. Fictional person, not a recognizable real individual.",
+    "file": "05.jpg"
+  },
+  {
+    "id": "06",
+    "tool": "built-in image_gen",
+    "fictional": true,
+    "prompt": "Use case: photorealistic-natural. Create one vertical 3:4 premium editorial lifestyle photograph for a mature travel-and-local-people app's fictional demo profile. Subject and scene: an entirely fictional adult Chinese woman about 28, straight shoulder-length dark hair, beige cotton trench coat, on a quiet Shanghai tree-lined street, gentle afternoon light. Relaxed approachable expression and subtle natural smile. Natural visible skin texture and individual facial features. Waist-up composition, one person centered, head comfortably below top edge, room below chest for UI text, softly defocused believable city surroundings. Understated warm neutrals, candid documentary photography, 50mm lens. No text, watermarks, UI, illustrations, cartoon, beauty retouching, fake film borders. Anatomically accurate face and hands. Fictional person, not a recognizable real individual.",
+    "file": "06.jpg"
+  },
+  {
+    "id": "07",
+    "tool": "built-in image_gen",
+    "fictional": true,
+    "prompt": "Use case: photorealistic-natural. Create one vertical 3:4 premium editorial lifestyle photograph for a mature travel-and-local-people app's fictional demo profile. Subject and scene: an entirely fictional adult white Canadian woman about 33, auburn hair tied loosely, dark navy knit sweater, sitting by a cafe window in Vancouver, soft overcast light. Relaxed approachable expression and subtle natural smile. Natural visible skin texture and individual facial features. Waist-up composition, one person centered, head comfortably below top edge, room below chest for UI text, softly defocused believable city surroundings. Understated warm neutrals, candid documentary photography, 50mm lens. No text, watermarks, UI, illustrations, cartoon, beauty retouching, fake film borders. Anatomically accurate face and hands. Fictional person, not a recognizable real individual.",
+    "file": "07.jpg"
+  },
+  {
+    "id": "08",
+    "tool": "built-in image_gen",
+    "fictional": true,
+    "prompt": "Use case: photorealistic-natural. Create one vertical 3:4 premium editorial lifestyle photograph for a mature travel-and-local-people app's fictional demo profile. Subject and scene: an entirely fictional adult Spanish man about 30, short wavy brown hair, clean-shaven, off-white linen shirt, at a Barcelona neighborhood cafe terrace, soft afternoon light. Relaxed approachable expression and subtle natural smile. Natural visible skin texture and individual facial features. Waist-up composition, one person centered, head comfortably below top edge, room below chest for UI text, softly defocused believable city surroundings. Understated warm neutrals, candid documentary photography, 50mm lens. No text, watermarks, UI, illustrations, cartoon, beauty retouching, fake film borders. Anatomically accurate face and hands. Fictional person, not a recognizable real individual.",
+    "file": "08.jpg"
+  }
+]

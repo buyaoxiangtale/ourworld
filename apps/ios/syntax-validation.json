@@ -1,0 +1,55 @@
+{
+  "method": "tree-sitter Swift grammar and Python plistlib",
+  "validatedAtUtc": "2026-11-02T15:24:09.384454+00:00",
+  "checks": [
+    {
+      "file": "API.swift",
+      "syntaxPassed": true,
+      "errors": []
+    },
+    {
+      "file": "OurworldApp.swift",
+      "syntaxPassed": true,
+      "errors": []
+    },
+    {
+      "file": "WorldStore.swift",
+      "syntaxPassed": true,
+      "errors": []
+    },
+    {
+      "file": "Info-Debug.plist",
+      "plistPassed": true
+    },
+    {
+      "file": "Info.plist",
+      "plistPassed": true
+    }
+  ],
+  "sourceSha256": {
+    "API.swift": "71d491de5578ab53796ff16ba9440df91e2b39fc5a5822bdd8768d77cdeb202b",
+    "OurworldApp.swift": "219e784dddc03acf803d5b77cf1b9aa7da4f4cab595760c906a8979fc715d0da",
+    "WorldStore.swift": "91638c950d0bac0fe741cbce4e04ae9c773a6b97b55379c0858a678646cdc4aa"
+  },
+  "xcodeBuildPerformed": false,
+  "simulatorPerformed": false,
+  "devicePerformed": false,
+  "sameOriginMediaAuthorizationImplemented": true,
+  "controlledSeedPngMappingImplemented": true,
+  "profileReferencesImplemented": true,
+  "homepage": "Night globe with native dark translucent search and three icon navigation entries; light native content and detail sheets",
+  "globeBundle": "index-CD2nwCRT.js",
+  "imageryCreditsInSettings": true,
+  "note": "Syntax parsing is not Swift type checking or SDK compilation. A Mac/Xcode run is still required.",
+  "resourceValidatedAtUtc": "2026-11-02T15:47:30.761615+00:00",
+  "globeResourcesSha256": {
+    "assets/index-CD2nwCRT.js": "90363af472d5fdaf99c4859ca5eed57b65b100fd500059238fef4a312ffe6596",
+    "credits.html": "6787e776106b31c8637342c8aad8ebf3c837ed42ced432951c72837ec74d6a2c",
+    "index.html": "668d0580ed1a42c5e29f555cf0af8e931fff4051f7beae35f2f4cea10e026c49",
+    "textures/asset-manifest.json": "8ba705dd905990756e742b29c685dbf7bb3c1fe602db9cdc3471ce892fbd2e2f",
+    "textures/earth-bump.png": "579cce501068380ef719eed093b3c77ea772c927d9ad43b22797654027aadc8f",
+    "textures/earth-clouds.png": "ae8bdb4cdbf6712cc75dca67c02ae38c96ded660e605b074b65312c2fe17b4d0",
+    "textures/earth-day.jpg": "460b479ba9d714c94563d0e553293f6b52322bf25a71e3ca9b6d00c196c4ebce",
+    "textures/earth-night.jpg": "d87de751a264e4f8ff69c68de5dab9606daee87a6f15ae743c93200743bd7ec1"
+  }
+}

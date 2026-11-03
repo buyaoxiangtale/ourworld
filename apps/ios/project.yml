@@ -1,0 +1,36 @@
+name: Ourworld
+options:
+  bundleIdPrefix: app.ourworld
+  deploymentTarget:
+    iOS: "16.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    API_BASE_URL: http://127.0.0.1:8188/api/v1
+    DEVELOPMENT_TEAM: ""
+targets:
+  Ourworld:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+      - path: Resources
+        type: folder
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.ourworld.ios
+        TARGETED_DEVICE_FAMILY: "1"
+        INFOPLIST_FILE: Info.plist
+      configs:
+        Debug:
+          INFOPLIST_FILE: Info-Debug.plist
+schemes:
+  Ourworld:
+    build:
+      targets:
+        Ourworld: all
+    run:
+      config: Debug
+    archive:
+      config: Release

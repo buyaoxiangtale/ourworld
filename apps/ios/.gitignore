@@ -1,0 +1,4 @@
+.qa/
+build/
+DerivedData/
+*.xcodeproj/xcuserdata/
