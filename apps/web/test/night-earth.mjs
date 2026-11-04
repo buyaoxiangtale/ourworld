@@ -38,7 +38,7 @@ try{
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${name} has no horizontal overflow`);
   for(const icon of await page.locator('.bottom-nav svg').all()){const box=await icon.boundingBox();if(box.y+box.height>height)throw new Error(`${name} navigation icon clipped`);}
   const chrome=await page.locator('.home-search').evaluate(el=>({shadow:getComputedStyle(el).boxShadow,blur:getComputedStyle(el).backdropFilter}));
-  assert(chrome.shadow==='none'&&chrome.blur==='none',`${name} search uses a flat dark surface`);
+  assert(chrome.shadow!=='none'&&chrome.blur==='none',`${name} search pill is raised over the globe without blur`);
   const shot=await page.screenshot({path:resolve(out,`ui-night-earth-${name}.png`),timeout:20000,animations:'disabled'});
   const visible=await page.evaluate(async data=>{
    const image=new Image();image.src=`data:image/png;base64,${data}`;await image.decode();
@@ -99,8 +99,10 @@ try{
  await pause();await page.screenshot({path:resolve(out,'ui-night-earth-country.png'),animations:'disabled'});
  await page.locator('.country-city-list .place-result').filter({hasText:'巴黎'}).first().click();
  await page.getByRole('button',{name:'找当地人',exact:true}).click();await page.locator('.person-card').waitFor();
- const paperNav=await page.locator('.bottom-nav').evaluate(el=>getComputedStyle(el).backgroundColor);
- assert(paperNav==='rgb(245, 244, 242)','people content restores the paper navigation surface');
+ const navBand=await page.locator('.bottom-nav').evaluate(el=>getComputedStyle(el).backgroundColor);
+ assert(navBand==='rgba(0, 0, 0, 0)','navigation band stays transparent so the floating discs carry the surface');
+ const navDisc=await page.locator('.bottom-nav>button').first().evaluate(el=>getComputedStyle(el).backgroundColor);
+ assert(navDisc==='rgba(0, 0, 0, 0.32)','navigation discs keep the glass surface over the globe');
  await page.locator('.bottom-nav').getByRole('button',{name:'Profile',exact:true}).click();
  await page.getByText('看看示例主页',{exact:true}).waitFor();
  assert(await page.locator('.demo-profile-grid>button').count()===4,'Profile still shows real example profile links');

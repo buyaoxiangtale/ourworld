@@ -60,12 +60,11 @@ import org.json.JSONObject
 import java.util.UUID
 import kotlinx.coroutines.delay
 
-private val Sky=Color(0xffeef4f5)
-private val Night=OWVisual.night
-private val NightSurface=OWVisual.nightSurface
-private val Moon=OWVisual.moon
-private val MoonMuted=OWVisual.moonMuted
-private val Paper=OWVisual.paper
+private val Night=OWVisual.bg
+private val NightSurface=OWVisual.surface
+private val Moon=OWVisual.ink
+private val MoonMuted=OWVisual.inkMuted
+private val Paper=OWVisual.bg
 private val Ink=OWVisual.ink
 private val Coral=OWVisual.accent
 
@@ -79,7 +78,7 @@ class MainActivity:ComponentActivity(){
             val display=body
             val base=Typography()
             val typography=base.copy(bodyLarge=base.bodyLarge.copy(fontFamily=body),bodyMedium=base.bodyMedium.copy(fontFamily=body),bodySmall=base.bodySmall.copy(fontFamily=body),labelLarge=base.labelLarge.copy(fontFamily=body),headlineLarge=base.headlineLarge.copy(fontFamily=display),headlineSmall=base.headlineSmall.copy(fontFamily=display),titleLarge=base.titleLarge.copy(fontFamily=display),titleMedium=base.titleMedium.copy(fontFamily=display))
-            MaterialTheme(colorScheme=lightColorScheme(primary=Coral,onPrimary=Color.White,secondary=Coral,background=Paper,onBackground=Ink,surface=OWVisual.surface,onSurface=Ink,surfaceVariant=OWVisual.soft,onSurfaceVariant=OWVisual.muted,outline=OWVisual.line,secondaryContainer=OWVisual.soft,onSecondaryContainer=Ink),typography=typography){Ourworld(vm)}
+            MaterialTheme(colorScheme=lightColorScheme(primary=Coral,onPrimary=OWVisual.bg,secondary=Coral,background=Paper,onBackground=Ink,surface=OWVisual.surface,onSurface=Ink,surfaceVariant=OWVisual.raised,onSurfaceVariant=OWVisual.inkMuted,outline=OWVisual.line,secondaryContainer=OWVisual.raised,onSecondaryContainer=Ink),typography=typography){Ourworld(vm)}
         }
     }
 }
@@ -127,7 +126,7 @@ class MainActivity:ComponentActivity(){
             }
             if(vm.busy && !globePage)LinearProgressIndicator(Modifier.fillMaxWidth().align(Alignment.TopCenter))
             if(vm.error.isNotEmpty())Box(Modifier.align(Alignment.TopCenter)){Status(vm.error,true){vm.error=""}}
-            if(vm.notice.isNotEmpty())Box(Modifier.align(Alignment.BottomCenter).padding(12.dp)){Surface(shape=RoundedCornerShape(16.dp),color=OWVisual.nightSurface){Text(vm.notice,color=OWVisual.moon,fontSize=14.sp,modifier=Modifier.padding(16.dp))}}
+            if(vm.notice.isNotEmpty())Box(Modifier.align(Alignment.BottomCenter).padding(12.dp)){Surface(shape=RoundedCornerShape(16.dp),color=OWVisual.surface){Text(vm.notice,color=OWVisual.ink,fontSize=14.sp,modifier=Modifier.padding(16.dp))}}
         }
     }
     LaunchedEffect(vm.notice){val current=vm.notice;if(current.isNotEmpty()){delay(3200);if(vm.notice==current)vm.notice=""}}
@@ -164,7 +163,7 @@ class MainActivity:ComponentActivity(){
     }
 }
 
-@Composable fun Status(value:String,error:Boolean=false,onDismiss:()->Unit){Surface(color=if(error)Color(0xfff5d9d4) else Color(0xffdcebdc)){Row(Modifier.fillMaxWidth().padding(start=14.dp),verticalAlignment=Alignment.CenterVertically){Text(value,Modifier.weight(1f));IconButton(onClick=onDismiss){Icon(Icons.Outlined.Close,"Close")}}}}
+@Composable fun Status(value:String,error:Boolean=false,onDismiss:()->Unit){Surface(color=if(error)OWVisual.nope.copy(alpha=.16f) else OWVisual.like.copy(alpha=.16f)){Row(Modifier.fillMaxWidth().padding(start=14.dp),verticalAlignment=Alignment.CenterVertically){Text(value,Modifier.weight(1f),color=OWVisual.ink);IconButton(onClick=onDismiss){Icon(Icons.Outlined.Close,"Close",tint=OWVisual.ink)}}}}
 @Composable fun Action(text:String,enabled:Boolean=true,onClick:()->Unit){Button(onClick=onClick,enabled=enabled,modifier=Modifier.fillMaxWidth().heightIn(min=OWVisual.spacing_touch.dp),shape=RoundedCornerShape(OWVisual.radii_control.dp)){Text(text,fontWeight=FontWeight.SemiBold)}}
 @Composable fun Field(value:String,label:String,secret:Boolean=false,onChange:(String)->Unit){OutlinedTextField(value,onChange,label={Text(label)},modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(16.dp),visualTransformation=if(secret)androidx.compose.ui.text.input.PasswordVisualTransformation() else androidx.compose.ui.text.input.VisualTransformation.None)}
 @Composable fun Header(vm:WorldModel,title:String,back:()->Unit={vm.back()}){Row(Modifier.fillMaxWidth().padding(12.dp),verticalAlignment=Alignment.CenterVertically){IconButton(onClick=back){Icon(Icons.Outlined.ArrowBack,vm.t("返回","Back"))};Text(title,style=MaterialTheme.typography.titleLarge,modifier=Modifier.weight(1f));TextButton(onClick=vm::language){Text(if(vm.locale=="zh")"EN" else "中")}}}
@@ -173,7 +172,7 @@ class MainActivity:ComponentActivity(){
     val context=LocalContext.current
     val resolved=nativeMediaUrl(url)
     val request=ImageRequest.Builder(context).data(resolved).apply{if(sameMediaOrigin(resolved))addHeader("Authorization","Bearer ${SecureSession(context).get("access")}")}.build()
-    SubcomposeAsyncImage(model=request,contentDescription=description,modifier=modifier.background(OWVisual.soft),contentScale=ContentScale.Crop,alignment=Alignment.TopCenter,loading={Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){CircularProgressIndicator(Modifier.size(24.dp),strokeWidth=2.dp)}},error={Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){Icon(Icons.Outlined.ImageNotSupported,description,tint=OWVisual.muted)}})
+    SubcomposeAsyncImage(model=request,contentDescription=description,modifier=modifier.background(OWVisual.raised),contentScale=ContentScale.Crop,alignment=Alignment.TopCenter,loading={Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){CircularProgressIndicator(Modifier.size(24.dp),strokeWidth=2.dp)}},error={Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){Icon(Icons.Outlined.ImageNotSupported,description,tint=OWVisual.inkMuted)}})
 }
 @Composable fun Picture(url:String,height:Int=180){if(url.isNotBlank())NativePhoto(url,Modifier.fillMaxWidth().height(height.dp).clip(RoundedCornerShape(OWVisual.radii_card.dp)))}
 @Composable fun EndDateField(vm:WorldModel,value:String,onChange:(String)->Unit){
@@ -224,7 +223,7 @@ class MainActivity:ComponentActivity(){
     fun command(value:JSONObject){web?.evaluateJavascript("window.OurworldGlobe&&window.OurworldGlobe.receive(${value});",null)}
     AndroidView(factory={
         WebView(context).apply {
-            setBackgroundColor(android.graphics.Color.rgb(5,8,13));settings.javaScriptEnabled=true;settings.domStorageEnabled=false;settings.allowFileAccess=false;settings.allowContentAccess=false
+            setBackgroundColor(OWVisual.bg.toArgb());settings.javaScriptEnabled=true;settings.domStorageEnabled=false;settings.allowFileAccess=false;settings.allowContentAccess=false
             val loader=WebViewAssetLoader.Builder().addPathHandler("/assets/",WebViewAssetLoader.AssetsPathHandler(context)).build()
             webViewClient=object:WebViewClientCompat(){override fun shouldInterceptRequest(view:WebView,request:android.webkit.WebResourceRequest)=loader.shouldInterceptRequest(request.url);override fun shouldOverrideUrlLoading(view:WebView,request:android.webkit.WebResourceRequest)=request.url.host!="appassets.androidplatform.net"}
             addJavascriptInterface(object {
@@ -331,7 +330,7 @@ class MainActivity:ComponentActivity(){
         Picture(vm.user!!.s("avatar"),300)
         Text(vm.user!!.s("name"),style=MaterialTheme.typography.headlineLarge)
         Text(vm.user!!.s("bio"))
-        Text(if(vm.user!!.s("id").startsWith("demo-"))vm.t("AI 演示人物","AI demo profile") else vm.user!!.s("providerStatus"),color=OWVisual.muted,fontSize=12.sp)
+        Text(if(vm.user!!.s("id").startsWith("demo-"))vm.t("AI 演示人物","AI demo profile") else vm.user!!.s("providerStatus"),color=OWVisual.inkMuted,fontSize=12.sp)
         Row(horizontalArrangement=Arrangement.spacedBy(12.dp)){
             Button(onClick=vm::edit){Text(vm.t("搭建主页","Build profile"))}
             OutlinedButton(onClick={vm.route="settings"}){Text(vm.t("设置","Settings"))}
@@ -364,7 +363,7 @@ fun profileRows(blocks:List<JSONObject>):List<List<JSONObject>> {
 @Composable fun ProfileBlockView(vm:WorldModel,resource:JSONObject,profileLayout:JSONObject,block:JSONObject,publicView:Boolean=false){
     val source=resource.o("user");val type=block.s("type");val refs=block.a("refs").let{a->(0 until a.length()).map{a.optString(it)}}
     val accent=runCatching{Color(android.graphics.Color.parseColor(profileLayout.s("accent")))}.getOrDefault(Coral)
-    Surface(color=if(publicView && profileLayout.s("theme")=="cream")Color.Transparent else if(profileLayout.s("theme")=="ocean")Color(0xffedf0f0) else if(profileLayout.s("theme")=="forest")Color(0xffedf0ed) else Color.White,shape=RoundedCornerShape(16.dp),modifier=Modifier.fillMaxWidth()){
+    Surface(color=if(publicView && profileLayout.s("theme")=="cream")Color.Transparent else OWVisual.bg,shape=RoundedCornerShape(16.dp),modifier=Modifier.fillMaxWidth()){
         Column(Modifier.padding(if(publicView)0.dp else if(block.s("size")=="expanded")24.dp else 16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
             Text(block.s("title").ifEmpty{blockTitle(vm,type)},style=MaterialTheme.typography.titleMedium,color=accent)
             when(type){

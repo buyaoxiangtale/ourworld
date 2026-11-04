@@ -6,76 +6,42 @@
   <meta name="color-scheme" content="dark">
   <title>地球影像来源 · OurWorld</title>
   <style>
-    :root{color-scheme:dark;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:#080e19;color:#e9eef6}
+    :root{color-scheme:dark;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:#05080D;color:#E8EDF0}
     *{box-sizing:border-box}body{margin:0;line-height:1.75}main{max-width:760px;margin:auto;padding:max(40px,env(safe-area-inset-top)) 24px max(48px,env(safe-area-inset-bottom))}
-    .eyebrow{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#a7c4df}h1{font-size:clamp(28px,6vw,40px);line-height:1.2;letter-spacing:-.035em;margin:12px 0 20px;font-weight:650}
-    .intro{font-size:16px;color:#bac7d8;max-width:620px}.date{font-size:12px;color:#9daec1;margin:20px 0 32px}section{padding:26px 0;border-top:1px solid #263347}h2{font-size:19px;letter-spacing:-.02em;margin:0 0 8px;font-weight:600}
-    p{margin:10px 0}a{color:#99d1fb;text-decoration:underline;text-underline-offset:4px}a:hover{color:#d7edff}a:focus-visible{outline:2px solid #99d1fb;outline-offset:5px;border-radius:2px}
-    .credit{color:#d1dce9;font-size:14px;overflow-wrap:anywhere}.note{font-size:14px;color:#aebdd0}.links{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:14px}.year{font-size:12px;font-weight:400;color:#adbed2;margin-left:8px;white-space:nowrap}
-    footer{border-top:1px solid #263347;padding-top:24px;color:#aebdd0;font-size:13px}footer p{margin:12px 0}.policy{display:flex;gap:8px 20px;flex-wrap:wrap;margin-top:20px}
-    @media(prefers-reduced-motion:no-preference){a{transition:color .15s ease}}@media print{:root{color-scheme:light;background:#fff;color:#111}a,.intro,.date,.credit,.note,footer,.eyebrow{color:#222}main{padding:20px}section,footer{border-color:#bbb}}
+    .eyebrow{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#A5AFB8}h1{font-size:clamp(28px,6vw,40px);line-height:1.2;letter-spacing:-.035em;margin:12px 0 20px;font-weight:650}
+    .intro{font-size:16px;color:#A5AFB8;max-width:620px}.date{font-size:12px;color:#A5AFB8;margin:20px 0 32px}section{padding:26px 0;border-top:1px solid #2A333D}h2{font-size:19px;letter-spacing:-.02em;margin:0 0 8px;font-weight:600}
+    p{margin:10px 0}a{color:#6496E6;text-decoration:underline;text-underline-offset:4px}a:hover{color:#E8EDF0}a:focus-visible{outline:2px solid #6496E6;outline-offset:5px;border-radius:2px}
+    .credit{color:#A5AFB8;font-size:14px;overflow-wrap:anywhere}.note{font-size:14px;color:#A5AFB8}.links{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:14px}.year{font-size:12px;font-weight:400;color:#A5AFB8;margin-left:8px;white-space:nowrap}
+    footer{border-top:1px solid #2A333D;padding-top:24px;color:#A5AFB8;font-size:13px}footer p{margin:12px 0}.policy{display:flex;gap:8px 20px;flex-wrap:wrap;margin-top:20px}
+    @media(prefers-reduced-motion:no-preference){a{transition:color .15s ease}}@media print{:root{color-scheme:light;background:#E8EDF0;color:#111}a,.intro,.date,.credit,.note,footer,.eyebrow{color:#222}main{padding:20px}section,footer{border-color:#bbb}}
   </style>
 </head>
 <body>
   <main>
     <section aria-labelledby="current"><h2 id="current">当前地球 · 统一夜间地图配色</h2>
-    <p>无云层、无昼夜分界。当前只读取下列 2004 年地表影像，结合 world-atlas 1:50m 国家轮廓，在渲染器内统一调色。海洋为深蓝，陆地保留地形明暗；不使用太阳方向、当前时间或夜间灯光。</p>
-    <p>轮廓数据：Natural Earth，经 <a href="https://github.com/topojson/world-atlas">world-atlas</a> 提供。以下夜灯、高程、云层资料是历史素材档案，当前渲染均未加载。</p></section>
+    <p>无云层、无昼夜分界。当前只读取下列 2004 年地表影像，结合 world-atlas 1:110m 国家轮廓，在渲染器内统一调色。海洋为深蓝，陆地保留地形明暗；不使用太阳方向、当前时间或夜间灯光。</p>
+    <p>轮廓数据：Natural Earth，经 <a href="https://github.com/topojson/world-atlas">world-atlas</a> 提供。历史上的夜灯、高程、云层纹理从未参与当前渲染，已于 2026-11-04 从打包资源中移除。</p></section>
 
     <div class="eyebrow">OurWorld · Earth imagery</div>
     <h1>地球影像来源</h1>
-    <p class="intro">地球表面、城市灯光、山脉与云层来自公开的卫星合成影像及高程资料。所有纹理随应用保存，可离线展示。感谢原始数据团队与可视化作者。</p>
-    <p class="date">以下为历史合成影像，不代表实时灯光、云层或天气。资料核验：2026-11-02。</p>
+    <p class="intro">地球表面来自公开的卫星合成影像。纹理随应用保存，可离线展示。感谢原始数据团队与可视化作者。</p>
+    <p class="date">以下为历史合成影像，不代表实时地表。资料核验：2026-11-04。</p>
 
     <section aria-labelledby="day">
       <h2 id="day">日间地表 <span class="year">July 2004</span></h2>
       <p>Blue Marble: Next Generation。通过多次卫星观测合成的地表颜色，包含地形阴影。</p>
       <p class="credit" lang="en">NASA Earth Observatory / Reto Stöckli.<br>Blue Marble Next Generation, July 2004.</p>
-      <p class="note">源图 5400 × 2700；应用内使用 4096 × 2048 JPEG。</p>
+      <p class="note">源图 5400 × 2700；应用内使用 2048 × 1024 JPEG（baseline 编码，便于移动端快速解码）。</p>
       <div class="links">
         <a href="https://science.nasa.gov/earth/earth-observatory/blue-marble-next-generation/base-topography/" target="_blank" rel="noopener noreferrer">NASA 资料说明</a>
         <a href="https://assets.science.nasa.gov/content/dam/science/esd/eo/images/bmng/bmng-topography/july/world.topo.200407.3x5400x2700.jpg" target="_blank" rel="noopener noreferrer">官方原图</a>
       </div>
     </section>
 
-    <section aria-labelledby="night">
-      <h2 id="night">夜间灯光 <span class="year">2016</span></h2>
-      <p>Black Marble。Suomi NPP 卫星 VIIRS 仪器观测形成的夜间合成影像，呈现城市与聚落的灯光分布。</p>
-      <p class="credit" lang="en">NASA Earth Observatory / Joshua Stevens.<br>Suomi NPP VIIRS data from Miguel Román, NASA Goddard Space Flight Center.</p>
-      <p class="note">应用内保留 NASA 官方 3600 × 1800 JPEG 原文件。</p>
-      <div class="links">
-        <a href="https://science.nasa.gov/earth/earth-observatory/earth-at-night/maps/" target="_blank" rel="noopener noreferrer">NASA 资料说明</a>
-        <a href="https://assets.science.nasa.gov/content/dam/science/esd/eo/images/imagerecords/144000/144898/BlackMarble_2016_01deg.jpg" target="_blank" rel="noopener noreferrer">官方原图</a>
-      </div>
-    </section>
-
-    <section aria-labelledby="relief">
-      <h2 id="relief">地形起伏 <span class="year">GEBCO_08</span></h2>
-      <p>NASA 根据 GEBCO 数据制作的陆地高程可视化，为地球上的山脉增加细微起伏。</p>
-      <p class="credit" lang="en">Jesse Allen, NASA Earth Observatory.<br>Data: General Bathymetric Chart of the Oceans (GEBCO), produced by the British Oceanographic Data Centre.<br>GEBCO Compilation Group / GEBCO_08.</p>
-      <p class="note">源图 5400 × 2700；应用内使用 2048 × 1024 灰度内容 PNG。仅用于外观展示，不作为精确海拔或航行资料。</p>
-      <div class="links">
-        <a href="https://science.nasa.gov/earth/earth-observatory/blue-marble-next-generation/topography-bathymetry-maps/" target="_blank" rel="noopener noreferrer">NASA 资料说明</a>
-        <a href="https://assets.science.nasa.gov/content/dam/science/esd/eo/images/bmng/topography/gebco_08_rev_elev_5400x2700.jpg" target="_blank" rel="noopener noreferrer">官方原图</a>
-        <a href="https://www.gebco.net/data-products/gridded-bathymetry/terms-of-use" target="_blank" rel="noopener noreferrer">GEBCO 使用条款</a>
-      </div>
-    </section>
-
-    <section aria-labelledby="clouds">
-      <h2 id="clouds">云层 <span class="year">Published 2002</span></h2>
-      <p>Blue Marble Clouds。历史卫星合成云图转为透明图层，保留观测中云带的细节。</p>
-      <p class="credit" lang="en">NASA Goddard Space Flight Center / Reto Stöckli.<br>Blue Marble Clouds, published 2002.</p>
-      <p class="note">源图与透明 PNG 均为 2048 × 1024。不同图层来自不同年代；云图不表示今天的天气。</p>
-      <div class="links">
-        <a href="https://svs.gsfc.nasa.gov/2872/" target="_blank" rel="noopener noreferrer">NASA 云数据与作者说明</a>
-        <a href="https://eoimages.gsfc.nasa.gov/images/imagerecords/57000/57747/cloud_combined_2048.jpg" target="_blank" rel="noopener noreferrer">官方原图</a>
-      </div>
-    </section>
-
     <footer>
-      <p lang="en">Earth imagery: NASA Earth Observatory. Relief: GEBCO_08, via NASA Earth Observatory.</p>
-      <p>NASA 原创影像按官方复用指引保留来源；GEBCO 数据按其公共领域条款致谢。NASA、GEBCO、IHO 与 IOC 均未对本应用作出背书。</p>
-      <p>纹理仅作尺寸调整、编码与透明度转换；未使用 Apple 地图瓦片。本页无需联网即可阅读；点击官方资料链接时会访问外部网站。</p>
+      <p lang="en">Earth imagery: NASA Earth Observatory.</p>
+      <p>NASA 原创影像按官方复用指引保留来源；NASA 未对本应用作出背书。</p>
+      <p>纹理仅作尺寸调整与编码转换；未使用 Apple 地图瓦片。本页无需联网即可阅读；点击官方资料链接时会访问外部网站。</p>
       <div class="policy">
         <a href="https://science.nasa.gov/earth/faq/" target="_blank" rel="noopener noreferrer">NASA Earth 复用说明</a>
         <a href="https://www.nasa.gov/nasa-brand-center/images-and-media/" target="_blank" rel="noopener noreferrer">NASA 影像使用指引</a>

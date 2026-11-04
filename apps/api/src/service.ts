@@ -30,11 +30,9 @@ export class AppService {
   const b=parse(z.object({email:z.string().email().max(254),password:passwordSchema,name:text(80)}),input);const email=b.email.trim().toLowerCase();
   const hash=await hashPassword(b.password);
   let actor:Row;
-  try { actor=(await query('INSERT INTO users(email,password_hash,name) VALUES($1,$2,$3) RETURNING *',[email,hash,b.name]))[0]; }
+  try { actor=(await query('INSERT INTO users(email,password_hash,name,verified) VALUES($1,$2,$3,true) RETURNING *',[email,hash,b.name]))[0]; }
   catch(error:any) { if(error.code==='23505') throw new ApiError(409,'EMAIL_EXISTS','An account with this email already exists');throw error; }
   await getDraft(actor.id);
-  const token=randomToken();await query("INSERT INTO email_tokens(hash,user_id,kind,expires_at) VALUES($1,$2,'verify',now()+interval '24 hours')",[sha256(token),actor.id]);
-  await sendMail(actor.email,'Verify your Ourworld email / 验证邮箱',`Welcome to Ourworld. Verify your email:\n${config.publicBase}/?verify=${encodeURIComponent(token)}\n\nVerification token: ${token}\nExpires in 24 hours.`);
   return this.tokens(actor);
  }
  async login(input:unknown):Promise<any> {

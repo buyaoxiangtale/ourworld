@@ -57,7 +57,7 @@ try{
 
   const actions=await page.locator('.people-actions').boundingBox(),nav=await page.locator('.bottom-nav').boundingBox();assert(actions.y+actions.height<=nav.y+1,'people controls must remain above navigation');
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no page overflow');
-  const primary=await page.locator('.people-actions .primary').evaluate(el=>getComputedStyle(el).backgroundColor);assert.equal(primary,'rgb(36, 35, 34)');
+  const primary=await page.locator('.people-actions .primary').evaluate(el=>getComputedStyle(el).backgroundColor);assert.equal(primary,'rgb(46, 213, 115)');
   await page.screenshot({path:resolve(output,`people-${viewport.width}.png`),animations:'disabled'});
   await page.locator('.person-details').click();await page.getByRole('dialog').locator('.profile-portrait .cover').waitFor();await page.getByRole('dialog').locator('.profile-portrait .cover').evaluate(img=>img.decode());await page.screenshot({path:resolve(output,`profile-${viewport.width}.png`),animations:'disabled'});
   await page.getByRole('dialog').getByRole('button',{name:'Close',exact:true}).click();assert.equal(await page.locator('.person-photo-name h2').innerText(),'Claire');

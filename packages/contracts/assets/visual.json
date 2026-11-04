@@ -1,10 +1,12 @@
 {
-  "name": "Deep sea encounters",
+  "name": "Deep sea encounters · night immersion",
   "colors": {
-    "paper": "#F7F8FA", "surface": "#FFFFFF", "ink": "#20262C",
-    "muted": "#626B74", "line": "#E1E5EA", "accent": "#D92D4F",
-    "soft": "#ECEFF3", "positive": "#31745B", "negative": "#BF4E5F",
-    "night": "#05080D", "nightSurface": "#181C21", "moon": "#E8EDF0", "moonMuted": "#A5AFB8"
+    "bg": "#05080D", "surface": "#181C21", "raised": "#232B33",
+    "line": "#2A333D", "ink": "#E8EDF0", "inkMuted": "#A5AFB8", "inkFaint": "#67737F",
+    "accent": "#FD5068", "accentEnd": "#FF7854",
+    "like": "#2ED573", "nope": "#FF4757",
+    "focus": "#6496E6", "focusDeep": "#0064C8",
+    "sea": "#091725", "seaShelf": "#102535", "land": "#26343C", "highland": "#3A4A50"
   },
   "radii": { "card": 24, "control": 24, "field": 12 },
   "spacing": { "gutter": 16, "gap": 16, "touch": 48 },

@@ -26,10 +26,7 @@ const browser=await chromium.launch({headless:true,args:['--no-proxy-server','--
 const context=await browser.newContext({viewport:{width:390,height:844},locale:'zh-CN'});const page=await context.newPage();page.setDefaultTimeout(15000);
 try{
  await post('/auth/register',{email,password:initial,name:'UI email link test'});
- const verify=await tokenFromMail('verify');
- await page.goto(`${base}/?verify=${encodeURIComponent(verify)}`,{waitUntil:'domcontentloaded',timeout:25000});
- await page.getByRole('heading',{name:'验证完成 / Email verified',exact:true}).waitFor();
- const session=await post('/auth/login',{email,password:initial});if(!session.user.verified)throw new Error('Email link did not verify the database account');checks.push('real Mailpit /?verify= link verifies account');
+ const session=await post('/auth/login',{email,password:initial});if(!session.user.verified)throw new Error('Registration must mark the account verified immediately');checks.push('registration is immediately usable without a verification email');
  await post('/auth/forgot',{email});const reset=await tokenFromMail('reset');
  await page.goto(`${base}/?reset=${encodeURIComponent(reset)}`,{waitUntil:'domcontentloaded',timeout:25000});
  await page.getByLabel('新密码 / New password').fill(updated);await page.getByRole('button',{name:'更新密码 / Update password',exact:true}).click();

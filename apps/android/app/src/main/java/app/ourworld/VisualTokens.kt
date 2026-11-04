@@ -2,19 +2,23 @@
 package app.ourworld
 import androidx.compose.ui.graphics.Color
 internal object OWVisual {
-    val paper = Color(0xffF7F8FA)
-    val surface = Color(0xffFFFFFF)
-    val ink = Color(0xff20262C)
-    val muted = Color(0xff626B74)
-    val line = Color(0xffE1E5EA)
-    val accent = Color(0xffD92D4F)
-    val soft = Color(0xffECEFF3)
-    val positive = Color(0xff31745B)
-    val negative = Color(0xffBF4E5F)
-    val night = Color(0xff05080D)
-    val nightSurface = Color(0xff181C21)
-    val moon = Color(0xffE8EDF0)
-    val moonMuted = Color(0xffA5AFB8)
+    val bg = Color(0xff05080D)
+    val surface = Color(0xff181C21)
+    val raised = Color(0xff232B33)
+    val line = Color(0xff2A333D)
+    val ink = Color(0xffE8EDF0)
+    val inkMuted = Color(0xffA5AFB8)
+    val inkFaint = Color(0xff67737F)
+    val accent = Color(0xffFD5068)
+    val accentEnd = Color(0xffFF7854)
+    val like = Color(0xff2ED573)
+    val nope = Color(0xffFF4757)
+    val focus = Color(0xff6496E6)
+    val focusDeep = Color(0xff0064C8)
+    val sea = Color(0xff091725)
+    val seaShelf = Color(0xff102535)
+    val land = Color(0xff26343C)
+    val highland = Color(0xff3A4A50)
     const val radii_card = 24
     const val radii_control = 24
     const val radii_field = 12

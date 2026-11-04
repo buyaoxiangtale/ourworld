@@ -34,12 +34,12 @@ internal fun messageSummary(value:String)=value.replace(Regex("^\\[image]\\s*.*"
 private fun localTime(value:String)=runCatching{Instant.parse(value).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("HH:mm"))}.getOrDefault("")
 
 @Composable fun TravelConversations(vm:WorldModel){
-    Column(Modifier.fillMaxSize().background(OWVisual.paper)){
+    Column(Modifier.fillMaxSize().background(OWVisual.bg)){
         Text(vm.t("对话","Conversations"),fontSize=26.sp,fontWeight=FontWeight.SemiBold,modifier=Modifier.padding(20.dp))
-        if(!vm.online)Text(vm.t("正在重连，消息会自动同步","Reconnecting. Messages will sync."),fontSize=14.sp,color=OWVisual.muted,modifier=Modifier.padding(horizontal=20.dp,vertical=8.dp))
+        if(!vm.online)Text(vm.t("正在重连，消息会自动同步","Reconnecting. Messages will sync."),fontSize=14.sp,color=OWVisual.inkMuted,modifier=Modifier.padding(horizontal=20.dp,vertical=8.dp))
         if(vm.conversations.isEmpty())Column(Modifier.padding(24.dp),verticalArrangement=Arrangement.spacedBy(16.dp)){
             Text(vm.t("从一座城市，认识一个人","Meet someone through a city"),fontSize=22.sp)
-            Text(vm.t("在地球上选一座城市，右滑的人会留在这里。","Choose a city on the globe. People you connect with will appear here."),color=OWVisual.muted)
+            Text(vm.t("在地球上选一座城市，右滑的人会留在这里。","Choose a city on the globe. People you connect with will appear here."),color=OWVisual.inkMuted)
             Action(vm.t("探索地球","Explore the globe")){vm.tab=0;vm.route=""}
         }
         LazyColumn{items(vm.conversations.sortedByDescending{it.s("updatedAt")},key={it.s("id")}){c->
@@ -47,10 +47,10 @@ private fun localTime(value:String)=runCatching{Instant.parse(value).atZone(Zone
                 NativePhoto(c.o("peer").s("avatar"),Modifier.size(54.dp).clip(CircleShape),c.o("peer").s("name"))
                 Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(6.dp)){
                     Text(c.o("peer").s("name"),fontSize=16.sp,fontWeight=if(c.optInt("unread")>0)FontWeight.SemiBold else FontWeight.Medium,maxLines=1,overflow=TextOverflow.Ellipsis)
-                    Text(messageSummary(c.s("lastMessage").ifEmpty{vm.t("说一句你好","Say hello")}),fontSize=14.sp,color=OWVisual.muted,maxLines=1,overflow=TextOverflow.Ellipsis)
+                    Text(messageSummary(c.s("lastMessage").ifEmpty{vm.t("说一句你好","Say hello")}),fontSize=14.sp,color=OWVisual.inkMuted,maxLines=1,overflow=TextOverflow.Ellipsis)
                 }
                 Column(horizontalAlignment=Alignment.End,verticalArrangement=Arrangement.spacedBy(8.dp)){
-                    Text(localTime(c.s("updatedAt")),fontSize=12.sp,color=OWVisual.muted)
+                    Text(localTime(c.s("updatedAt")),fontSize=12.sp,color=OWVisual.inkMuted)
                     if(c.optInt("unread")>0)Badge(containerColor=OWVisual.accent){Text(c.optInt("unread").toString())}
                 }
             }}
@@ -82,19 +82,19 @@ private fun localTime(value:String)=runCatching{Instant.parse(value).atZone(Zone
     LaunchedEffect(list){snapshotFlow{list.layoutInfo.visibleItemsInfo.lastOrNull()?.index?:0}.collect{last->nearBottom=last>=list.layoutInfo.totalItemsCount-2}}
     LaunchedEffect(rows.lastOrNull()?.s("id")){if(rows.isNotEmpty() && (nearBottom || rows.last().s("senderId")==vm.user?.s("id")))list.animateScrollToItem(rows.size)}
     LaunchedEffect(panel){if(panel=="packages"){panelLoading=true;panelError="";try{packages=vm.api.call("/packages?userId=${vm.user?.s("id")}").a("items").objects().filter{it.s("status")=="published"}}catch(e:Exception){panelError=e.message.orEmpty()}finally{panelLoading=false}}}
-    Column(Modifier.fillMaxSize().background(OWVisual.paper).imePadding()){
+    Column(Modifier.fillMaxSize().background(OWVisual.bg).imePadding()){
         Row(Modifier.fillMaxWidth().heightIn(min=64.dp).padding(horizontal=8.dp),verticalAlignment=Alignment.CenterVertically){
             IconButton(onClick={vm.route=""}){Icon(Icons.Outlined.ArrowBack,vm.t("返回","Back"))}
             Surface(onClick={vm.openProfile(peer.s("id"))},color=Color.Transparent,modifier=Modifier.weight(1f)){
                 Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(10.dp)){
                     NativePhoto(peer.s("avatar"),Modifier.size(40.dp).clip(CircleShape),peer.s("name"))
-                    Column{Text(peer.s("name"),fontSize=16.sp,fontWeight=FontWeight.SemiBold,maxLines=1,overflow=TextOverflow.Ellipsis);if(city!=null)Text(vm.t("在${city.localized("name",vm.locale)}认识","Connected in ${city.localized("name",vm.locale)}"),fontSize=12.sp,color=OWVisual.muted)}
+                    Column{Text(peer.s("name"),fontSize=16.sp,fontWeight=FontWeight.SemiBold,maxLines=1,overflow=TextOverflow.Ellipsis);if(city!=null)Text(vm.t("在${city.localized("name",vm.locale)}认识","Connected in ${city.localized("name",vm.locale)}"),fontSize=12.sp,color=OWVisual.inkMuted)}
                 }
             }
             Box{IconButton(onClick={menu=true}){Icon(Icons.Outlined.MoreHoriz,vm.t("更多","More"))};DropdownMenu(expanded=menu,onDismissRequest={menu=false}){
                 DropdownMenuItem(text={Text(vm.t("查看主页","View profile"))},onClick={menu=false;vm.openProfile(peer.s("id"))})
                 DropdownMenuItem(text={Text(vm.t("举报用户","Report person"))},onClick={menu=false;report=json("type" to "user","id" to peer.s("id"))})
-                DropdownMenuItem(text={Text(vm.t("拉黑用户","Block person"),color=OWVisual.negative)},onClick={menu=false;panel="block"})
+                DropdownMenuItem(text={Text(vm.t("拉黑用户","Block person"),color=OWVisual.nope)},onClick={menu=false;panel="block"})
             }}
         }
         Box(Modifier.weight(1f)){
@@ -105,7 +105,7 @@ private fun localTime(value:String)=runCatching{Instant.parse(value).atZone(Zone
                     if(!vm.messagesLoading && rows.isEmpty())Column(Modifier.fillMaxWidth().padding(top=32.dp,bottom=24.dp),verticalArrangement=Arrangement.spacedBy(16.dp),horizontalAlignment=Alignment.CenterHorizontally){
                         NativePhoto(peer.s("avatar"),Modifier.size(80.dp).clip(CircleShape),peer.s("name"))
                         Text(vm.t("和 ${peer.s("name")} 聊聊这座城市","Discover the city with ${peer.s("name")}"),fontSize=22.sp,fontWeight=FontWeight.SemiBold)
-                        Text(peer.s("bio"),color=OWVisual.muted,fontSize=14.sp,maxLines=3,overflow=TextOverflow.Ellipsis)
+                        Text(peer.s("bio"),color=OWVisual.inkMuted,fontSize=14.sp,maxLines=3,overflow=TextOverflow.Ellipsis)
                         listOf(vm.t("有什么值得散步的街区？","Which neighbourhood is great for a walk?"),vm.t("第一次来，你推荐从哪里开始？","Where would you recommend starting on a first visit?")).forEach{prompt->OutlinedButton(onClick={text=prompt},modifier=Modifier.fillMaxWidth().heightIn(min=48.dp)){Text(prompt)}}
                     }
                 }
@@ -146,7 +146,7 @@ private fun localTime(value:String)=runCatching{Instant.parse(value).atZone(Zone
     }
     if(report!=null)AlertDialog(onDismissRequest={report=null},title={Text(vm.t("举报此内容？","Report this content?"))},text={Text(vm.t("提交后由审核人员处理。","A moderator will review the report."))},confirmButton={TextButton(onClick={report?.let{vm.report(it.s("type"),it.s("id"),"Reported from conversation")};report=null}){Text(vm.t("提交举报","Report"))}},dismissButton={TextButton(onClick={report=null}){Text(vm.t("取消","Cancel"))}})
     if(panel=="block")AlertDialog(onDismissRequest={panel=""},title={Text(vm.t("拉黑 ${peer.s("name")}？","Block ${peer.s("name")}?"))},text={Text(vm.t("对方将不能继续给你发消息。","This person will no longer be able to message you."))},confirmButton={TextButton(onClick={panel="";vm.block(peer.s("id"))}){Text(vm.t("拉黑","Block"))}},dismissButton={TextButton(onClick={panel=""}){Text(vm.t("取消","Cancel"))}})
-    else if(panel.isNotEmpty())ModalBottomSheet(onDismissRequest={panel=""},containerColor=OWVisual.paper){
+    else if(panel.isNotEmpty())ModalBottomSheet(onDismissRequest={panel=""},containerColor=OWVisual.bg){
         LazyColumn(contentPadding=PaddingValues(20.dp),verticalArrangement=Arrangement.spacedBy(12.dp)){
             when(panel){
                 "attachments"->item{Column(verticalArrangement=Arrangement.spacedBy(12.dp)){

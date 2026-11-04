@@ -36,7 +36,7 @@ internal fun profileBlockVisible(resource:JSONObject,block:JSONObject):Boolean {
     val user=vm.profile.o("user")
     var menu by remember{mutableStateOf(false)}
     val cities=vm.profile.a("places").objects().filter{place->user.a("cityIds").let{a->(0 until a.length()).any{a.optString(it)==place.s("id")}}}
-    Column(Modifier.fillMaxSize().background(OWVisual.paper)){
+    Column(Modifier.fillMaxSize().background(OWVisual.bg)){
         Row(Modifier.fillMaxWidth().heightIn(min=56.dp).padding(horizontal=8.dp),verticalAlignment=Alignment.CenterVertically){
             IconButton(onClick=vm::back){Icon(Icons.Outlined.ArrowBack,vm.t("返回","Back"))}
             Text(vm.t("个人主页","Profile"),fontSize=20.sp,fontWeight=FontWeight.SemiBold,modifier=Modifier.weight(1f))
@@ -46,18 +46,18 @@ internal fun profileBlockVisible(resource:JSONObject,block:JSONObject):Boolean {
             NativePhoto(user.s("avatar"),Modifier.fillMaxWidth().height(340.dp).clip(RoundedCornerShape(24.dp)),user.s("name"))
             Column(verticalArrangement=Arrangement.spacedBy(10.dp)){
                 Text(user.s("name"),fontSize=32.sp,fontWeight=FontWeight.SemiBold)
-                if(cities.isNotEmpty())Text(cities.joinToString(" · "){it.localized("name",vm.locale)},fontSize=14.sp,color=OWVisual.muted)
+                if(cities.isNotEmpty())Text(cities.joinToString(" · "){it.localized("name",vm.locale)},fontSize=14.sp,color=OWVisual.inkMuted)
                 val labels=buildList{
                     if(user.s("id").startsWith("demo-") || user.s("id").startsWith("load-"))add(vm.t("AI 演示人物","AI demo profile"))
                     if(user.optBoolean("verified"))add(vm.t("邮箱已验证","Email verified"))
                     if(user.s("providerStatus")=="approved")add(vm.t("服务资料已审核","Service profile reviewed"))
                 }
-                Text(labels.joinToString(" · "),fontSize=12.sp,color=OWVisual.muted)
+                Text(labels.joinToString(" · "),fontSize=12.sp,color=OWVisual.inkMuted)
                 if(vm.profile.o("layout").a("blocks").objects().none{it.s("type")=="intro"})Text(user.s("bio"),fontSize=16.sp)
             }
             RenderProfile(vm,vm.profile,publicView=true)
             Spacer(Modifier.height(16.dp))
         }
-        if(user.s("id")!=vm.user?.s("id"))Surface(color=OWVisual.paper){Button(onClick={vm.connectPerson(user)},enabled=vm.connectingPerson.isEmpty(),shape=RoundedCornerShape(24.dp),modifier=Modifier.fillMaxWidth().padding(16.dp).heightIn(min=52.dp),colors=ButtonDefaults.buttonColors(containerColor=OWVisual.accent,contentColor=Color.White)){Icon(Icons.Outlined.ChatBubbleOutline,null);Spacer(Modifier.width(8.dp));Text(vm.t("加入对话","Add to chats"))}}
+        if(user.s("id")!=vm.user?.s("id"))Surface(color=OWVisual.bg){Button(onClick={vm.connectPerson(user)},enabled=vm.connectingPerson.isEmpty(),shape=RoundedCornerShape(24.dp),modifier=Modifier.fillMaxWidth().padding(16.dp).heightIn(min=52.dp),colors=ButtonDefaults.buttonColors(containerColor=OWVisual.accent,contentColor=OWVisual.bg)){Icon(Icons.Outlined.ChatBubbleOutline,null);Spacer(Modifier.width(8.dp));Text(vm.t("加入对话","Add to chats"))}}
     }
 }

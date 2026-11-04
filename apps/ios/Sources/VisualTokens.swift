@@ -1,19 +1,23 @@
 // Generated from packages/contracts/assets/visual.json. Run node scripts/sync-design.mjs.
 import SwiftUI
 enum OWVisual {
-    static let paper = Color(hex: "F7F8FA")
-    static let surface = Color(hex: "FFFFFF")
-    static let ink = Color(hex: "20262C")
-    static let muted = Color(hex: "626B74")
-    static let line = Color(hex: "E1E5EA")
-    static let accent = Color(hex: "D92D4F")
-    static let soft = Color(hex: "ECEFF3")
-    static let positive = Color(hex: "31745B")
-    static let negative = Color(hex: "BF4E5F")
-    static let night = Color(hex: "05080D")
-    static let nightSurface = Color(hex: "181C21")
-    static let moon = Color(hex: "E8EDF0")
-    static let moonMuted = Color(hex: "A5AFB8")
+    static let bg = Color(hex: "05080D")
+    static let surface = Color(hex: "181C21")
+    static let raised = Color(hex: "232B33")
+    static let line = Color(hex: "2A333D")
+    static let ink = Color(hex: "E8EDF0")
+    static let inkMuted = Color(hex: "A5AFB8")
+    static let inkFaint = Color(hex: "67737F")
+    static let accent = Color(hex: "FD5068")
+    static let accentEnd = Color(hex: "FF7854")
+    static let like = Color(hex: "2ED573")
+    static let nope = Color(hex: "FF4757")
+    static let focus = Color(hex: "6496E6")
+    static let focusDeep = Color(hex: "0064C8")
+    static let sea = Color(hex: "091725")
+    static let seaShelf = Color(hex: "102535")
+    static let land = Color(hex: "26343C")
+    static let highland = Color(hex: "3A4A50")
     static let radii_card: CGFloat = 24
     static let radii_control: CGFloat = 24
     static let radii_field: CGFloat = 12

@@ -3,9 +3,14 @@ import {
   ShaderMaterial, SphereGeometry, SRGBColorSpace, TextureLoader,
 } from 'three';
 import { geoEquirectangular, geoPath } from 'd3-geo';
-import type { Feature, FeatureCollection, Geometry } from 'geojson';
+import type { FeatureCollection, Geometry } from 'geojson';
+import { theme } from './theme';
 
-/** Cloud-free night-map palette: the surface uses no sun, clock or night-side imagery. */
+/**
+ * Photographic globe: the day texture carries the colour and the shader only deepens
+ * the sea and shades the terrain. Country plates are drawn by globe.gl's polygon
+ * layer, so the mask keeps a single job - separating land from water.
+ */
 export async function createEarthAppearance(countries: FeatureCollection<Geometry>) {
   const day = await new TextureLoader().loadAsync(new URL('textures/earth-day.jpg', document.baseURI).href);
   day.colorSpace = SRGBColorSpace;
@@ -21,8 +26,8 @@ export async function createEarthAppearance(countries: FeatureCollection<Geometr
   const earth = new ShaderMaterial({
     uniforms: {
       uSurface: { value: day }, uMask: { value: mask },
-      uOcean: { value: new Color('#091725') }, uShelf: { value: new Color('#102535') },
-      uLand: { value: new Color('#26343c') }, uHighland: { value: new Color('#3a4a50') },
+      uOcean: { value: new Color(theme.sea) }, uShelf: { value: new Color(theme.seaShelf) },
+      uLand: { value: new Color(theme.land) }, uHighland: { value: new Color(theme.highland) },
     },
     vertexShader: `
       varying vec2 vMapUv;
@@ -50,17 +55,21 @@ export async function createEarthAppearance(countries: FeatureCollection<Geometr
         vec3 land = mix(uLand, uHighland, terrain * .8);
         land *= .87 + .26 * terrain;
         vec3 sea = mix(uOcean, uShelf, smoothstep(.01, .20, surface.b) * .55);
-        vec3 color = mix(sea, land, mask.r);
-        color *= 1.0 + mask.g * .10;
+        vec3 tinted = mix(sea, land, mask.r);
+        // The reference globe stays photographic, so the day texture is blended back in:
+        // strongly over the sea, lightly over land where the cobalt plates sit on top.
+        vec3 colour = mix(tinted, surface, mix(.55, .22, mask.r));
+        colour *= 1.0 + mask.r * .06;
         float facing = abs(dot(normalize(vWorldNormal), normalize(cameraPosition - vWorldPosition)));
-        color *= mix(.60, 1.0, smoothstep(0.0, .85, facing));
-        gl_FragColor = vec4(color, 1.0);
+        colour *= mix(.72, 1.0, smoothstep(0.0, .85, facing));
+        gl_FragColor = vec4(colour, 1.0);
         #include <colorspace_fragment>
       }
     `,
     toneMapped: false,
   });
   const atmosphere = new Mesh(new SphereGeometry(101.2, 128, 64), new ShaderMaterial({
+    uniforms: { uRim: { value: new Color(theme.focus) } },
     vertexShader: `
       varying vec3 vNormal;
       varying vec3 vPosition;
@@ -71,12 +80,13 @@ export async function createEarthAppearance(countries: FeatureCollection<Geometr
       }
     `,
     fragmentShader: `
+      uniform vec3 uRim;
       varying vec3 vNormal;
       varying vec3 vPosition;
       void main() {
         float facing = abs(dot(normalize(vNormal), normalize(cameraPosition - vPosition)));
-        float rim = pow(1.0 - facing, 4.0) * smoothstep(0.0, .18, facing);
-        gl_FragColor = vec4(.08, .15, .22, rim * .12);
+        float rim = pow(1.0 - facing, 3.2) * smoothstep(0.0, .16, facing);
+        gl_FragColor = vec4(uRim, rim * .30);
         #include <colorspace_fragment>
       }
     `,
@@ -86,11 +96,5 @@ export async function createEarthAppearance(countries: FeatureCollection<Geometr
   const configureTextures = (maxAnisotropy: number) => {
     for (const texture of [day, mask]) texture.anisotropy = Math.min(maxAnisotropy, 4);
   };
-  const selectCountry = (country?: Feature<Geometry>) => {
-    context.fillStyle = '#000000'; context.fillRect(0, 0, canvas.width, canvas.height);
-    context.beginPath(); path(countries); context.fillStyle = '#ff0000'; context.fill();
-    if (country) { context.beginPath(); path(country); context.fillStyle = '#ffff00'; context.fill(); }
-    mask.needsUpdate = true;
-  };
-  return { earth, atmosphere, lights: [new AmbientLight(0xffffff, 1.8)], configureTextures, selectCountry };
+  return { earth, atmosphere, lights: [new AmbientLight(0xffffff, 1.8)], configureTextures };
 }

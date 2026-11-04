@@ -62,14 +62,14 @@ test('blocking prevents new conversations and messages in both directions',async
 test('private drafts never leak and stale candidates cannot overwrite edits',async()=>{
  const first=(await request('GET','/profile/draft',tokenA)).json();const forest={...DEFAULT_LAYOUT,theme:'forest'};
  const save=await request('PUT','/profile/draft',tokenA,{revision:first.revision,layout:forest});assert.equal(save.statusCode,200,save.body);
- assert.equal((await request('GET',`/users/${a}`)).json().layout.theme,'cream');
+ assert.equal((await request('GET',`/users/${a}`)).json().layout.theme,'nocturne');
  assert.equal((await request('POST','/profile/publish',tokenA,{revision:first.revision})).statusCode,409);
  const publish=await request('POST','/profile/publish',tokenA,{revision:save.json().revision});assert.equal(publish.statusCode,200,publish.body);
  assert.equal((await request('GET',`/users/${a}`)).json().layout.theme,'forest');
  const jobId=randomUUID();await query("INSERT INTO layout_jobs(id,user_id,status,base_revision,base_layout,prompt,layout) VALUES($1,$2,'ready',$3,$4,'test candidate',$5)",[jobId,a,save.json().revision,JSON.stringify(forest),JSON.stringify({...DEFAULT_LAYOUT,theme:'ocean'})]);
  const next=await request('PUT','/profile/draft',tokenA,{revision:save.json().revision,layout:DEFAULT_LAYOUT});
  assert.equal((await request('POST',`/profile/jobs/${jobId}/apply`,tokenA,{revision:next.json().revision})).statusCode,409);
- assert.equal((await request('GET','/profile/draft',tokenA)).json().layout.theme,'cream');
+ assert.equal((await request('GET','/profile/draft',tokenA)).json().layout.theme,'nocturne');
  assert.equal((await request('GET',`/profile/jobs/${jobId}`,tokenB)).statusCode,404);
 });
 test('gallery references cannot expose private verification files or foreign media',async()=>{
@@ -118,14 +118,12 @@ test('random snapshots do not repeat people across pages',async()=>{
 test('an unconfigured model explicitly fails instead of generating a simulated layout',async()=>{
  if(config.llmKey)return;const d=(await request('GET','/profile/draft',tokenC)).json();const r=await request('POST','/profile/jobs',tokenC,{prompt:'Put photos first',baseRevision:d.revision});assert.equal(r.statusCode,503);assert.equal(r.json().code,'MODEL_NOT_CONFIGURED');
 });
-test('registration, actual queued email tokens, refresh rotation and password reset work together',async()=>{
+test('registration is immediately usable, refresh rotation and password reset work together',async()=>{
  const email=`${prefix}-registered@ourworld.test`,original='Original password 2026!',changed='Changed password 2026!';
- const registered=await request('POST','/auth/register',undefined,{email,password:original,name:'Email flow test'});assert.equal(registered.statusCode,200,registered.body);const account=registered.json();all.push(account.user.id);assert.equal(account.user.verified,false);
+ const registered=await request('POST','/auth/register',undefined,{email,password:original,name:'Email flow test'});assert.equal(registered.statusCode,200,registered.body);const account=registered.json();all.push(account.user.id);assert.equal(account.user.verified,true);
  const mails=await mailTasks.getJobs(['waiting','active','completed','delayed'],0,200);
- const verification=mails.find(j=>j.data.to===email&&j.data.subject.includes('Verify'));assert(verification,'Verification email must be queued with an actual token');
- const token=verification.data.text.match(/Verification token: (\S+)/)[1];
- assert.equal((await request('POST','/auth/verify',undefined,{token})).statusCode,200);
- assert.equal((await request('POST','/auth/verify',undefined,{token})).statusCode,400);
+ const verification=mails.find(j=>j.data.to===email&&j.data.subject.includes('Verify'));assert(!verification,'No verification email should be queued anymore');
+ assert.equal((await request('POST','/auth/verify',undefined,{token:'not-an-issued-token'})).statusCode,400);
  const refreshed=await instance.server.inject({method:'POST',url:'/api/v1/auth/refresh',headers:{authorization:'Bearer deliberately-expired'},payload:{refreshToken:account.refreshToken}});assert.equal(refreshed.statusCode,200,refreshed.body);
  assert.equal((await request('POST','/auth/refresh',undefined,{refreshToken:account.refreshToken})).statusCode,401);
  assert.equal((await request('POST','/auth/forgot',undefined,{email})).statusCode,200);

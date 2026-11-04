@@ -6,11 +6,11 @@ import CoreText
 import UIKit
 
 let sky = Color(hex: "eef4f5")
-let night = OWVisual.night
-let nightSurface = OWVisual.nightSurface
-let moon = OWVisual.moon
-let moonMuted = OWVisual.moonMuted
-let paper = OWVisual.paper
+let night = OWVisual.bg
+let nightSurface = OWVisual.surface
+let moon = OWVisual.ink
+let moonMuted = OWVisual.inkMuted
+let paper = OWVisual.bg
 let ink = OWVisual.ink
 let coral = OWVisual.accent
 extension Color { init(hex: String) { let value = UInt64(hex.replacingOccurrences(of: "#", with: ""), radix: 16) ?? 0x193936; self.init(red: Double((value >> 16) & 255) / 255, green: Double((value >> 8) & 255) / 255, blue: Double(value & 255) / 255) } }
@@ -84,7 +84,7 @@ extension Color { init(hex: String) { let value = UInt64(hex.replacingOccurrence
     var body: some View {
         Group {
             if let image { Image(uiImage: image).resizable().scaledToFill() }
-            else { Rectangle().fill(OWVisual.soft).overlay { if failed { Image(systemName: "photo").foregroundStyle(OWVisual.muted).accessibilityLabel(s.t("照片暂不可用", "Photo unavailable")) } else { ProgressView() } } }
+            else { Rectangle().fill(OWVisual.raised).overlay { if failed { Image(systemName: "photo").foregroundStyle(OWVisual.inkMuted).accessibilityLabel(s.t("照片暂不可用", "Photo unavailable")) } else { ProgressView() } } }
         }.frame(maxWidth: .infinity).frame(height: height).clipped().clipShape(RoundedRectangle(cornerRadius: cornerRadius))
         .task(id: url) {
             image = nil; failed = false
@@ -279,9 +279,9 @@ func layoutRows(_ blocks: [JSON]) -> [[JSON]] { var rows: [[JSON]] = []; var hal
     case "reviews": ForEach(Array(referencedResources(resource.rows("reviews"), refs: block.strings("refs")).enumerated()), id: \.offset) { _, item in Text("★ \(item.int("rating"))  \(item.str("body"))") }
     case "social": ForEach(Array(user.rows("socialLinks").enumerated()), id: \.offset) { _, item in if let url = URL(string: item.str("url")), ["https", "http"].contains(url.scheme ?? "") { Link(item.str("label"), destination: url) } }
     default: EmptyView()
-    } }.frame(maxWidth: .infinity, alignment: .leading).padding(publicView ? 0 : block.str("size") == "expanded" ? 24 : 16).background(publicView && layout.str("theme") == "cream" ? Color.clear : layout.str("theme") == "ocean" ? Color(hex: "edf0f0") : layout.str("theme") == "forest" ? Color(hex: "edf0ed") : .white).clipShape(RoundedRectangle(cornerRadius: 24)) } }
+    } }.frame(maxWidth: .infinity, alignment: .leading).padding(publicView ? 0 : block.str("size") == "expanded" ? 24 : 16).background(publicView && layout.str("theme") == "cream" ? Color.clear : OWVisual.bg).clipShape(RoundedRectangle(cornerRadius: 24)) } }
 
-@MainActor struct OwnProfileView: View { @EnvironmentObject var s: WorldStore; var body: some View { if let user = s.user { Page("Profile") { Photo(url: user.str("avatar"), height: 300); Text(user.str("name")).font(ourFont(32, display: true)); Text(user.str("id").hasPrefix("demo-") ? s.t("AI 演示人物", "AI demo profile") : user.str("providerStatus")).font(ourFont(12)).foregroundStyle(OWVisual.muted); HStack { Button(s.t("搭建主页", "Build profile"), action: s.edit); Spacer(); Button(s.t("设置", "Settings")) { s.route = "settings" } }; HStack { Button(s.t("发布服务", "Publish service")) { s.route = "packages" }; Spacer(); Button(s.t("资料认证", "Verification")) { s.route = "verification" } }; ProfileRenderer(resource: s.profile) } } else { AuthView() } } }
+@MainActor struct OwnProfileView: View { @EnvironmentObject var s: WorldStore; var body: some View { if let user = s.user { Page("Profile") { Photo(url: user.str("avatar"), height: 300); Text(user.str("name")).font(ourFont(32, display: true)); Text(user.str("id").hasPrefix("demo-") ? s.t("AI 演示人物", "AI demo profile") : user.str("providerStatus")).font(ourFont(12)).foregroundStyle(OWVisual.inkMuted); HStack { Button(s.t("搭建主页", "Build profile"), action: s.edit); Spacer(); Button(s.t("设置", "Settings")) { s.route = "settings" } }; HStack { Button(s.t("发布服务", "Publish service")) { s.route = "packages" }; Spacer(); Button(s.t("资料认证", "Verification")) { s.route = "verification" } }; ProfileRenderer(resource: s.profile) } } else { AuthView() } } }
 @MainActor struct PublicProfileView: View { var body: some View { TravelPublicProfileView() } }
 
 @MainActor struct ProfileEditorView: View {

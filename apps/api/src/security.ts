@@ -8,7 +8,7 @@ const derive = promisify(scrypt);
 export class ApiError extends Error { constructor(public status: number, public code: string, message: string) { super(message); } }
 export function assert(condition: unknown, status: number, code: string, message: string): asserts condition { if (!condition) throw new ApiError(status,code,message); }
 export function parse<S extends z.ZodTypeAny>(schema: S, value: unknown): z.output<S> { const result=schema.safeParse(value); if(!result.success) throw new ApiError(400,'VALIDATION_ERROR',result.error.issues.map(x=>`${x.path.join('.')}: ${x.message}`).join('; ')); return result.data; }
-export const passwordSchema = z.string().min(10).max(128);
+export const passwordSchema = z.string().min(8,'密码至少需要 8 位 / password must be at least 8 characters').max(128);
 export const sha256 = (value: string) => createHash('sha256').update(value).digest('hex');
 export async function hashPassword(password:string):Promise<string> { const salt=randomBytes(16).toString('hex'); const hash=await derive(password,salt,64) as Buffer; return `scrypt:${salt}:${hash.toString('hex')}`; }
 export async function verifyPassword(password:string,stored:string):Promise<boolean> { const [kind,salt,hash]=stored.split(':'); if(kind!=='scrypt'||!salt||!hash) return false; const check=await derive(password,salt,64) as Buffer; const target=Buffer.from(hash,'hex'); return target.length===check.length&&timingSafeEqual(target,check); }

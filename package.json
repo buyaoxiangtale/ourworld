@@ -12,7 +12,7 @@
     "build": "node scripts/sync-design.mjs && npm run build -w @ourworld/contracts && npm run build -w @ourworld/globe && node scripts/sync-globe.mjs && npm run build -w @ourworld/api && npm run build -w @ourworld/web",
     "dev:api": "npm run dev -w @ourworld/api",
     "dev:web": "npm run dev -w @ourworld/web",
-    "test": "npm run test -w @ourworld/api",
+    "test": "npm run test -w @ourworld/api && node apps/web/test/color-tokens.mjs",
     "typecheck": "npm run typecheck -w @ourworld/contracts && npm run typecheck -w @ourworld/globe && npm run typecheck -w @ourworld/api && npm run typecheck -w @ourworld/web"
   },
   "engines": {
@@ -20,5 +20,10 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true,
+    "esbuild@0.25.12": true,
+    "msgpackr-extract@3.0.6": true
   }
 }

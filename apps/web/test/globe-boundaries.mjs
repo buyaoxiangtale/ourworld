@@ -37,6 +37,17 @@ try{
   await page.screenshot({path:resolve(output,`country-selected-${name.toLowerCase()}.png`)});
   countries.push({name,lat,lng,geoId:selection.geoId,selected:true});
  }
+ // Taiwan is merged into China in packages/globe/src/atlas.ts, so the same tap must
+ // resolve to China instead of an unlisted country.
+ await command('restoreCamera',{lat:23.7,lng:121,altitude:2.8});
+ await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+ await page.evaluate(()=>window.__events=[]);
+ await page.mouse.click(195,422);
+ await page.waitForFunction(()=>window.__events.some(e=>e.event==='placeSelected'));
+ const taiwan=await page.evaluate(()=>window.__events.find(e=>e.event==='placeSelected').data);
+ assert.equal(taiwan.geoName,'China','Taiwan must resolve to China');
+ assert.equal(String(taiwan.geoId),'156');
+ countries.push({name:'Taiwan',lat:23.7,lng:121,geoId:taiwan.geoId,selected:true,mergedInto:'China'});
  const city={id:'test-paris',kind:'city',name:{zh:'巴黎',en:'Paris'},lat:48.86,lng:2.35};
  await page.evaluate(city=>{window.__events=[];for(const [event,data]of [['focusPlace',{place:city}],['setActive',{active:false}]])window.OurworldGlobe.receive({bridgeVersion:1,event,data});},city);
  const frozen=await page.evaluate(()=>window.__events.filter(e=>e.event==='cameraChanged').at(-1)?.data);

@@ -35,3 +35,7 @@ DerivedData/
 .DS_Store
 test-results/
 playwright-report/
+.zcode-site/
+.zcode/
+.zcode-site.json
+*.tsbuildinfo
