@@ -24,6 +24,8 @@ import javax.crypto.spec.GCMParameterSpec
 fun JSONObject.s(key:String, fallback:String="") = if (isNull(key)) fallback else optString(key,fallback)
 fun JSONObject.o(key:String) = optJSONObject(key) ?: JSONObject()
 fun JSONObject.a(key:String) = optJSONArray(key) ?: JSONArray()
+fun JSONObject.d(key:String, fallback:Double=0.0) = if (isNull(key)) fallback else optDouble(key,fallback)
+fun Double.trim0():String = if(this==toLong())toLong().toString() else toString
 fun JSONArray.objects() = (0 until length()).mapNotNull { optJSONObject(it) }
 fun json(vararg pairs:Pair<String,Any?>) = JSONObject().apply { pairs.forEach { put(it.first,it.second ?: JSONObject.NULL) } }
 fun JSONObject.localized(key:String, locale:String) = optJSONObject(key)?.s(locale) ?: s(key)

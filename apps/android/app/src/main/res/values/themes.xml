@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Ourworld" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@drawable/launch_starlight</item>
+        <item name="android:statusBarColor">@color/ow_night</item>
+        <item name="android:navigationBarColor">@color/ow_night</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>

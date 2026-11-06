@@ -1,6 +1,6 @@
 import Globe from 'globe.gl';
 import { geoCentroid, geoContains, geoDistance } from 'd3-geo';
-import { ACESFilmicToneMapping, SRGBColorSpace } from 'three';
+import { NoToneMapping, SRGBColorSpace, type PerspectiveCamera } from 'three';
 import { createEarthAppearance } from './earth-material';
 import { theme } from './theme';
 import { countries } from './atlas';
@@ -34,14 +34,48 @@ const plateCap={selected:rgba(theme.focus,.45),base:rgba(theme.focusDeep,.30)};
 const plateSide={selected:rgba(theme.focus,.25),base:rgba(theme.focusDeep,.10)};
 const plateStroke={selected:`rgba(${towardWhite(theme.focus,.55)},.70)`,base:rgba(theme.focus,.50)};
 
+// Starlight backdrop: a deterministic deep-space canvas plus a few CSS-twinkling
+// stars, painted before the globe mounts so the launch moment is already starlit.
+const paintStars=()=>{
+  const canvas=document.getElementById('stars') as HTMLCanvasElement|null;
+  if(!canvas)return;
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  const width=window.innerWidth,height=window.innerHeight;
+  canvas.width=Math.floor(width*dpr);canvas.height=Math.floor(height*dpr);
+  canvas.style.width=`${width}px`;canvas.style.height=`${height}px`;
+  const context=canvas.getContext('2d');if(!context)return;
+  context.setTransform(dpr,0,0,dpr,0,0);
+  const sky=context.createLinearGradient(0,0,0,height);
+  sky.addColorStop(0,theme.bg);sky.addColorStop(.55,theme.nebula);sky.addColorStop(1,theme.bg);
+  context.fillStyle=sky;context.fillRect(0,0,width,height);
+  let seed=20261106;
+  const next=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};
+  const count=Math.max(90,Math.round(width*height/6500));
+  context.fillStyle=theme.starSoft;
+  for(let i=0;i<count;i++){const r=next()<.12?1.6:next()<.5?1.1:.7;context.globalAlpha=.22+next()*.55;context.beginPath();context.arc(next()*width,next()*height,r,0,7);context.fill();}
+  const bright=Math.round(count*.08);
+  context.fillStyle=theme.starBright;
+  for(let i=0;i<bright;i++){const x=next()*width,y=next()*height;context.globalAlpha=.85;context.beginPath();context.arc(x,y,1.7,0,7);context.fill();context.globalAlpha=.25;context.fillRect(x-4,y-.4,8,.8);context.fillRect(x-.4,y-4,.8,8);}
+  context.globalAlpha=1;
+  const twinkle=document.getElementById('twinkle');
+  if(twinkle&&!twinkle.childElementCount){for(let i=0;i<26;i++){const star=document.createElement('i');star.style.left=`${next()*100}%`;star.style.top=`${next()*100}%`;star.style.animationDelay=`${next()*5}s`;twinkle.appendChild(star);}}
+};
+// While the globe is inactive the twinkle layer is removed from composition
+// entirely so a frozen frame stays byte-identical.
+const setTwinkleVisible=(visible:boolean)=>{const twinkle=document.getElementById('twinkle');if(twinkle)twinkle.style.display=visible?'':'none';};
+paintStars();
+
 async function mount(){
   document.documentElement.style.background=theme.bg;
   document.body.style.background=theme.bg;
   document.getElementById('fallback')!.style.background=theme.bg;
-  const appearance=await createEarthAppearance(countries);
+  const appearance=createEarthAppearance();
   const globe=new Globe(host,{animateIn:false})
     .backgroundColor('rgba(0,0,0,0)')
-    .globeCurvatureResolution(1.8).showAtmosphere(false)
+    .globeImageUrl(new URL('textures/earth-day.jpg',document.baseURI).href)
+    .bumpImageUrl(new URL('textures/earth-topology.png',document.baseURI).href)
+    .showAtmosphere(true).atmosphereColor(theme.focus).atmosphereAltitude(.22)
+    .globeCurvatureResolution(1.8)
     .pointsMerge(false).pointAltitude(cityMarkerAltitude).pointRadius((d:object)=>favorites.has((d as Place).id)?.62:.28)
     .pointColor((d:object)=>favorites.has((d as Place).id)?theme.accent:theme.inkMuted)
     .pointLat((d:object)=>(d as Place).lat).pointLng((d:object)=>(d as Place).lng)
@@ -61,35 +95,35 @@ async function mount(){
   paintCountries();
   const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)');
   const controls=globe.controls();
-  controls.autoRotate=!reducedMotion.matches;controls.enablePan=false;controls.minDistance=120;controls.maxDistance=800;controls.rotateSpeed=.7;controls.zoomSpeed=.7;controls.enableDamping=true;controls.dampingFactor=.08;
-  const spinToggle=document.getElementById('spin-toggle');
-  const pauseIcon=document.getElementById('spin-pause-icon');
-  const playIcon=document.getElementById('spin-play-icon');
-  // The reference design keeps the globe turning while the Earth tab is open, so the
-  // render loop runs continuously here instead of waking for short bursts. It still
-  // stops when the tab is hidden, when another tab is active, or on reduced motion.
-  let spin=!reducedMotion.matches;
+  controls.enablePan=false;controls.minDistance=120;controls.maxDistance=800;controls.rotateSpeed=.7;controls.zoomSpeed=.7;controls.enableDamping=true;controls.dampingFactor=.08;controls.autoRotateSpeed=.9;
+  // The globe arrives spinning and never dead-stops: rotation only yields while the
+  // user drags or a camera focus is in flight, then resumes on its own. The loop
+  // still pauses when the tab is hidden, another tab is active, or motion is reduced.
+  let rotating=!reducedMotion.matches;
+  let resumeTimer:number|undefined;
   let idleTimer:number|undefined;
-  const paintSpin=()=>{
-    if(pauseIcon&&playIcon){pauseIcon.style.display=spin?'':'none';playIcon.style.display=spin?'none':'';}
-    if(spinToggle)spinToggle.setAttribute('aria-label',spin?'Pause rotation':'Resume rotation');
-  };
+  const applyRotation=()=>{controls.autoRotate=rotating&&!reducedMotion.matches;};
+  const cancelResume=()=>{clearTimeout(resumeTimer);resumeTimer=undefined;};
+  const holdRotation=(resumeMs:number)=>{cancelResume();controls.autoRotate=false;if(resumeMs>0)resumeTimer=window.setTimeout(()=>{resumeTimer=undefined;rotating=!reducedMotion.matches;applyRotation();
+    // Keep the loop alive only when the spin actually resumed; under reduced motion
+    // (or any other non-rotating hold) settle back to a paused frame instead.
+    if(active&&!document.hidden){if(controls.autoRotate)globe.resumeAnimation();else{clearTimeout(idleTimer);idleTimer=window.setTimeout(()=>globe.pauseAnimation(),350);}}},resumeMs);};
   const syncAnimation=()=>{
-    controls.autoRotate=spin&&!reducedMotion.matches;
+    // Re-activation (returning to the Earth tab) settles for a beat before the spin
+    // resumes, so a restored view never drifts while the user is re-orienting.
+    holdRotation(600);
     if(active&&!document.hidden)globe.resumeAnimation();
     else globe.pauseAnimation();
   };
   const wake=(duration=350)=>{
     if(!active||document.hidden)return;
     clearTimeout(idleTimer);globe.resumeAnimation();
-    if(!spin)idleTimer=window.setTimeout(()=>globe.pauseAnimation(),duration);
+    if(!controls.autoRotate&&!resumeTimer)idleTimer=window.setTimeout(()=>globe.pauseAnimation(),duration);
   };
-  const stopSpin=()=>{if(!spin)return;spin=false;controls.autoRotate=false;paintSpin();};
-  spinToggle?.addEventListener('click',()=>{spin=!spin;controls.autoRotate=spin&&!reducedMotion.matches;paintSpin();wake(600);});
-  paintSpin();
-  reducedMotion.addEventListener('change',event=>{controls.autoRotate=!event.matches&&spin;});
+  applyRotation();
+  reducedMotion.addEventListener('change',event=>{rotating=!event.matches;applyRotation();});
   globe.lights(appearance.lights);
-  globe.scene().add(appearance.atmosphere);
+  appearance.attachTo(globe.scene(),globe.camera() as PerspectiveCamera);
   const highlight=(place?:Place,geoId?:string)=>{
     const country=place?.kind==='country'?place:places.find(p=>p.kind==='country'&&(p.id===place?.parentId||p.name.en===place?.country));
     const polygon=countries.features.find(p=>geoId?String(p.id)===geoId:country&&(clean(String(p.properties?.name||''))===clean(country.name.en)||(country.aliases||[]).some(a=>clean(a)===clean(String(p.properties?.name||'')))));
@@ -97,11 +131,12 @@ async function mount(){
     paintCountries();
   };
   globe.renderer().setPixelRatio(Math.min(window.devicePixelRatio||1,1.7));
-  globe.renderer().toneMapping=ACESFilmicToneMapping;
+  globe.renderer().toneMapping=NoToneMapping;
   globe.renderer().toneMappingExposure=1.0;
   globe.renderer().outputColorSpace=SRGBColorSpace;
-  appearance.configureTextures(globe.renderer().capabilities.getMaxAnisotropy());
-  const resize=()=>{const width=host.clientWidth||innerWidth;const height=host.clientHeight||innerHeight;globe.width(width).height(height);if(untouched){const fov=Number((globe.camera() as unknown as {fov:number}).fov)||50;const angle=Math.atan((Math.min(width,height)*.88/height)*Math.tan(fov*Math.PI/360));globe.pointOfView({lat:22,lng:85,altitude:1/Math.sin(angle)-1},0);}};
+  // The initial view frames the whole planet with breathing room for the starfield,
+  // matching the reference presentation instead of an edge-to-edge zoom.
+  const resize=()=>{const width=host.clientWidth||innerWidth;const height=host.clientHeight||innerHeight;globe.width(width).height(height);paintStars();if(untouched){const fov=Number((globe.camera() as unknown as {fov:number}).fov)||50;const angle=Math.atan((Math.min(width,height)*.62/height)*Math.tan(fov*Math.PI/360));globe.pointOfView({lat:22,lng:85,altitude:1/Math.sin(angle)-1},0);}};
   window.addEventListener('resize',()=>{resize();wake();});resize();
   let focusTimer:number|undefined;
   let pendingFocus:{lat:number;lng:number;altitude:number}|undefined;
@@ -114,11 +149,11 @@ async function mount(){
   const focusCamera=(pov:{lat:number;lng:number;altitude:number})=>{
     clearTimeout(focusTimer);pendingFocus=pov;
     if(!active||reducedMotion.matches){finishFocus();return;}
-    wake(1000);globe.pointOfView(pov,850);
+    holdRotation(8000);wake(1000);globe.pointOfView(pov,850);
     focusTimer=window.setTimeout(()=>{pendingFocus=undefined;emit('cameraChanged',{...globe.pointOfView()});},880);
   };
   let lastSelectionAt=0;
-  const selectPlace=(place:Place)=>{if(!active)return;lastSelectionAt=performance.now();untouched=false;stopSpin();highlight(place);focusCamera({lat:place.lat,lng:place.lng,altitude:place.kind==='country'?1.15:.65});emit('placeSelected',{place});};
+  const selectPlace=(place:Place)=>{if(!active)return;lastSelectionAt=performance.now();untouched=false;highlight(place);focusCamera({lat:place.lat,lng:place.lng,altitude:place.kind==='country'?1.15:.65});emit('placeSelected',{place});};
   const chooseCountry=(polygon:Feature<Geometry>)=>{
     const name=String(polygon.properties?.name||'');
     const known=places.find(p=>p.kind==='country'&&(clean(p.name.en)===clean(name)||(p.aliases||[]).some(a=>clean(a)===clean(name))));
@@ -132,7 +167,7 @@ async function mount(){
     if(!active)return;
     const polygon=countries.features.find(p=>geoContains(p,[hitLng,hitLat]));
     if(!polygon)return;
-    lastSelectionAt=performance.now();untouched=false;stopSpin();
+    lastSelectionAt=performance.now();untouched=false;
     chooseCountry(polygon);
   };
   globe.onPointClick((d:object)=>selectPlace(d as Place));
@@ -140,7 +175,7 @@ async function mount(){
   // to the pointer handler below, which resolves the same polygon from the tap position.
   globe.onPolygonClick((polygon:object)=>{
     if(!active)return;
-    lastSelectionAt=performance.now();untouched=false;stopSpin();
+    lastSelectionAt=performance.now();untouched=false;
     chooseCountry(polygon as Feature<Geometry>);
   });
   // A touch can finish between animation frames, before the library's hover hit is refreshed.
@@ -162,8 +197,8 @@ async function mount(){
       if(nearby)selectPlace(nearby.place);else selectCountry(coords);
     },70);
   },{capture:true});
-  controls.addEventListener('start',()=>{untouched=false;stopSpin();clearTimeout(focusTimer);pendingFocus=undefined;clearTimeout(idleTimer);if(active)globe.resumeAnimation();});
-  controls.addEventListener('end',()=>{wake(450);clearTimeout(cameraTimer);cameraTimer=window.setTimeout(()=>{emit('cameraChanged',{...globe.pointOfView()});},400);});
+  controls.addEventListener('start',()=>{untouched=false;cancelResume();clearTimeout(focusTimer);pendingFocus=undefined;controls.autoRotate=false;clearTimeout(idleTimer);if(active)globe.resumeAnimation();});
+  controls.addEventListener('end',()=>{holdRotation(2500);wake(450);clearTimeout(cameraTimer);cameraTimer=window.setTimeout(()=>{emit('cameraChanged',{...globe.pointOfView()});},400);});
   const update=()=>globe.pointsData(places.filter(p=>p.kind==='city'));
   const receive=(command:GlobeCommand)=>{
     if(!command||command.bridgeVersion!==1||!command.data)return;
@@ -175,21 +210,26 @@ async function mount(){
       wake();
     }
     if(command.event==='focusPlace'){
-      const p=d.place as Place|undefined;if(p&&Number.isFinite(p.lat)&&Number.isFinite(p.lng)){untouched=false;stopSpin();highlight(p);focusCamera({lat:p.lat,lng:p.lng,altitude:p.kind==='country'?1.15:.65});}
+      const p=d.place as Place|undefined;if(p&&Number.isFinite(p.lat)&&Number.isFinite(p.lng)){untouched=false;highlight(p);focusCamera({lat:p.lat,lng:p.lng,altitude:p.kind==='country'?1.15:.65});}
     }
-    if(command.event==='restoreCamera'&&Number.isFinite(d.lat)&&Number.isFinite(d.lng)&&Number.isFinite(d.altitude)){untouched=false;clearTimeout(focusTimer);pendingFocus=undefined;wake();globe.pointOfView({lat:Number(d.lat),lng:Number(d.lng),altitude:Number(d.altitude)},0);}
-    if(command.event==='setActive'){active=d.active!==false;controls.enabled=active;if(active){syncAnimation();wake();}else{finishFocus();tap=null;pointers.clear();clearTimeout(idleTimer);globe.pauseAnimation();}}
+    if(command.event==='restoreCamera'&&Number.isFinite(d.lat)&&Number.isFinite(d.lng)&&Number.isFinite(d.altitude)){untouched=false;clearTimeout(focusTimer);pendingFocus=undefined;wake();holdRotation(4000);globe.pointOfView({lat:Number(d.lat),lng:Number(d.lng),altitude:Number(d.altitude)},0);
+     // A restored view must land immediately, even while the animation loop is
+     // paused, so hit-testing and the visible frame both use the settled camera.
+     globe.renderer().render(globe.scene(),globe.camera());}
+    if(command.event==='setActive'){active=d.active!==false;controls.enabled=active;document.documentElement.classList.toggle('globe-idle',!active);setTwinkleVisible(active);if(active){rotating=!reducedMotion.matches;syncAnimation();wake();}else{finishFocus();tap=null;pointers.clear();cancelResume();clearTimeout(idleTimer);globe.pauseAnimation();}}
     if(command.event==='setTheme')document.documentElement.dataset.theme=String(d.theme||'ocean');
   };
   window.OurworldGlobe={receive};
   window.addEventListener('message',e=>{if(e.source===window.parent&&(e.origin===window.location.origin||e.origin==='null'))receive(e.data);});
   document.addEventListener('visibilitychange',()=>{document.hidden?globe.pauseAnimation():wake();});
   globe.onGlobeReady(()=>{
-    // Set the material after globe.gl's first default-property update so it cannot clear bumpMap.
-    globe.globeMaterial(appearance.earth);resize();
+    // globe.gl has applied the day + bump textures to its Phong material; tune colour
+    // space, anisotropy and relief strength once so the photographs stay accurate.
+    appearance.configure(globe.globeMaterial() as import('three').MeshPhongMaterial,globe.renderer().capabilities.getMaxAnisotropy());
+    resize();
     wake(600);
     document.getElementById('boot')?.classList.add('done');
-    requestAnimationFrame(()=>requestAnimationFrame(()=>emit('rendererReady',{version:1,style:'deep-sea',borders:true,texturesReady:true,textureCount:2,loadedTextureCount:1,lighting:'uniform-view-relative',clouds:false,dayNight:false})));
+    requestAnimationFrame(()=>requestAnimationFrame(()=>emit('rendererReady',{version:1,style:'blue-marble',borders:true,texturesReady:true,textureCount:2,loadedTextureCount:2,lighting:'uniform-view-relative',clouds:'baked',dayNight:false})));
   });
 }
 void mount().catch(error=>{

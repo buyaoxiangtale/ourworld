@@ -11,7 +11,9 @@
 <key>CFBundleShortVersionString</key><string>0.1.0</string>
 <key>CFBundleVersion</key><string>1</string>
 <key>API_BASE_URL</key><string>$(API_BASE_URL)</string>
-<key>UILaunchScreen</key><dict/>
+<key>UILaunchScreen</key><dict>
+<key>UIColorName</key><string>LaunchNight</string>
+</dict>
 <key>NSLocalNetworkUsageDescription</key><string>Connect to your local Ourworld server.</string>
 <key>NSAppTransportSecurity</key><dict><key>NSAllowsArbitraryLoads</key><true/><key>NSAllowsLocalNetworking</key><true/></dict>
 <key>UISupportedInterfaceOrientations</key><array><string>UIInterfaceOrientationPortrait</string></array>

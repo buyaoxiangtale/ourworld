@@ -20,12 +20,15 @@ try{
     posts:['a','b'].map(id=>({id:`post-${id}`,userId:user.id,title:`POST_${id.toUpperCase()}`,body:'Example story',cityId:'city-a',images:[],likes:0,createdAt:'2026-01-01T00:00:00Z'})),
     reviews:['a','b'].map(id=>({id:`review-${id}`,rating:5,body:`REVIEW_${id.toUpperCase()}`,createdAt:'2026-01-01T00:00:00Z'})),
     places:['a','b','outside'].map(id=>({id:`city-${id}`,kind:'city',parentId:'country',country:'Example',name:{zh:`CITY_${id.toUpperCase()}`,en:`CITY_${id.toUpperCase()}`},lat:0,lng:0,description:{zh:'',en:''},image:''}))};
-  const render=(blocks)=>renderToStaticMarkup(React.createElement(AppContext.Provider,{value:context},React.createElement(ProfileRenderer,{resource,layout:{schemaVersion:1,theme:'cream',accent:'#ce795f',blocks}})));
+  const render=(blocks)=>renderToStaticMarkup(React.createElement(AppContext.Provider,{value:context},React.createElement(ProfileRenderer,{resource,layout:{schemaVersion:1,theme:'nocturne',accent:'#ce795f',blocks}})));
   for(const [type,prefix] of [['packages','package'],['posts','post'],['reviews','review'],['cities','city']]){
     const marker=prefix==='package'?'PACKAGE':prefix==='post'?'POST':prefix==='review'?'REVIEW':'CITY';
-    const selected=render([{id:type,type,span:2,size:'compact',refs:[`${prefix}-b`]}]);
+    // The identity header always summarises every service city, so selection for the
+    // cities block is asserted inside the block's own container rather than the page.
+    const scope=(html)=>type==='cities'?html.split('profile-city-list')[1]||'':html;
+    const selected=scope(render([{id:type,type,span:2,size:'compact',refs:[`${prefix}-b`]}]));
     assert(selected.includes(`${marker}_B`)&&!selected.includes(`${marker}_A`),`${type}: only explicitly referenced resource is rendered`);
-    const ordered=render([{id:type,type,span:2,size:'compact',refs:[`${prefix}-b`,`${prefix}-a`]}]);
+    const ordered=scope(render([{id:type,type,span:2,size:'compact',refs:[`${prefix}-b`,`${prefix}-a`]}]));
     assert(ordered.indexOf(`${marker}_B`)<ordered.indexOf(`${marker}_A`),`${type}: explicit reference order is respected`);
     const fallback=render([{id:type,type,span:2,size:'compact',refs:[]}]);
     assert(fallback.includes(`${marker}_A`)&&fallback.includes(`${marker}_B`),`${type}: empty refs retain the existing fallback`);

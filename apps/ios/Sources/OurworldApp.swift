@@ -279,7 +279,7 @@ func layoutRows(_ blocks: [JSON]) -> [[JSON]] { var rows: [[JSON]] = []; var hal
     case "reviews": ForEach(Array(referencedResources(resource.rows("reviews"), refs: block.strings("refs")).enumerated()), id: \.offset) { _, item in Text("★ \(item.int("rating"))  \(item.str("body"))") }
     case "social": ForEach(Array(user.rows("socialLinks").enumerated()), id: \.offset) { _, item in if let url = URL(string: item.str("url")), ["https", "http"].contains(url.scheme ?? "") { Link(item.str("label"), destination: url) } }
     default: EmptyView()
-    } }.frame(maxWidth: .infinity, alignment: .leading).padding(publicView ? 0 : block.str("size") == "expanded" ? 24 : 16).background(publicView && layout.str("theme") == "cream" ? Color.clear : OWVisual.bg).clipShape(RoundedRectangle(cornerRadius: 24)) } }
+    } }.frame(maxWidth: .infinity, alignment: .leading).padding(publicView ? 0 : block.str("size") == "expanded" ? 24 : 16).background(publicView && layout.str("theme") == "nocturne" ? Color.clear : OWVisual.bg).clipShape(RoundedRectangle(cornerRadius: 24)) } }
 
 @MainActor struct OwnProfileView: View { @EnvironmentObject var s: WorldStore; var body: some View { if let user = s.user { Page("Profile") { Photo(url: user.str("avatar"), height: 300); Text(user.str("name")).font(ourFont(32, display: true)); Text(user.str("id").hasPrefix("demo-") ? s.t("AI 演示人物", "AI demo profile") : user.str("providerStatus")).font(ourFont(12)).foregroundStyle(OWVisual.inkMuted); HStack { Button(s.t("搭建主页", "Build profile"), action: s.edit); Spacer(); Button(s.t("设置", "Settings")) { s.route = "settings" } }; HStack { Button(s.t("发布服务", "Publish service")) { s.route = "packages" }; Spacer(); Button(s.t("资料认证", "Verification")) { s.route = "verification" } }; ProfileRenderer(resource: s.profile) } } else { AuthView() } } }
 @MainActor struct PublicProfileView: View { var body: some View { TravelPublicProfileView() } }
@@ -294,7 +294,7 @@ func layoutRows(_ blocks: [JSON]) -> [[JSON]] { var rows: [[JSON]] = []; var hal
     let types = ["intro", "gallery", "experiences", "skills", "cities", "packages", "posts", "reviews", "social"]
     var body: some View { Page(s.t("搭建我的主页", "Build my profile")) {
         Text(s.t("拖动组件排序；先预览，再发布。", "Drag to reorder. Preview before publishing."))
-        Picker(s.t("主题", "Theme"), selection: Binding(get: { s.layout.str("theme", "cream") }, set: { s.updateLayout("theme", $0) })) { Text("Cream").tag("cream"); Text("Ocean").tag("ocean"); Text("Forest").tag("forest") }.pickerStyle(.segmented)
+        Picker(s.t("主题", "Theme"), selection: Binding(get: { s.layout.str("theme", "nocturne") }, set: { s.updateLayout("theme", $0) })) { Text("Ocean").tag("ocean"); Text("Forest").tag("forest"); Text("Nocturne").tag("nocturne") }.pickerStyle(.segmented)
         Input(label: s.t("强调色 HEX", "Accent HEX"), value: Binding(get: { s.layout.str("accent") }, set: { s.updateLayout("accent", $0) }))
         Input(label: s.t("描述你想要的主页", "Describe your ideal profile"), value: $prompt)
         Action(s.t("让 Agent 排版", "Design with Agent"), disabled: prompt.isEmpty || s.busy) { s.generate(prompt) }

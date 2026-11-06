@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Launch starlight: night floor with an indigo nebula band and scattered stars.
+     Colours mirror packages/contracts/assets/visual.json (bg / nebula / starSoft / starBright). -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <gradient android:angle="270" android:startColor="@color/ow_night" android:centerColor="@color/ow_nebula" android:endColor="@color/ow_night" />
+        </shape>
+    </item>
+    <item android:gravity="top|left" android:left="46dp" android:top="92dp" android:right="0dp" android:bottom="0dp">
+        <shape android:shape="oval">
+            <size android:width="3dp" android:height="3dp" />
+            <solid android:color="@color/ow_star_bright" />
+        </shape>
+    </item>
+    <item android:gravity="top|left" android:left="124dp" android:top="58dp" android:right="0dp" android:bottom="0dp">
+        <shape android:shape="oval">
+            <size android:width="2dp" android:height="2dp" />
+            <solid android:color="@color/ow_star_soft" />
+        </shape>
+    </item>
+    <item android:gravity="top|left" android:left="212dp" android:top="150dp" android:right="0dp" android:bottom="0dp">
+        <shape android:shape="oval">
+            <size android:width="2dp" android:height="2dp" />
+            <solid android:color="@color/ow_star_soft" />
+        </shape>
+    </item>
+    <item android:gravity="top|left" android:left="78dp" android:top="236dp" android:right="0dp" android:bottom="0dp">
+        <shape android:shape="oval">
+            <size android:width="4dp" android:height="4dp" />
+            <solid android:color="@color/ow_star_bright" />
+        </shape>
+    </item>
+    <item android:gravity="top|left" android:left="172dp" android:top="310dp" android:right="0dp" android:bottom="0dp">
+        <shape android:shape="oval">
+            <size android:width="2dp" android:height="2dp" />
+            <solid android:color="@color/ow_star_soft" />
+        </shape>
+    </item>
+    <item android:gravity="top|left" android:left="28dp" android:top="388dp" android:right="0dp" android:bottom="0dp">
+        <shape android:shape="oval">
+            <size android:width="3dp" android:height="3dp" />
+            <solid android:color="@color/ow_star_soft" />
+        </shape>
+    </item>
+    <item android:gravity="top|left" android:left="246dp" android:top="420dp" android:right="0dp" android:bottom="0dp">
+        <shape android:shape="oval">
+            <size android:width="2dp" android:height="2dp" />
+            <solid android:color="@color/ow_star_bright" />
+        </shape>
+    </item>
+    <item android:gravity="top|left" android:left="120dp" android:top="486dp" android:right="0dp" android:bottom="0dp">
+        <shape android:shape="oval">
+            <size android:width="2dp" android:height="2dp" />
+            <solid android:color="@color/ow_star_soft" />
+        </shape>
+    </item>
+    <item android:gravity="top|left" android:left="60dp" android:top="552dp" android:right="0dp" android:bottom="0dp">
+        <shape android:shape="oval">
+            <size android:width="3dp" android:height="3dp" />
+            <solid android:color="@color/ow_star_bright" />
+        </shape>
+    </item>
+    <item android:gravity="top|left" android:left="200dp" android:top="610dp" android:right="0dp" android:bottom="0dp">
+        <shape android:shape="oval">
+            <size android:width="2dp" android:height="2dp" />
+            <solid android:color="@color/ow_star_soft" />
+        </shape>
+    </item>
+    <item android:gravity="top|left" android:left="102dp" android:top="668dp" android:right="0dp" android:bottom="0dp">
+        <shape android:shape="oval">
+            <size android:width="2dp" android:height="2dp" />
+            <solid android:color="@color/ow_star_soft" />
+        </shape>
+    </item>
+</layer-list>

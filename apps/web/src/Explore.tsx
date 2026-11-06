@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowDown, ArrowLeft, ArrowRight, Bookmark, Check, Compass, Globe2, HeartHandshake, Info, MapPin, MessageCircle, Search, SlidersHorizontal, Sparkles, Star, Users, X } from 'lucide-react';
+import { ArrowDown, ArrowLeft, ArrowRight, Bookmark, Check, Compass, Globe2, HeartHandshake, Info, MapPin, MessageCircle, Search, SlidersHorizontal, Sparkles, Star, Trophy, Users, X } from 'lucide-react';
 import type { GlobeCommand, GlobeEvent, PeopleFeed, Person, Place, Conversation } from '@ourworld/contracts';
 import { api, send } from './api';
 import { useApp } from './context';
@@ -7,6 +7,7 @@ import { errorMessage, useLoad } from './hooks';
 import { Avatar, Button, Cover, Empty, ErrorBox, IconButton, Loading, Modal, PageHeader, Sheet } from './ui';
 import { Stories } from './Stories';
 import { useSwipeDeck } from './useSwipeDeck';
+import { unitLabels } from './Profile';
 
 export function Explore({active}:{active:boolean}){
  const {t,locale,user,requireAuth,toast}=useApp();
@@ -97,6 +98,9 @@ function PeopleCards({city,onClose}:{city:Place;onClose:()=>void}){
  const load=async(reset=false)=>{const requestGeneration=reset?++generation.current:generation.current;setLoading(true);setFeedError('');if(reset){setFeed(null);setIndex(0);loadedCursor.current=null;}try{const query=!reset&&feed?`?feedId=${encodeURIComponent(feed.feedId)}&cursor=${encodeURIComponent(feed.nextCursor||'')}`:`?cityIds=${encodeURIComponent(cityIds.join(','))}&coverage=${coverage}`;const result=await api<PeopleFeed>(`/cities/${city.id}/people-feed${query}`);if(requestGeneration!==generation.current)return;setFeed(prev=>!reset&&prev?{...result,items:[...prev.items,...result.items.filter(p=>!prev.items.some(q=>q.id===p.id))]}:result);if(reset)setIndex(0);}catch(e){if(requestGeneration===generation.current)setFeedError(errorMessage(e));}finally{if(requestGeneration===generation.current)setLoading(false);}};
  useEffect(()=>{void load(true);},[city.id,cityIds.join(','),coverage]);
  useEffect(()=>{if(feed&&feed.items.length-index<=3&&feed.nextCursor&&loadedCursor.current!==feed.nextCursor&&!loading){loadedCursor.current=feed.nextCursor;void load();}},[index,feed,loading]);
+ // Warm the next portraits while the current card is on screen so a swipe never
+ // waits on a fresh image request (demo photos used to take seconds to appear).
+ useEffect(()=>{for(const next of (feed?.items??[]).slice(index+1,index+3))if(next?.avatar){const image=new Image();image.decoding='async';image.src=next.avatar;}},[feed,index]);
  useEffect(()=>()=>{generation.current++;},[]);
  const person=feed?.items[index];
  const advance=()=>setIndex(n=>n+1);
@@ -111,7 +115,7 @@ function PeopleCards({city,onClose}:{city:Place;onClose:()=>void}){
     <article ref={swipe.card} className="person-card deck-front" onPointerDown={swipe.onPointerDown} onPointerMove={swipe.onPointerMove} onPointerUp={swipe.onPointerUp} onPointerCancel={swipe.onPointerCancel}>
      <div className="person-photo">
       <Cover src={person.avatar} alt={person.name}/><div className="person-photo-shade"/>
-      <div className="person-photo-name"><h2>{person.name}</h2><span>{/^(demo-|load-)/.test(person.id)?t('AI 演示人物','AI demo profile'):person.providerStatus==='approved'&&<><Check size={13}/>{t('资料已审核','Profile reviewed')}</>}</span>{person.tags.length>0&&<p className="person-interests">{person.tags.slice(0,2).join(' · ')}</p>}</div>
+      <div className="person-photo-name"><h2>{person.name}</h2><span>{/^(demo-|load-)/.test(person.id)?t('AI 演示人物','AI demo profile'):person.accountType==='agency'?person.providerStatus==='approved'?<><Trophy size={13}/>{t('认证旅行社','Certified agency')}</>:<>{person.providerStatus==='pending'?t('旅行社认证审核中','Agency certification pending'):t('旅行社认证未通过','Agency certification not passed')}</>:person.providerStatus==='approved'&&<><Check size={13}/>{t('资料已审核','Profile reviewed')}</>}</span>{(person.rating!==undefined||person.priceRange)&&<p className="person-meta">{[person.rating!==undefined?`★ ${person.rating}`:'',person.priceRange?`${person.priceRange.currency} ${person.priceRange.min}–${person.priceRange.max} / ${t(...unitLabels[person.priceRange.unit])}`:''].filter(Boolean).join(' · ')}</p>}{person.tags.length>0&&<p className="person-interests">{person.tags.slice(0,2).join(' · ')}</p>}</div>
       <button className="person-details" aria-label={t('查看主页','View profile')} disabled={swipe.busy} onClick={()=>openProfile(person.id)}><Info size={24}/></button>
       <span className="swipe-stamp yes">{t('聊一聊','LET’S TALK')}</span><span className="swipe-stamp no">{t('略过','PASS')}</span>
      </div>

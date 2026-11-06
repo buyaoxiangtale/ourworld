@@ -16,7 +16,7 @@ const city={id:'city-paris',kind:'city',parentId:'country-france',name:{zh:'巴�
 const country={...city,id:'country-france',kind:'country',name:{zh:'法国',en:'France'}};
 const tokyo={...city,id:'city-tokyo',parentId:'country-japan',country:'Japan',name:{zh:'东京',en:'Tokyo'},lat:35.68,lng:139.69};
 const conversation={id:'visual-conversation',peer:people[0],cityId:city.id,unread:0,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
-const layout={schemaVersion:1,theme:'cream',accent:'#d92d4f',blocks:[{id:'intro',type:'intro',span:2,size:'compact'},{id:'gallery',type:'gallery',span:2,size:'expanded',refs:[]},{id:'skills',type:'skills',span:1,size:'compact'},{id:'cities',type:'cities',span:1,size:'compact'}]};
+const layout={schemaVersion:1,theme:'nocturne',accent:'#d92d4f',blocks:[{id:'intro',type:'intro',span:2,size:'compact'},{id:'gallery',type:'gallery',span:2,size:'expanded',refs:[]},{id:'skills',type:'skills',span:1,size:'compact'},{id:'cities',type:'cities',span:1,size:'compact'}]};
 const resource=person=>({user:person,layout,packages:[],posts:[],reviews:[],places:[city]});
 const browser=await chromium.launch({headless:true,args:['--no-proxy-server','--disable-gpu','--enable-unsafe-swiftshader']});
 const checks=[],errors=[],taste=[];
@@ -64,7 +64,7 @@ try{
   const page=await context.newPage();page.setDefaultTimeout(30000);page.on('pageerror',e=>errors.push(e.message));
   await page.goto(base,{waitUntil:'domcontentloaded'});await page.evaluate(()=>document.fonts.ready);
   await page.waitForFunction(()=>window.__globeEvents.some(e=>e.event==='rendererReady'));
-  const ready=await page.evaluate(()=>window.__globeEvents.find(e=>e.event==='rendererReady').data);assert.equal(ready.borders,true);assert.equal(ready.clouds,false);assert.equal(ready.dayNight,false);
+  const ready=await page.evaluate(()=>window.__globeEvents.find(e=>e.event==='rendererReady').data);assert.equal(ready.borders,true);assert.equal(ready.clouds,'baked');assert.equal(ready.dayNight,false);
   await page.screenshot({animations:'disabled',path:resolve(output,`earth-${viewport.width}.png`)});
   await inspect(page,'earth',viewport.width);
   if(viewport.width===390){for(const [name,lat,lng]of [['africa',8,18],['americas',18,-90],['pacific',5,-170],['europe',47,10]]){await page.locator('iframe').evaluate((el,pov)=>el.contentWindow.OurworldGlobe.receive({bridgeVersion:1,event:'restoreCamera',data:pov}),{lat,lng,altitude:2.8});await page.screenshot({animations:'disabled',path:resolve(output,`earth-${name}.png`)});}}

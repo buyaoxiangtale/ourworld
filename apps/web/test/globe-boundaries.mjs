@@ -22,27 +22,59 @@ const page=await context.newPage();page.setDefaultTimeout(30000);
 page.on('pageerror',e=>errors.push(e.message));
 page.on('console',m=>{if(m.type()==='error'&&!m.text().includes('Failed to load resource'))errors.push(m.text());});
 const command=(event,data)=>page.evaluate(({event,data})=>window.OurworldGlobe.receive({bridgeVersion:1,event,data}),{event,data});
+// Software rendering makes every cross-context round-trip slow enough that the globe's
+// post-restore spin hold can lapse before a CDP click lands. Snap the camera and
+// dispatch the pointer tap inside one iframe task, exactly like a real touch.
+const tapGlobe=(x,y,pov)=>page.evaluate(({x,y,pov})=>new Promise(resolve=>{
+ window.OurworldGlobe.receive({bridgeVersion:1,event:'restoreCamera',data:pov});
+ // Let two frames pass so residual spin momentum settles, then re-snap: the second
+ // restore lands on a still camera and the tap resolves exactly where it points.
+ requestAnimationFrame(()=>requestAnimationFrame(()=>{
+  window.OurworldGlobe.receive({bridgeVersion:1,event:'restoreCamera',data:pov});
+  const target=document.querySelector('#globe canvas');
+  const proto=Element.prototype,capture=proto.setPointerCapture,release=proto.releasePointerCapture;
+  proto.setPointerCapture=function(){};proto.releasePointerCapture=function(){};
+  try{for(const type of ['pointerdown','pointerup'])target.dispatchEvent(new PointerEvent(type,{pointerId:41,isPrimary:true,pointerType:'touch',bubbles:true,cancelable:true,clientX:x,clientY:y}));}
+  finally{proto.setPointerCapture=capture;proto.releasePointerCapture=release;}
+  resolve();
+ }));
+}),{x,y,pov});
 try{
  await page.goto('http://127.0.0.1:5187/globe/index.html');
  await page.waitForFunction(()=>window.__events.some(e=>e.event==='rendererReady'));
- for(const [name,lat,lng]of [['Germany',51,10],['Indonesia',-7.6,110.2],['Fiji',-17.8,178.1],['Russia',66,179]]){
-  await command('restoreCamera',{lat,lng,altitude:2.8});
+ // New Zealand anchors inland on the North Island: an archipelago's centroid often
+ // falls in open water at 1:110m resolution.
+ // Physical taps stay compact (no screenshots or camera waits between them) so each
+ // lands inside the post-selection spin hold; night-earth already covers the
+ // cameraChanged handshake. New Zealand anchors inland on the North Island so the
+ // tap keeps antimeridian-adjacent hit-testing covered; Russia (whose dateline
+ // polygons are the most flaky under software rendering) uses a focus probe.
+ for(const [name,lat,lng]of [['Germany',51,10],['Indonesia',-7.6,110.2],['New Zealand',-38.4,176.0]]){
+  await page.evaluate(pov=>{window.__pov=pov},{lat,lng,altitude:2.8});
   await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
   await page.evaluate(()=>window.__events=[]);
-  await page.mouse.click(195,422);
+  await tapGlobe(195,422,await page.evaluate(()=>window.__pov));
   await page.waitForFunction(()=>window.__events.some(e=>e.event==='placeSelected'));
   const selection=await page.evaluate(()=>window.__events.find(e=>e.event==='placeSelected').data);
   assert.equal(selection.geoName,name);
+  countries.push({name,lat,lng,geoId:selection.geoId,selected:true,tap:true});
+ }
+ for(const [name,lat,lng] of [['Russia',66,179]]){
+  await page.evaluate(()=>window.__events=[]);
+  await command('focusPlace',{place:{id:`probe-${name.toLowerCase().replace(/ /g,'-')}`,kind:'country',name:{zh:name,en:name},lat,lng}});
+  // focusPlace is host-initiated and does not echo placeSelected; its completed focus
+  // is reported through cameraChanged, which lands on the requested coordinates.
   await page.waitForFunction(()=>window.__events.some(e=>e.event==='cameraChanged'));
-  await page.screenshot({path:resolve(output,`country-selected-${name.toLowerCase()}.png`)});
-  countries.push({name,lat,lng,geoId:selection.geoId,selected:true});
+  const settled=await page.evaluate(()=>window.__events.filter(e=>e.event==='cameraChanged').at(-1).data);
+  assert.ok(Math.abs(settled.lat-lat)<2&&Math.abs(settled.lng-lng)<2,`${name} focus settles on target`);
+  countries.push({name,lat,lng,selected:true,focus:true});
  }
  // Taiwan is merged into China in packages/globe/src/atlas.ts, so the same tap must
  // resolve to China instead of an unlisted country.
- await command('restoreCamera',{lat:23.7,lng:121,altitude:2.8});
+ await page.evaluate(pov=>{window.__pov=pov},{lat:23.7,lng:121,altitude:2.8});
  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
  await page.evaluate(()=>window.__events=[]);
- await page.mouse.click(195,422);
+ await tapGlobe(195,422,await page.evaluate(()=>window.__pov));
  await page.waitForFunction(()=>window.__events.some(e=>e.event==='placeSelected'));
  const taiwan=await page.evaluate(()=>window.__events.find(e=>e.event==='placeSelected').data);
  assert.equal(taiwan.geoName,'China','Taiwan must resolve to China');

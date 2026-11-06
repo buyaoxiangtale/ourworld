@@ -58,7 +58,7 @@ ok('globe sources take every colour from theme.ts');
 
 // 5. Globe static HTML: only palette values may appear (pre-JS boot/fallback surfaces).
 // Print stylesheets keep their paper colours — strip @media print blocks first.
-for (const file of ['packages/globe/index.html', 'packages/globe/public/credits.html']) {
+for (const file of ['packages/globe/index.html', 'packages/globe/public/credits.html', 'apps/web/index.html']) {
   const html = (await read(file)).replace(/@media print\{.+?\}\s*(?=@media|<\/style>)/gs, '');
   for (const hex of html.match(/#[0-9a-fA-F]{3,8}\b/g) || []) {
     if (!colorValues.has(hex.toLowerCase())) fail(`${file}: ${hex} is not a visual.json colour`);

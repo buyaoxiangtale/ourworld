@@ -33,6 +33,8 @@ extension Dictionary where Key == String, Value == Any {
     func rows(_ key: String = "items") -> [JSON] { self[key] as? [JSON] ?? [] }
     func strings(_ key: String) -> [String] { self[key] as? [String] ?? [] }
     func int(_ key: String) -> Int { (self[key] as? NSNumber)?.intValue ?? 0 }
+    func dbl(_ key: String) -> Double { (self[key] as? NSNumber)?.doubleValue ?? 0 }
+    func has(_ key: String) -> Bool { self[key] != nil && !(self[key] is NSNull) }
     func flag(_ key: String) -> Bool { self[key] as? Bool ?? false }
     func localized(_ key: String, _ locale: String) -> String { obj(key).str(locale, str(key)) }
 }

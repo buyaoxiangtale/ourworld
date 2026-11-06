@@ -778,6 +778,122 @@
           "503": {
             "description": "Dependency or model unavailable"
           }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "bio": {
+                    "type": "string"
+                  },
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 40
+                    }
+                  },
+                  "cityIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "description": "Opaque resource identifier"
+                    }
+                  },
+                  "quote": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "avatar": {
+                    "type": "string"
+                  },
+                  "socialLinks": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "label": {
+                          "type": "string"
+                        },
+                        "url": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "label",
+                        "url"
+                      ]
+                    }
+                  },
+                  "accountType": {
+                    "enum": [
+                      "individual",
+                      "agency"
+                    ]
+                  },
+                  "priceRange": {
+                    "type": "object",
+                    "properties": {
+                      "min": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1000000
+                      },
+                      "max": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1000000
+                      },
+                      "currency": {
+                        "enum": [
+                          "USD",
+                          "CNY",
+                          "EUR",
+                          "GBP",
+                          "JPY"
+                        ]
+                      },
+                      "unit": {
+                        "enum": [
+                          "hour",
+                          "half-day",
+                          "day",
+                          "experience"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "min",
+                      "max",
+                      "currency",
+                      "unit"
+                    ]
+                  },
+                  "experienceYears": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0,
+                    "maximum": 90
+                  },
+                  "languages": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 30
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -2283,7 +2399,8 @@
                   "kind": {
                     "enum": [
                       "professional",
-                      "experience"
+                      "experience",
+                      "agency"
                     ]
                   },
                   "name": {
@@ -5195,6 +5312,62 @@
               "admin"
             ]
           },
+          "accountType": {
+            "enum": [
+              "individual",
+              "agency"
+            ]
+          },
+          "priceRange": {
+            "type": "object",
+            "properties": {
+              "min": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1000000
+              },
+              "max": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1000000
+              },
+              "currency": {
+                "enum": [
+                  "USD",
+                  "CNY",
+                  "EUR",
+                  "GBP",
+                  "JPY"
+                ]
+              },
+              "unit": {
+                "enum": [
+                  "hour",
+                  "half-day",
+                  "day",
+                  "experience"
+                ]
+              }
+            },
+            "required": [
+              "min",
+              "max",
+              "currency",
+              "unit"
+            ]
+          },
+          "experienceYears": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 90
+          },
+          "languages": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 30
+            }
+          },
           "tags": {
             "type": "array",
             "items": {
@@ -5220,6 +5393,7 @@
           "verified",
           "providerStatus",
           "role",
+          "accountType",
           "tags",
           "cityIds"
         ]
@@ -5366,9 +5540,9 @@
           },
           "theme": {
             "enum": [
-              "cream",
               "ocean",
-              "forest"
+              "forest",
+              "nocturne"
             ]
           },
           "accent": {

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ow_night">#05080D</color>
+    <color name="ow_nebula">#0A1122</color>
+    <color name="ow_star_soft">#D7E1F0</color>
+    <color name="ow_star_bright">#F5F9FF</color>
+</resources>

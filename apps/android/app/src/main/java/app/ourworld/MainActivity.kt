@@ -363,7 +363,7 @@ fun profileRows(blocks:List<JSONObject>):List<List<JSONObject>> {
 @Composable fun ProfileBlockView(vm:WorldModel,resource:JSONObject,profileLayout:JSONObject,block:JSONObject,publicView:Boolean=false){
     val source=resource.o("user");val type=block.s("type");val refs=block.a("refs").let{a->(0 until a.length()).map{a.optString(it)}}
     val accent=runCatching{Color(android.graphics.Color.parseColor(profileLayout.s("accent")))}.getOrDefault(Coral)
-    Surface(color=if(publicView && profileLayout.s("theme")=="cream")Color.Transparent else OWVisual.bg,shape=RoundedCornerShape(16.dp),modifier=Modifier.fillMaxWidth()){
+    Surface(color=if(publicView && profileLayout.s("theme")=="nocturne")Color.Transparent else OWVisual.bg,shape=RoundedCornerShape(16.dp),modifier=Modifier.fillMaxWidth()){
         Column(Modifier.padding(if(publicView)0.dp else if(block.s("size")=="expanded")24.dp else 16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
             Text(block.s("title").ifEmpty{blockTitle(vm,type)},style=MaterialTheme.typography.titleMedium,color=accent)
             when(type){
@@ -389,7 +389,7 @@ fun blockTitle(vm:WorldModel,type:String)=when(type){"intro"->vm.t("关于我","
     val photo=rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()){uri->uri?.let{vm.upload(it,"public"){file->val blocks=vm.layout.a("blocks").objects().map{JSONObject(it.toString())}.toMutableList();val gallery=blocks.firstOrNull{b->b.s("type")=="gallery"}?:json("id" to UUID.randomUUID().toString(),"type" to "gallery","span" to 2,"size" to "expanded").also{blocks.add(it)};gallery.put("refs",gallery.a("refs").put(file.s("url")));update(blocks)}}}
     Form(vm,vm.t("搭建我的主页","Build my profile")){
         Text(vm.t("长按拖动组件，或使用箭头排序。先预览，再发布。","Long press to reorder, or use arrows. Preview before publishing."))
-        Row{listOf("cream","ocean","forest").forEach{theme->TextButton(onClick={vm.changeLayout(JSONObject(vm.layout.toString()).put("theme",theme))}){Text(theme)}}}
+        Row{listOf("ocean","forest","nocturne").forEach{theme->TextButton(onClick={vm.changeLayout(JSONObject(vm.layout.toString()).put("theme",theme))}){Text(theme)}}}
         Field(vm.layout.s("accent"),vm.t("强调色 HEX","Accent HEX")){vm.changeLayout(JSONObject(vm.layout.toString()).put("accent",it))}
         Field(prompt,vm.t("用自然语言描述你想要的主页","Describe your ideal profile")){prompt=it}
         Action(vm.t("让 Agent 排版","Design with Agent"),prompt.isNotBlank()&&!vm.busy){vm.generate(prompt)}

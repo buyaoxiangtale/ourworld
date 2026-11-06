@@ -6,15 +6,15 @@
 
 三端共用 `packages/contracts/assets/visual.json` 的配色、尺寸和手势参数，生成 CSS、Kotlin 与 Swift 常量。Manrope / Noto Sans SC、24dp 人物卡圆角、48dp 主要触摸区域保持一致。珊瑚色集中用于加入对话等主要动作；探索采用深色，主页和聊天采用浅色内容面。
 
-### 地球
+### 地球（2026-11-06 蔚蓝星球更新）
 
-- 球面回到摄影质感：本地 `earth-day.jpg` 叠在深海底色上，按海域 55% / 陆地 22% 混回卫星纹理；深海 `#091725`，近岸 `#102535`，陆地 `#26343C`，高地 `#3A4A50`。大气改为 `lightskyblue` 边缘光。
+- 球面为照片渲染：本地 `earth-day.jpg`（NASA Blue Marble，云层已烘入）直接作 `globeImageUrl`，叠加 `earth-topology.png`（GEBCO_08 灰度）作凹凸贴图产生纵深；自带 `showAtmosphere(true)` 钴蓝大气辉光（`theme.focus`，高度 .22），随相机的高位光保证整球均匀可读、无太阳方向依赖。纯色着色器与自绘边缘光已移除。
 - 国家块：`globe.gl` 多边形图层。默认高度 0.004、填充 `rgba(0,100,200,.30)`、侧壁 `.10`、描边 `.50`；选中国家抬到 0.014，填充 `rgba(100,150,230,.45)`、侧壁 `.25`、描边 `.70`。原矢量国界线层（`borders.ts`）已移除，边界由多边形描边承担。
 - 城市标记抬到高度 0.02，始终高于国家块，选中国家时不会被半透明蓝色板块盖住。
 - `src/atlas.ts` 在数据层做领土合并：台湾按 ISO 158 并入中国 156，`feature()`、`geoContains()`、陆海遮罩和选中样式自动继承合并后的形状。合并项不得与目标共享 arc，否则 `topojson.mesh` 会把该弧当成海岸线重画。升级 `world-atlas` 后必须重跑 `apps/web/test/globe-boundaries.mjs`。
-- 自转开启（`autoRotate`，速度 1，`dampingFactor .08`，`minDistance 120`，`maxDistance 800`），`prefers-reduced-motion` 时关闭；地球内右下角圆形按钮可手动暂停/继续，选中国家后也会停止。切到其它 tab 或页面隐藏时停止绘制。
+- 自转默认开启（`autoRotateSpeed .9`，`dampingFactor .08`，`minDistance 120`，`maxDistance 800`），`prefers-reduced-motion` 时关闭。手动暂停按钮已删除：拖动后约 2.5s、恢复视角后约 4s、选中国家/聚焦地点后约 8s 自动恢复，地球不再死停。切到其它 tab 或页面隐藏时停止绘制。星空背景为程序化 canvas（`nebula/starSoft/starBright` token）+ 少量 CSS 闪烁星点，boot 遮罩半透明覆盖其上构成星光开屏。
 - 地球页外壳：顶部单颗白色搜索胶囊，右侧深蓝 `#0D2242` 提交块；底部三颗圆形浮动导航（地球态为半透明黑底 + 白色图标，激活态墨蓝实心 + 亮蓝描边光晕——近黑底色上仅靠深蓝填充无法分辨选中）；人物卡的略过/加入按钮改用 `#FF4757` / `#2ED573`，配深色图标保证对比度（白字对这两个色只有 2.4:1 与 1.7:1）。
-- 初始球体完整居中，约占短边 88%。人物卡前景时禁用地球触摸。
+- 初始球体完整居中，约占短边 62%，四周留出星空呼吸空间。人物卡前景时禁用地球触摸。
 - 聚焦和冻结统一处理：快速打开人物卡也先完成城市聚焦，再暂停；国家点击和搜索聚焦均回传最终相机状态。返回探索恢复原视角。
 
 核心文件：`packages/globe/src/atlas.ts`、`earth-material.ts`、`main.ts`。

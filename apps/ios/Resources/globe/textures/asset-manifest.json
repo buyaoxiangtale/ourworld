@@ -2,15 +2,16 @@
   "schemaVersion": 1,
   "retrievedAt": "2026-11-02T15:18:01.162Z",
   "projection": "Equirectangular 2:1; longitude -180..180 left to right, latitude +90..-90 top to bottom; no flips or crop",
-  "totalBytes": 213354,
+  "totalBytes": 736071,
   "processingTool": {
     "sharp": "0.35.5",
     "vips": "8.18.7"
   },
-  "attribution": "Earth imagery: NASA Earth Observatory. NASA does not endorse this app.",
+  "attribution": "Earth imagery: NASA Earth Observatory. Relief: GEBCO_08, via NASA Earth Observatory. NASA and GEBCO do not endorse this app.",
   "policies": [
     "https://science.nasa.gov/earth/faq/",
-    "https://www.nasa.gov/nasa-brand-center/images-and-media/"
+    "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+    "https://www.gebco.net/data-products/gridded-bathymetry/terms-of-use"
   ],
   "assets": [
     {
@@ -34,6 +35,28 @@
       },
       "credit": "NASA Earth Observatory / Reto Stöckli; Blue Marble Next Generation (July 2004)",
       "processing": "Lanczos3 resize to 2048x1024; JPEG quality 84, baseline (non-progressive), 4:2:0 chroma; re-encoded 2026-11-04 from the previous 4096x2048 progressive build; no flip, crop, paint or synthetic detail."
+    },
+    {
+      "file": "earth-topology.png",
+      "url": "/textures/earth-topology.png",
+      "bytes": 522717,
+      "width": 2048,
+      "height": 1024,
+      "format": "png",
+      "channels": 3,
+      "hasAlpha": false,
+      "sha256": "579cce501068380ef719eed093b3c77ea772c927d9ad43b22797654027aadc8f",
+      "source": {
+        "url": "https://assets.science.nasa.gov/content/dam/science/esd/eo/images/bmng/topography/gebco_08_rev_elev_5400x2700.jpg",
+        "resolvedUrl": "https://assets.science.nasa.gov/content/dam/science/esd/eo/images/bmng/topography/gebco_08_rev_elev_5400x2700.jpg",
+        "bytes": 1244508,
+        "width": 5400,
+        "height": 2700,
+        "sha256": "97828a87bcb6549a527232455e478c5f9e4556f761b37d620a46446da17593ab",
+        "page": "https://science.nasa.gov/earth/earth-observatory/blue-marble-next-generation/topography-bathymetry-maps/"
+      },
+      "credit": "NASA Earth Observatory / Jesse Allen; GEBCO_08, British Oceanographic Data Centre / GEBCO Compilation Group",
+      "processing": "Grayscale; Lanczos3 resize to 2048x1024; lossless PNG compression level 9. Rebuilt 2026-11-06 from the same verified source; byte-identical (same SHA256) to the bump texture distributed before 2026-11-04. Visual bump only, not a numerical elevation grid."
     }
   ]
 }

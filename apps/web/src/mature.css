@@ -107,7 +107,7 @@ body:has(.app-shell) :is(.empty p){font-size:14px;color:var(--ow-inkMuted)}
 body:has(.app-shell) :is(.editor-overlay){background:var(--ow-bg)}
 body:has(.app-shell) :is(.editor-toolbar,.layout-editor-block){background:var(--ow-raised);border-color:var(--ow-line);box-shadow:none}
 body:has(.app-shell) :is(.photo-credits){display:block;color:var(--ow-inkMuted);font-size:13px;margin:16px 0}
-@media(max-width:600px){.app-shell{padding:0}.mobile-app{width:100%;height:100dvh;min-height:0;border-radius:0;border:0}.mobile-app .person-card{flex-basis:360px;min-height:360px}body:has(.app-shell) .profile-portrait{height:300px}}
+@media(max-width:800px){.app-shell{padding:0}.mobile-app{width:100%;height:100dvh;min-height:0;border-radius:0;border:0}.mobile-app .person-card{flex-basis:360px;min-height:360px}body:has(.app-shell) .profile-portrait{height:300px}}
 @media(max-height:740px){.mobile-app .people-intro{display:none}.mobile-app .person-card{flex-basis:300px;min-height:300px}.mobile-app .person-photo{min-height:210px}.mobile-app .person-content{padding:10px 16px}.mobile-app .person-content>p{margin:6px 0;-webkit-line-clamp:1}.mobile-app .swipe-guide{display:none}.mobile-app .people-actions{padding-top:10px}}
 @media(prefers-reduced-motion:reduce){body:has(.app-shell) *{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
 
@@ -140,6 +140,9 @@ body:has(.app-shell) .profile-identity>p{opacity:1}
 .mobile-app .person-card{max-height:none}
 .mobile-app .person-photo{max-height:none}
 body:has(.app-shell) .identity-badges span{font-size:12px;color:var(--ow-inkMuted);line-height:1.5}
+body:has(.app-shell) :is(.profile-meta){font-size:14px;color:var(--ow-inkMuted);margin:0 0 10px}
+body:has(.app-shell) :is(.profile-price){font-size:16px;margin:0 0 14px}
+body:has(.app-shell) .identity-badge-agency{font-size:12px;padding:6px 12px;gap:6px}
 body:has(.app-shell) .thread-intro{font-size:12px;color:var(--ow-inkMuted);background:var(--ow-raised);padding:10px 20px;letter-spacing:0}
 body:has(.app-shell) .thread-intro svg{display:none}
 body:has(.app-shell) .message-composer{background:var(--ow-bg);border:0}
@@ -182,10 +185,10 @@ body:has(.app-shell) .agent-panel textarea{font-size:16px;background:var(--ow-ra
 body:has(.app-shell) .agent-panel-actions{flex-direction:column;align-items:stretch;gap:12px}
 body:has(.app-shell) .agent-panel-actions small{font-size:12px;color:var(--ow-inkMuted);max-width:none}
 body:has(.app-shell) .agent-panel-actions .button{width:100%;font-size:14px}
-body:has(.app-shell) .theme-swatches{display:grid;grid-template-columns:repeat(4,minmax(0,1fr)) 48px;gap:8px}
+body:has(.app-shell) .theme-swatches{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) 48px;gap:8px}
 body:has(.app-shell) .theme-swatches button{width:auto;min-width:0;min-height:88px;border:0;border-radius:12px;box-shadow:none;padding:10px 6px;font-size:12px;color:var(--ow-ink)}
 /* Theme previews: night surfaces with an accent underline per theme. */
-body:has(.app-shell) .theme-swatches button.cream{background:var(--ow-surface);box-shadow:inset 0 -6px 0 var(--ow-accent)}
+
 body:has(.app-shell) .theme-swatches button.ocean{background:var(--ow-surface);box-shadow:inset 0 -6px 0 var(--ow-focus)}
 body:has(.app-shell) .theme-swatches button.forest{background:var(--ow-surface);box-shadow:inset 0 -6px 0 var(--ow-like)}
 body:has(.app-shell) .theme-swatches button.nocturne{background:var(--ow-surface);box-shadow:inset 0 -6px 0 var(--ow-accentEnd)}

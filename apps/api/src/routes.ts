@@ -91,7 +91,7 @@ export function registerRoutes(server:FastifyInstance,s:AppService):void {
  add('POST','/reports','verified',r=>s.report(actor(r),body(r)),[20,3600]);
  add('PUT','/blocks/:userId','user',r=>s.block(actor(r),params(r).userId,true));
  add('DELETE','/blocks/:userId','user',r=>s.block(actor(r),params(r).userId,false));
- for(const kind of ['overview','users','verifications','reports','trips','posts','places','audit'])add('GET',`/admin/${kind}`,'admin',()=>s.adminList(kind));
+ for(const kind of ['overview','users','verifications','reports','trips','posts','places','audit'])add('GET',`/admin/${kind}`,'admin',r=>s.adminList(kind,qs(r)));
  add('POST','/admin/places','admin',r=>s.savePlace(actor(r),body(r)),[120,60]);
  add('PATCH','/admin/places/:id','admin',r=>s.savePlace(actor(r),body(r),params(r).id),[120,60]);
  add('POST','/admin/verifications/:id/decision','admin',r=>s.decideVerification(actor(r),params(r).id,body(r)));

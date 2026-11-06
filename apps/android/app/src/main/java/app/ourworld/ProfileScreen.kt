@@ -46,11 +46,19 @@ internal fun profileBlockVisible(resource:JSONObject,block:JSONObject):Boolean {
             NativePhoto(user.s("avatar"),Modifier.fillMaxWidth().height(340.dp).clip(RoundedCornerShape(24.dp)),user.s("name"))
             Column(verticalArrangement=Arrangement.spacedBy(10.dp)){
                 Text(user.s("name"),fontSize=32.sp,fontWeight=FontWeight.SemiBold)
+                val meta=buildList{
+                    if(!user.isNull("rating"))add("★ ${user.d("rating").trim0()}")
+                    if(!user.isNull("experienceYears"))add(vm.t("${user.d("experienceYears").toInt()} 年经验","${user.d("experienceYears").toInt()} yrs"))
+                    user.a("languages").let{a->if(a.length()>0)add((0 until minOf(3,a.length())).joinToString(" / "){a.optString(it)})}
+                }.filter{it.isNotBlank()}.joinToString(" · ")
+                if(meta.isNotEmpty())Text(meta,fontSize=14.sp,color=OWVisual.inkMuted)
+                if(!user.isNull("priceRange")){val range=user.o("priceRange");val unit=when(range.s("unit")){"hour"->vm.t("小时","hour");"half-day"->vm.t("半日","half-day");"experience"->vm.t("次","experience");else->vm.t("天","day")};Text("${range.s("currency")} ${range.d("min").trim0()}–${range.d("max").trim0()} / $unit",fontSize=16.sp,fontWeight=FontWeight.SemiBold,color=OWVisual.focus)}
                 if(cities.isNotEmpty())Text(cities.joinToString(" · "){it.localized("name",vm.locale)},fontSize=14.sp,color=OWVisual.inkMuted)
                 val labels=buildList{
                     if(user.s("id").startsWith("demo-") || user.s("id").startsWith("load-"))add(vm.t("AI 演示人物","AI demo profile"))
                     if(user.optBoolean("verified"))add(vm.t("邮箱已验证","Email verified"))
-                    if(user.s("providerStatus")=="approved")add(vm.t("服务资料已审核","Service profile reviewed"))
+                    if(user.s("accountType")=="agency"){if(user.s("providerStatus")=="approved")add(vm.t("认证旅行社","Certified agency"))else add(vm.t("旅行社认证审核中","Agency certification pending"))}
+                    else if(user.s("providerStatus")=="approved")add(vm.t("个人导游","Personal guide"))
                 }
                 Text(labels.joinToString(" · "),fontSize=12.sp,color=OWVisual.inkMuted)
                 if(vm.profile.o("layout").a("blocks").objects().none{it.s("type")=="intro"})Text(user.s("bio"),fontSize=16.sp)

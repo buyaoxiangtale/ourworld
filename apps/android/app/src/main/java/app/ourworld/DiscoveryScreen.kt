@@ -122,7 +122,8 @@ import kotlin.math.abs
                         if(depth==0){
                             Column(Modifier.align(Alignment.BottomStart).padding(start=20.dp,end=68.dp,bottom=24.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
                                 Text(p.s("name"),fontSize=32.sp,fontWeight=FontWeight.SemiBold,color=Color.White,maxLines=2,overflow=TextOverflow.Ellipsis)
-                                Text(if(p.s("id").startsWith("demo-")||p.s("id").startsWith("load-"))vm.t("AI 演示人物","AI demo profile") else if(p.s("providerStatus")=="approved")vm.t("服务资料已审核","Service profile reviewed") else vm.t("认识当地人","Meet a local"),fontSize=12.sp,color=Color.White)
+                                Text(if(p.s("id").startsWith("demo-")||p.s("id").startsWith("load-"))vm.t("AI 演示人物","AI demo profile") else if(p.s("accountType")=="agency"){if(p.s("providerStatus")=="approved")vm.t("认证旅行社","Certified agency") else vm.t("旅行社认证审核中","Agency certification pending")} else if(p.s("providerStatus")=="approved")vm.t("个人导游","Personal guide") else vm.t("认识当地人","Meet a local"),fontSize=12.sp,color=Color.White)
+                                if(!p.isNull("rating")||!p.isNull("priceRange")){val unit=when(p.o("priceRange").s("unit")){"hour"->vm.t("小时","hour");"half-day"->vm.t("半日","half-day");"experience"->vm.t("次","experience");else->vm.t("天","day")};Text(listOfNotNull(if(!p.isNull("rating"))"★ ${p.d("rating").trim0()}"else null,if(!p.isNull("priceRange"))"${p.o("priceRange").s("currency")} ${p.o("priceRange").d("min").trim0()}–${p.o("priceRange").d("max").trim0()} / $unit"else null).joinToString(" · "),fontSize=14.sp,fontWeight=FontWeight.SemiBold,color=Color.White)}
                                 val tags=p.a("tags").let{a->(0 until minOf(2,a.length())).map{a.optString(it)}}
                                 if(tags.isNotEmpty())Text(tags.joinToString(" · "),color=Color.White,fontSize=14.sp,maxLines=2)
                             }

@@ -19,6 +19,9 @@ internal object OWVisual {
     val seaShelf = Color(0xff102535)
     val land = Color(0xff26343C)
     val highland = Color(0xff3A4A50)
+    val nebula = Color(0xff0A1122)
+    val starSoft = Color(0xffD7E1F0)
+    val starBright = Color(0xffF5F9FF)
     const val radii_card = 24
     const val radii_control = 24
     const val radii_field = 12

@@ -18,9 +18,9 @@
 </head>
 <body>
   <main>
-    <section aria-labelledby="current"><h2 id="current">当前地球 · 统一夜间地图配色</h2>
-    <p>无云层、无昼夜分界。当前只读取下列 2004 年地表影像，结合 world-atlas 1:110m 国家轮廓，在渲染器内统一调色。海洋为深蓝，陆地保留地形明暗；不使用太阳方向、当前时间或夜间灯光。</p>
-    <p>轮廓数据：Natural Earth，经 <a href="https://github.com/topojson/world-atlas">world-atlas</a> 提供。历史上的夜灯、高程、云层纹理从未参与当前渲染，已于 2026-11-04 从打包资源中移除。</p></section>
+    <section aria-labelledby="current"><h2 id="current">当前地球 · 蔚蓝星球照片渲染</h2>
+    <p>地表直接使用下列 2004 年卫星合成影像，叠加同源地形凹凸贴图与钴蓝大气辉光；云层已烘入日间影像。无昼夜分界，不使用太阳方向、当前时间或夜间灯光；星空背景为程序化绘制，非摄影素材。</p>
+    <p>轮廓数据：Natural Earth，经 <a href="https://github.com/topojson/world-atlas">world-atlas</a> 提供。历史上的夜灯与云层独立纹理从未参与当前渲染，已于 2026-11-04 从打包资源中移除；地形贴图于 2026-11-06 依相同来源恢复。</p></section>
 
     <div class="eyebrow">OurWorld · Earth imagery</div>
     <h1>地球影像来源</h1>
@@ -38,8 +38,19 @@
       </div>
     </section>
 
+    <section aria-labelledby="relief">
+      <h2 id="relief">地形凹凸 <span class="year">GEBCO_08</span></h2>
+      <p>陆地与海床地形灰度图，用作地表凹凸贴图以产生纵深观感。2026-11-06 依与历史版本相同的已核验源图重建，成品逐字节一致（SHA256 相同）。</p>
+      <p class="credit" lang="en">NASA Earth Observatory / Jesse Allen; GEBCO_08, British Oceanographic Data Centre / GEBCO Compilation Group.</p>
+      <p class="note">源图 5400 × 2700；应用内使用 2048 × 1024 灰度 PNG。仅作视觉凹凸，非数值高程网格。</p>
+      <div class="links">
+        <a href="https://science.nasa.gov/earth/earth-observatory/blue-marble-next-generation/topography-bathymetry-maps/" target="_blank" rel="noopener noreferrer">NASA 地形资料说明</a>
+        <a href="https://www.gebco.net/data-products/gridded-bathymetry/terms-of-use" target="_blank" rel="noopener noreferrer">GEBCO 使用条款</a>
+      </div>
+    </section>
+
     <footer>
-      <p lang="en">Earth imagery: NASA Earth Observatory.</p>
+      <p lang="en">Earth imagery: NASA Earth Observatory. Relief: GEBCO Compilation Group.</p>
       <p>NASA 原创影像按官方复用指引保留来源；NASA 未对本应用作出背书。</p>
       <p>纹理仅作尺寸调整与编码转换；未使用 Apple 地图瓦片。本页无需联网即可阅读；点击官方资料链接时会访问外部网站。</p>
       <div class="policy">

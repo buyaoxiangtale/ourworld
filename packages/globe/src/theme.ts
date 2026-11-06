@@ -17,5 +17,8 @@ export const theme = {
   seaShelf: '#102535',
   land: '#26343C',
   highland: '#3A4A50',
+  nebula: '#0A1122',
+  starSoft: '#D7E1F0',
+  starBright: '#F5F9FF',
 } as const;
 export type ThemeColor = keyof typeof theme;

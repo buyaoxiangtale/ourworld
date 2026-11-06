@@ -18,6 +18,9 @@ enum OWVisual {
     static let seaShelf = Color(hex: "102535")
     static let land = Color(hex: "26343C")
     static let highland = Color(hex: "3A4A50")
+    static let nebula = Color(hex: "0A1122")
+    static let starSoft = Color(hex: "D7E1F0")
+    static let starBright = Color(hex: "F5F9FF")
     static let radii_card: CGFloat = 24
     static let radii_control: CGFloat = 24
     static let radii_field: CGFloat = 12

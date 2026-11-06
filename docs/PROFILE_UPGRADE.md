@@ -1,0 +1,102 @@
+# 个人主页升级需求（Profile Upgrade）
+
+> 2026-11-06 依据用户 5 段视频、参考 HTML（我的世界.html 导游卡组）与现状代码整理。
+> 视频逐帧转写记录见文末「视频证据」。
+
+## 一、需求总览
+
+| # | 需求 | 来源 |
+|---|---|---|
+| R1 | 每个主页都有**报价区间**，明确讲清价格 | 用户口述 + v4（现状只有套餐单点价 USD 70 / half-day） |
+| R2 | **旅行社专属认证**：旅行社类型主页必须持专属认证标识，与个人导游区分 | 用户口述 + v3（奖杯徽章 + 旅行社月牙标 vs 个人导游标） |
+| R3 | 主页配色收敛为**三选一**：夜航金 · 夜航海洋 · 森林来信（移除奶油手册），保留自定义强调色 | 用户已确认 |
+| R4 | 主页结构**仿照 Michael（Tinder 式）**：姓名+认证徽章、Preview 预览、完成度引导、信息条目 chips（+ 号补充）、照片网格 + Pro tip、问答式 Prompts、兴趣磁贴 | v5（Tinder Michael 主页编辑器） |
+| R5 | 导游/旅行社卡与主页头部呈现**评分星级、从业年限、服务语言、专长徽章、身份类型标识** | v3（参考 HTML：李明 4.9★/10年/中英；京华国际旅行社 4.8★/20年/6语言） |
+| R6 | 三端同步（web / Android / iOS），数据模型与 API 契约先行 | 项目现状 |
+
+## 二、R1 报价区间
+
+**现状**：身份上仅 `quote` 自由文本（“USD 70 / half-day · 演示”）；套餐为单点价 `price/currency/unit`。找人卡片上完全没有价格。
+
+**目标**：
+1. `User` 增加结构化报价：`priceRange?: { min: number; max: number; currency: 'USD'|'CNY'|'EUR'|'GBP'|'JPY'; unit: 'hour'|'day'|'half-day'|'experience' }`。
+2. 公开主页身份区（姓名/城市下方）以强调色展示区间：`USD 60–120 / day`；未填写时显示引导态「价格待定 · 补充报价」。
+3. 找人卡片（PeopleCards）与 deck 卡片在名字行下方常显区间价（小额、次级文字）。
+4. 套餐价格保持不变；当用户填了区间后，套餐卡可以显示「从 $min 起」对齐区间。
+5. 编辑入口：`资料`（DetailsDialog）中把「服务报价说明」升级为区间表单（min/max/币种/单位），`quote` 保留为补充说明文本。
+6. 展示不参与排序（延续 PRODUCT_REQUIREMENTS「不按价格排序」约定）。
+
+## 三、R2 旅行社专属认证
+
+**现状**：`providerStatus: none|pending|approved|rejected` 一套流程覆盖所有人；没有个人/旅行社之分；徽章只有「邮箱已验证」「服务资料已审核」。
+
+**目标**：
+1. `User` 增加 `accountType: 'individual' | 'agency'`（默认 individual）。
+2. 旅行社专属认证：
+   - 注册/编辑时可选「我是旅行社」，提交后必须完成 `kind:'agency'` 的资质审核（营业执照等证件，复用现有 verification 上传管线，新增 kind）。
+   - 审核通过 = 「认证旅行社」专属标识：奖杯图标徽章 + 「旅行社」类型标（参照 v3 视觉：白圆底金色奖杯 + 月牙标）。
+   - 未通过审核的旅行社主页显示「旅行社认证审核中」，且不进入找人 feed。
+3. 个人导游：现有 provider 审核通过后显示「个人导游」类型标（橙色系），无奖杯徽章。
+4. 卡片与主页头部的类型色彩区分：旅行社头部/标识用钴蓝系（focus #6496E6 家族），个人导游用暖橙系（accentEnd #FF7854 家族）——沿用现有 token，不新增裸色值。
+5. 管理端 Admin 审核队列支持按 kind 过滤（professional / experience / agency）。
+
+## 四、R3 配色三选一
+
+- `ProfileLayout.theme` 收敛为 `'ocean' | 'forest' | 'nocturne'`（三选一）+ `accent` 自定义强调色。
+- 存量 cream 布局迁移：读取时映射为 `nocturne`（DB 数据一次性 update 或读取时兼容）。
+- Profile Studio 主题选择 UI 从 4 格改 3 格；文案「夜航金 / 夜航海洋 / 森林来信」。
+- 三端（web mature.css/discovery.css/styles.css、Android、iOS）同步删 cream 分支。
+
+## 五、R4 主页结构仿 Michael（Tinder 式）
+
+以 v5 为模板，映射到我们的旅行场景（顺序自上而下）：
+
+1. **头部**：姓名 + 认证徽章（已验证打勾；旅行社为奖杯徽章）；右侧「预览 >」进入访客视角（公开视图）。
+2. **完成度横幅**：「完善你的主页」+ 完成度百分比/红点提示（未填报价、照片 <3 张、无 Prompts 等触发），可关闭，完成度高时隐藏。
+3. **信息条目 chips**（一行多个，未填显示 `+`，缺关键项显示红点）：居住地 / 服务城市 / 从业年限 / 语言 / 职业 / 教育背景。点击 `+` 就地弹出补填表单。
+4. **我的照片**：横向多图条（≥6 张为目标），下方 Pro tip 文案（「照片多样一些：街头、作品、日常」），黑色「编辑」胶囊按钮。
+5. **Prompts 问答卡**：「关于我」+ 2–3 个旅行问答提示（如「我城市里最值得早起的地方是…」「旅行者最好奇我当地的…」），占位灰字引导填写。
+6. **兴趣磁贴**：2 列磁贴（摄影 / 历史 / 咖啡 / 电子音乐…），每块带 `+` 添加按钮（对齐现有 tags）。
+7. 保留 OURWORLD 既有区块：旅行经历、我的城市、服务套餐、旅行手记、同行者说（_reviews 星级_）、找到我。
+8. 底部固定 CTA 保留「加入对话」渐变胶囊。
+
+公开主页（他人视角）呈现同一结构减去编辑元素（无 +、无横幅、无 Pro tip）。
+
+## 六、R5 导游卡与主页头部信息增强
+
+参照 v3 参考卡：
+- 公开主页身份区增加一行元信息：`★ 4.9 · 10 年经验 · 中文 / 英语`（评分沿用 feed 的 rating 平均值；年限、语言为新字段 `experienceYears?: number`、`languages?: string[]`）。
+- 专长徽章：复用 `tags` 前 2–3 个渲染为小徽章（可选 emoji/图标），悬停显示说明。
+- 找人 deck 卡片：名字下加元信息行（评分★ + 区间价），类型标识（个人导游/认证旅行社）置于卡角。
+
+## 七、数据模型与契约变更（packages/contracts + api）
+
+- `User`: + `accountType`, `priceRange?`, `experienceYears?`, `languages?`。
+- `ServicePackage` 不变。
+- `ProfileLayout.theme`: 移除 `'cream'`。
+- `Verification`: `kind` 增加 `'agency'`（DB CHECK 约束 + zod + API 契约文档 + openapi）。
+- seed/enriched-data：为演示旅行社（新增 1–2 个 agency demo，如「京华国际旅行社」风格）与导游补齐 priceRange/年限/语言/评分数据。
+- 端点：`PATCH /me` 接受新字段；`GET /users/:id`、people-feed 返回新字段；Admin 审核列表返回 kind。
+
+## 八、验证
+
+- `color-tokens.mjs`（无裸 hex）、`ui.mjs`、`deep-sea-ui.mjs` 回归。
+- 新增 profile 升级断言：三主题枚举、报价区间显示、旅行社徽章、cream 迁移。
+- 三端构建：web vitest/preview 截图核对 v4/v5 对应页面；Android Compose、iOS SwiftUI 编译。
+
+## 八A、补充需求（2026-11-06，来自最初 6 条地球视频中的 App 画面 g4–g6）
+
+1. **人物卡照片加载过慢**：g4 中 Theo Rossi 卡文字即时出现、照片灰渐变占位约 12 秒才加载。要求：卡片照片占位骨架 + 尺寸压缩/懒加载预取下一张（deck 前一张预载），目标 3 秒内出图。
+2. **演示数据错配**：g5/g6 中 Ava Laurent 与 Leo Sato 使用同一张照片，且 Theo Rivera/Ava Laurent 姓名与照片性别不匹配。要求：修 `enriched-data.ts`/seed 的头像与姓名配对，一人一像、性别一致。
+3. **找人卡信息升级联动 R1/R5**：deck 卡在名字行下增加「★评分 · 区间价」元信息行（与主页头部一致），保持卡面简洁不加更多文字。
+4. 滑动标签与 toast（聊一聊/路过/✓已加入对话，建议认识下一位）现状良好，保持不变。
+
+## 九、视频证据（逐帧转写摘要）
+
+| 视频 | 内容 | 关键画面 |
+|---|---|---|
+| v1 (43.8s) | 现状公开主页 Leo Sato（手机拍屏） | ← 个人主页 / 照片卡 / 巴黎·马赛·上海 / 三徽章（AI 生成人物·✓已验证·服务资料已审核）/ 关于我双语 / 喜欢与擅长 pills / 我的城市 / 加入对话红橙渐变 CTA。**无价格、无评分、无语言年限** |
+| v2 (60s) | 现状发现卡→公开主页 | 上海 deck 卡（X/聊天按钮）→ 同 v1 页面；徽章读作 AI 虚拟人物/资料已验证/服务资料已审核 |
+| v3 (24.6s) | 参考 HTML（Mac 我的世界.html）导游卡组 | 李明（橙头·个人导游标·4.9★·10年·中英）；京华国际旅行社（蓝头·奖杯徽章+旅行社标·4.8★·20年·6语言）；王芳（橙头·美食导游·7年）；搜索国家… |
+| v4 (24.5s) | 现状我的主页 Jonas·演示当地人 | 搭建主页/资料按钮 / 兴趣与特长 chips（街头摄影·电子音乐·战后建筑）/ 熟悉的城市（柏林·慕尼黑）/ 相册双图带标题 / 演示服务卡（柏林摄影与唱片店半日主题 · **USD 70 / half-day**）/ 菜单（我的服务套餐·身份与服务审核[已通过]·收藏的城市·我的旅行手记·发布一段故事） |
+| v5 (19.4s) | **Tinder Michael 主页编辑器（结构范本）** | Michael+打勾认证徽章 / Preview > / Complete your profile / chips（Living in+·Height+·Job+🔴·Education·Gender,Orientation·Basics+·Lifestyle+🔴·New friends·Languages+）/ My Photos 六图条 + Pro tip + Edit 黑胶囊 / My Prompts（About me:"model"·My biggest red flag is…）/ 兴趣磁贴（Rooting for·Playing·Listening to，各带+）/ Swipe·Explore·Likes·Chat·Profile 底部导航 |

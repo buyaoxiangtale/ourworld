@@ -13,10 +13,10 @@ const array=items=>({type:'array',items});
 const localized=object({zh:string,en:string},['zh','en']);
 const schemas={
  Error:object({code:string,message:string,requestId:string},['code','message']),
- User:object({id,name:string,avatar:string,bio:string,verified:{type:'boolean'},providerStatus:{enum:['none','pending','approved','rejected']},role:{enum:['user','admin']},tags:array(string),cityIds:array(id),quote:string},['id','name','avatar','bio','verified','providerStatus','role','tags','cityIds']),
+ User:object({id,name:string,avatar:string,bio:string,verified:{type:'boolean'},providerStatus:{enum:['none','pending','approved','rejected']},role:{enum:['user','admin']},accountType:{enum:['individual','agency']},priceRange:object({min:{type:'number',minimum:0,maximum:1000000},max:{type:'number',minimum:0,maximum:1000000},currency:{enum:['USD','CNY','EUR','GBP','JPY']},unit:{enum:['hour','half-day','day','experience']}},['min','max','currency','unit']),experienceYears:{type:'integer',minimum:0,maximum:90},languages:array({type:'string',maxLength:30}),tags:array(string),cityIds:array(id),quote:string},['id','name','avatar','bio','verified','providerStatus','role','accountType','tags','cityIds']),
  Place:object({id,kind:{enum:['country','city','attraction']},parentId:id,country:string,name:localized,lat:{type:'number',minimum:-90,maximum:90},lng:{type:'number',minimum:-180,maximum:180},description:localized,image:string,aliases:array(string)},['id','kind','country','name','lat','lng','description','image']),
  ProfileBlock:object({id,type:{enum:['intro','gallery','experiences','skills','cities','packages','posts','reviews','social']},span:{enum:[1,2]},size:{enum:['compact','expanded']},title:string,content:string,refs:array(string)},['id','type','span','size']),
- ProfileLayout:object({schemaVersion:{const:1},theme:{enum:['cream','ocean','forest']},accent:{type:'string',pattern:'^#[0-9a-fA-F]{6}$'},blocks:array(ref('ProfileBlock'))},['schemaVersion','theme','accent','blocks']),
+ ProfileLayout:object({schemaVersion:{const:1},theme:{enum:['ocean','forest','nocturne']},accent:{type:'string',pattern:'^#[0-9a-fA-F]{6}$'},blocks:array(ref('ProfileBlock'))},['schemaVersion','theme','accent','blocks']),
  ProfileDraft:object({revision:{type:'integer'},layout:ref('ProfileLayout'),publishedRevision:{type:['integer','null']}},['revision','layout','publishedRevision']),
  LayoutJob:object({id,status:{enum:['queued','running','validating','ready','failed','cancelled']},baseRevision:{type:'integer'},layout:ref('ProfileLayout'),error:string},['id','status','baseRevision']),
  Conversation:object({id,peer:ref('User'),cityId:id,lastMessage:string,unread:{type:'integer'},createdAt:date,updatedAt:date},['id','peer','unread','createdAt','updatedAt']),
@@ -32,6 +32,7 @@ const bodies={
  'POST /auth/verify':object({token:string},['token']),
  'POST /auth/forgot':object({email:{type:'string',format:'email'}},['email']),
  'POST /auth/reset':object({token:string,password:{type:'string',minLength:8}},['token','password']),
+ 'PATCH /me':object({name:string,bio:string,tags:array({type:'string',maxLength:40}),cityIds:array(id),quote:{type:'string',maxLength:100},avatar:string,socialLinks:array(object({label:string,url:string},['label','url'])),accountType:{enum:['individual','agency']},priceRange:schemas.User.properties.priceRange,experienceYears:{type:['integer','null'],minimum:0,maximum:90},languages:array({type:'string',maxLength:30})}),
  'PUT /profile/draft':object({revision:{type:'integer'},layout:ref('ProfileLayout')},['revision','layout']),
  'POST /profile/publish':object({revision:{type:'integer'}},['revision']),
  'POST /profile/restore':object({revision:{type:'integer'}},['revision']),
@@ -47,7 +48,7 @@ const bodies={
  'POST /reports':object({targetType:{enum:['user','post','message','review','trip']},targetId:id,reason:string},['targetType','targetId','reason']),
  'POST /posts':object({cityId:id,title:string,body:string,images:array(string)},['cityId','title','body']),
  'POST /posts/:id/comments':object({body:string},['body']),
- 'POST /verification':object({kind:{enum:['professional','experience']},name:string,description:string,fileIds:array(id)},['kind','name','description','fileIds']),
+ 'POST /verification':object({kind:{enum:['professional','experience','agency']},name:string,description:string,fileIds:array(id)},['kind','name','description','fileIds']),
  'POST /admin/places':ref('Place'),
  'PATCH /admin/places/:id':object(schemas.Place.properties)
 };
