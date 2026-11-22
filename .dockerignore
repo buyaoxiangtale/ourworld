@@ -17,3 +17,14 @@ playwright-report
 **/*.apk
 **/*.log
 **/DerivedData
+.venv
+.uv-cache
+.ruff_cache
+**/__pycache__
+.zcode
+.zcode-site
+.zcode-site.json
+apps/web/public/globe
+apps/web/public/openapi.json
+apps/android/app/src/main/assets/globe
+apps/ios/Resources/globe

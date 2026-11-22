@@ -1,0 +1,31 @@
+import assert from 'node:assert/strict';
+import {resolve} from 'node:path';
+import {mkdir,writeFile} from 'node:fs/promises';
+import {preview} from 'vite';
+import {chromium} from 'playwright';
+const root=resolve(import.meta.dirname,'../../..');
+const server=await preview({configFile:false,root:resolve(root,'apps/web'),preview:{host:'127.0.0.1',port:5190,strictPort:true}});
+const browser=await chromium.launch({headless:true,args:['--no-proxy-server','--disable-gpu']});
+const checks=[];const check=(value,label)=>{assert(value,label);checks.push(label);};
+try{
+ const context=await browser.newContext({viewport:{width:390,height:844}});let version='initial',unavailable=false,loads=0;
+ const user={id:'update-fixture',name:'更新验收',avatar:'',bio:'',verified:true,providerStatus:'none',role:'user',accountType:'individual',tags:[],cityIds:[]};
+ await context.addInitScript(user=>{sessionStorage.setItem('ourworld.session',JSON.stringify({user,accessToken:'fixture',refreshToken:'fixture'}));localStorage.setItem('ourworld.locale','zh');},user);
+ await context.route('http://127.0.0.1:5190/',async route=>{const response=await route.fetch();const html=(await response.text()).replace('</head>',`<meta name="ourworld-frontend-version" content="${version}"></head>`);await route.fulfill({response,body:html});});
+ await context.route('**/frontend-version.json',route=>route.fulfill({status:unavailable?503:200,json:{version}}));
+ await context.route('**/globe/**',route=>route.fulfill({contentType:'text/html',body:'<!doctype html><html></html>'}));
+ await context.routeWebSocket('**/api/v1/ws**',socket=>socket.close());
+ await context.route('**/api/v1/**',route=>{const path=new URL(route.request().url()).pathname;return route.fulfill({json:path.includes('/users/')?{user,layout:null,posts:[],packages:[],reviews:[],places:[]}:path.endsWith('/me')?user:{items:[]}});});
+ const page=await context.newPage();page.on('domcontentloaded',()=>loads++);await page.goto('http://127.0.0.1:5190/');await page.locator('.bottom-nav button[data-tab="profile"]').click();await page.locator('.owner-name').waitFor();
+ const poll=async()=>{const response=page.waitForResponse(r=>r.url().endsWith('/frontend-version.json'));await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await response;await page.waitForTimeout(100);};
+ const initial=loads;await poll();check(loads===initial,'an unchanged version does not reload');
+ unavailable=true;version='new';await poll();check(loads===initial,'a failed version request leaves the current app running');unavailable=false;
+ await page.getByRole('button',{name:'编辑个人资料',exact:true}).click();await page.getByLabel('名字',{exact:true}).fill('尚未保存的名字');await poll();
+ check(loads===initial,'automatic reload waits while a profile dialog is open');check(await page.getByLabel('名字',{exact:true}).inputValue()==='尚未保存的名字','unsaved profile input is retained');
+ await page.getByRole('button',{name:'Close',exact:true}).click();
+ const reload=page.waitForEvent('domcontentloaded');await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await reload;await page.locator('.owner-name').waitFor();
+ check(loads===initial+1,'a new version reloads after editing is finished');
+ check(await page.locator('.bottom-nav button[data-tab="profile"]').evaluate(el=>el.classList.contains('active')),'the selected profile tab is restored after automatic reload');
+ await poll();check(loads===initial+1,'the activated version does not create a reload loop');
+ const out=resolve(root,'artifacts/frontend-watch');await mkdir(out,{recursive:true});await writeFile(resolve(out,'browser-report.json'),JSON.stringify({passed:true,checks},null,2));console.log(`frontend-updates: ${checks.length} checks passed`);
+}finally{await browser.close();await server.httpServer.close();}

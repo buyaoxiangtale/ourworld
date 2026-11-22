@@ -19,8 +19,5 @@ gradlew text eol=lf
 *.jar binary
 *.pdf binary
 
-# Keep upstream license text and generated shader strings unchanged.
+# Keep upstream font license text unchanged.
 **/fonts/*-OFL.txt -whitespace
-apps/web/public/globe/assets/* linguist-generated=true -whitespace
-apps/android/app/src/main/assets/globe/assets/* linguist-generated=true -whitespace
-apps/ios/Resources/globe/assets/* linguist-generated=true -whitespace

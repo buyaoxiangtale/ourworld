@@ -1,0 +1,116 @@
+:root { color-scheme: dark; }
+body:has(.app-shell),
+body:has(.app-shell) .app-shell,
+.mobile-app.paper-mode,
+.mobile-app .paper-page,
+.mobile-app .full-overlay,
+body:has(.app-shell) :is(.modal, .bottom-sheet),
+body:has(.app-shell) :is(.editor-overlay, .public-profile-shell),
+.admin-app, .admin-guard {
+  background-color: var(--ow-space);
+  background-image: url('/globe/textures/stars.png'), radial-gradient(ellipse at 50% 42%, var(--ow-nebula), var(--ow-space) 75%);
+  background-position: center;
+}
+.mobile-app {
+  --nav-height: calc(var(--ow-spacing-touch) + 24px + env(safe-area-inset-bottom, 0px));
+}
+.mobile-app .tab-panel { height: calc(100% - var(--nav-height)); }
+.mobile-app .bottom-nav {
+  height: var(--nav-height);
+  justify-content: space-evenly;
+  gap: 0;
+  background: var(--ow-space);
+  padding-inline: var(--ow-spacing-gutter);
+}
+.mobile-app .bottom-nav > button {
+  color: var(--ow-ink);
+  width: var(--ow-spacing-touch);
+  height: var(--ow-spacing-touch);
+  min-width: 0;
+  padding: 0;
+}
+.mobile-app .bottom-nav > button > .nav-planet {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--ow-spacing-planetIcon);
+  height: var(--ow-spacing-planetIcon);
+  border-radius: 50%;
+  background: transparent;
+}
+.mobile-app .bottom-nav > button > .nav-planet::before { display: none; }
+.mobile-app .bottom-nav > button.active .nav-planet {
+  background: radial-gradient(circle, color-mix(in srgb, var(--ow-ink) 33%, transparent), transparent 74%);
+}
+.mobile-app .bottom-nav > button.active .nav-planet::before {
+  display: block;
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1.5px solid color-mix(in srgb, var(--ow-ink) 85%, transparent);
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: 0 0 10px color-mix(in srgb, var(--ow-ink) 40%, transparent);
+  pointer-events: none;
+}
+.mobile-app .bottom-nav .nav-planet :is(.nav-earth, .planet-atlas) {
+  width: var(--ow-spacing-planetViewport);
+  height: var(--ow-spacing-planetViewport);
+  border: 0;
+  pointer-events: none;
+}
+.mobile-app .bottom-nav > button .nav-planet > :is(.nav-earth, .planet-atlas) {
+  opacity: .61;
+  transition: opacity .18s ease, filter .18s ease;
+}
+.mobile-app .bottom-nav > button.active .nav-planet > :is(.nav-earth, .planet-atlas) {
+  opacity: 1;
+  filter: brightness(1.24);
+}
+.nav-planet .nav-earth { display: grid; place-items: center; }
+.nav-earth > * { grid-area: 1 / 1; }
+.nav-earth > canvas { width: 100%; height: 100%; }
+.nav-earth > canvas[hidden] { display: none; }
+.mobile-app .bottom-nav > button.active .nav-planet::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  width: 17px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--ow-ink);
+}
+.mobile-app .pure-earth .home-search {
+  width: calc(100% - 2 * var(--ow-spacing-gutter));
+  min-height: var(--ow-spacing-searchHeight);
+  padding: 4px 5px 4px var(--ow-spacing-gutter);
+  border: 1px solid var(--ow-line) !important;
+  border-radius: calc(var(--ow-radii-control) * 2);
+  background: var(--ow-surface);
+  box-shadow: 0 4px 18px color-mix(in srgb, var(--ow-accentInk) 66%, transparent);
+}
+.mobile-app .pure-earth .home-search .home-search-submit {
+  display: grid;
+  place-items: center;
+  width: var(--ow-spacing-searchButton);
+  height: var(--ow-spacing-searchButton);
+  border-radius: 50%;
+  background: var(--ow-raised);
+  color: var(--ow-ink);
+}
+.mobile-app .pure-earth .home-search .home-search-submit svg { color: inherit; }
+.pure-earth .earth-stage { inset: 0; }
+
+.app-shell::after {
+  position: fixed;
+  inset: 0;
+  content: '';
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 16% 21%, var(--ow-starBright) 1px, transparent 2px),
+    radial-gradient(circle at 84% 41%, var(--ow-starBright) 1px, transparent 2px),
+    radial-gradient(circle at 38% 78%, var(--ow-starBright) 1px, transparent 2px);
+  animation: app-stars-twinkle 5.2s ease-in-out infinite alternate;
+}
+@keyframes app-stars-twinkle { from { opacity: .12; } to { opacity: .65; } }
+@media (prefers-reduced-motion: reduce) { .app-shell::after { animation: none; opacity: .4; } }

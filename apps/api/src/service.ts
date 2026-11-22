@@ -1,3 +1,4 @@
+import { EDUCATION_LEVELS } from '@ourworld/contracts';
 import {photographicLayout,upgradeSeedPhoto} from './photography.js';
 import { randomUUID, randomInt } from 'node:crypto';
 import { z } from 'zod';
@@ -71,17 +72,17 @@ export class AppService {
  }
  async logout(input:unknown):Promise<any> { const b=parse(z.object({refreshToken:text(300)}),input);await transaction(async c=>{const r=(await c.query('UPDATE sessions SET revoked=true WHERE refresh_hash=$1 RETURNING id,user_id',[sha256(b.refreshToken)])).rows[0];if(r)await emit(c,[r.user_id],'session.revoked',{sessionId:r.id});});return {ok:true}; }
  async editMe(actor:Row,input:unknown):Promise<any> {
-  const b=parse(z.object({name:text(80).optional(),bio:z.string().max(5000).optional(),tags:z.array(text(40)).max(20).optional(),cityIds:ids.optional(),quote:z.string().max(100).optional(),avatar:url.optional(),socialLinks:z.array(z.object({label:text(50),url:url.refine(Boolean)})).max(10).optional(),accountType:z.enum(['individual','agency']).optional(),priceRange:priceRange.nullable().optional(),experienceYears:z.number().int().min(0).max(90).nullable().optional(),languages:z.array(text(30)).max(12).optional()}).strict(),input);
+  const b=parse(z.object({name:text(80).optional(),bio:z.string().max(5000).optional(),tags:z.array(text(40)).max(20).optional(),cityIds:ids.optional(),quote:z.string().max(100).optional(),avatar:url.optional(),socialLinks:z.array(z.object({label:text(50),url:url.refine(Boolean)})).max(10).optional(),accountType:z.enum(['individual','agency']).optional(),priceRange:priceRange.nullable().optional(),experienceYears:z.number().int().min(0).max(90).nullable().optional(),languages:z.array(text(30)).max(12).optional(),school:z.string().trim().max(120).nullable().optional(),educationLevel:z.enum(EDUCATION_LEVELS).nullable().optional()}).strict(),input);
   if(b.cityIds) await this.validCities(b.cityIds);
   // Switching to an agency account restarts service review: agencies must hold the
   // dedicated agency certification before they re-enter the people feed.
   const becomesAgency=b.accountType==='agency'&&actor.account_type!=='agency';
   const leavesAgency=b.accountType==='individual'&&actor.account_type==='agency';
-  const current={name:actor.name,bio:actor.bio,tags:actor.tags,cityIds:actor.city_ids,quote:actor.quote,avatar:actor.avatar,socialLinks:actor.social_links,accountType:actor.account_type||'individual',priceRange:actor.price_range??null,experienceYears:actor.experience_years??null,languages:actor.languages||[],...b};
+  const current={name:actor.name,bio:actor.bio,tags:actor.tags,cityIds:actor.city_ids,quote:actor.quote,avatar:actor.avatar,socialLinks:actor.social_links,accountType:actor.account_type||'individual',priceRange:actor.price_range??null,experienceYears:actor.experience_years??null,languages:actor.languages||[],school:actor.school??null,educationLevel:actor.education_level??null,...b};
   // The type switch and the voiding of pending verifications commit together, so a
   // concurrent approval decision can never restore the previous type's access.
   const u=await transaction(async c=>{
-   const row=(await c.query(`UPDATE users SET name=$2,bio=$3,tags=$4,city_ids=$5,quote=$6,avatar=$7,social_links=$8,account_type=$9,price_range=$10,experience_years=$11,languages=$12${becomesAgency||leavesAgency?",provider_status='none'":''} WHERE id=$1 RETURNING *`,[actor.id,current.name,current.bio,JSON.stringify(current.tags),current.cityIds,current.quote,current.avatar,JSON.stringify(current.socialLinks),current.accountType,current.priceRange?JSON.stringify(current.priceRange):null,current.experienceYears??null,current.languages])).rows[0];
+   const row=(await c.query(`UPDATE users SET name=$2,bio=$3,tags=$4,city_ids=$5,quote=$6,avatar=$7,social_links=$8,account_type=$9,price_range=$10,experience_years=$11,languages=$12,school=$13,education_level=$14${becomesAgency||leavesAgency?",provider_status='none'":''} WHERE id=$1 RETURNING *`,[actor.id,current.name,current.bio,JSON.stringify(current.tags),current.cityIds,current.quote,current.avatar,JSON.stringify(current.socialLinks),current.accountType,current.priceRange?JSON.stringify(current.priceRange):null,current.experienceYears??null,current.languages,current.school||null,current.educationLevel])).rows[0];
    // Either direction of an account-type switch restarts service review, so any
    // pending application from the previous type must stop being approvable.
    if(becomesAgency||leavesAgency)await c.query("UPDATE verifications SET status='rejected',reason='Superseded by an account type change' WHERE user_id=$1 AND status='pending'",[actor.id]);
@@ -92,7 +93,10 @@ export class AppService {
  async validCities(cityIds:string[]):Promise<void> { if(!cityIds.length)return;const found=await query("SELECT id FROM places WHERE kind='city' AND id=ANY($1::text[])",[cityIds]);assert(found.length===new Set(cityIds).size,400,'INVALID_CITY','One or more cities do not exist'); }
  async places(q:Record<string,any>):Promise<any> {
   const search=typeof q.q==='string'?q.q.trim().slice(0,100):'';
-  const items=await query("SELECT * FROM places WHERE ($1='' OR name->>'zh' ILIKE '%'||$1||'%' OR name->>'en' ILIKE '%'||$1||'%' OR EXISTS(SELECT 1 FROM unnest(aliases) a WHERE a ILIKE '%'||$1||'%')) AND ($2::text IS NULL OR kind=$2) AND ($3::text IS NULL OR parent_id=$3) ORDER BY CASE kind WHEN 'country' THEN 1 WHEN 'city' THEN 2 ELSE 3 END,name->>'en' LIMIT 250",[search,['country','city','attraction'].includes(q.kind)?q.kind:null,typeof q.parentId==='string'?q.parentId:null]);return {items:items.map(shapes.place)};
+  const limit=parse(z.coerce.number().int().min(1).max(250).default(250),q.limit);
+  const offset=parse(z.coerce.number().int().min(0).max(1000000).default(0),q.offset);
+  const rows=await query("SELECT * FROM places WHERE ($1='' OR name->>'zh' ILIKE '%'||$1||'%' OR name->>'en' ILIKE '%'||$1||'%' OR EXISTS(SELECT 1 FROM unnest(aliases) a WHERE a ILIKE '%'||$1||'%')) AND ($2::text IS NULL OR kind=$2) AND ($3::text IS NULL OR parent_id=$3) ORDER BY CASE kind WHEN 'country' THEN 1 WHEN 'city' THEN 2 ELSE 3 END,name->>'en',id LIMIT $4 OFFSET $5",[search,['country','city','attraction'].includes(q.kind)?q.kind:null,typeof q.parentId==='string'?q.parentId:null,limit+1,offset]);
+  return {items:rows.slice(0,limit).map(shapes.place),nextOffset:rows.length>limit?offset+limit:null};
  }
  async getPlace(id:string):Promise<any> {const p=await one('SELECT * FROM places WHERE id=$1',[id]);assert(p,404,'NOT_FOUND','Place not found');return shapes.place(p);}
  async favorites(actor:Row):Promise<any> {return {items:(await query('SELECT p.* FROM places p JOIN favorites f ON f.city_id=p.id WHERE f.user_id=$1 ORDER BY f.created_at DESC',[actor.id])).map(shapes.place)};}

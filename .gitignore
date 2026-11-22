@@ -39,3 +39,16 @@ playwright-report/
 .zcode/
 .zcode-site.json
 *.tsbuildinfo
+
+# uv and Python tooling
+.venv/
+.uv-cache/
+.ruff_cache/
+__pycache__/
+*.py[cod]
+
+# Generated from packages/globe and scripts/generate/generate-openapi.mjs
+/apps/web/public/globe/
+/apps/web/public/openapi.json
+/apps/android/app/src/main/assets/globe/
+/apps/ios/Resources/globe/

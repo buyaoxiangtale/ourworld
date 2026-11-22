@@ -1,0 +1,20 @@
+@import './starlight-tokens.css';
+
+.starlight {
+  background-color: var(--ow-space);
+  background-image: url('./textures/stars.png'),
+    radial-gradient(ellipse at 50% 42%, var(--ow-nebula), var(--ow-space) 75%);
+  background-position: center;
+}
+.earth-spinner {
+  display: inline-block;
+  flex: none;
+  width: var(--spinner-size, 28px);
+  height: var(--spinner-size, 28px);
+  vertical-align: middle;
+  background: url('./textures/earth-spinner.png') 0 0 / 3600% 100% no-repeat;
+  animation: earth-loader-spin 1.8s steps(36, end) infinite;
+}
+.earth-spinner.small { --spinner-size: 18px; }
+@keyframes earth-loader-spin { to { background-position: calc(-36 * var(--spinner-size, 28px)) 0; } }
+@media (prefers-reduced-motion: reduce) { .earth-spinner { animation: none; } }

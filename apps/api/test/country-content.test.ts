@@ -28,12 +28,57 @@ test('country enrichment is idempotent and preserves edited text and uploaded im
  const edited={description:{zh:'用户已经写好的中文介绍',en:'My own detailed description'},image:'/api/v1/media/my-own-upload',aliases:['custom name']};const kept=countryEnrichmentPatch(edited,target);assert.deepEqual(kept.description,edited.description);assert.equal(kept.image,edited.image);assert(kept.aliases.includes('custom name'));
  const bilingual=countryEnrichmentPatch({description:{zh:'保留中文',en:''},image:'https://images.example/user-photo.jpg'},target);assert.equal(bilingual.description.zh,'保留中文');assert.equal(bilingual.description.en,target.description.en);assert.equal(bilingual.image,'https://images.example/user-photo.jpg');
 });
-test('new cities and differentiated guide/traveler fixtures use valid data references',()=>{
- assert.equal(EXTRA_CITIES.length,15);const countries=new Set(ENRICHED_COUNTRIES.map(c=>c.id));const cities=new Set([...BASE_CITY_IDS,...EXTRA_CITIES.map(c=>c.id)]);assert.equal(cities.size,65);
- for(const city of EXTRA_CITIES){assert(countries.has(city.parentId));assert(city.description.zh.length>30);assert(city.lat>=-90&&city.lat<=90&&city.lng>=-180&&city.lng<=180);}
- assert.equal(DEMO_PROFILES.length,8);assert.equal(DEMO_PROFILES.filter(d=>d.kind==='guide').length,5);assert.equal(DEMO_PROFILES.filter(d=>d.kind==='traveler').length,3);
- for(const profile of DEMO_PROFILES){assert(!profile.id.startsWith('load-'));assert(profile.name.includes('演示'));assert(profile.bio.includes('fictional'));assert(profile.cityIds.every(id=>cities.has(id)));assert(profile.tags.length>=3);assert(profile.stories.length>=2);if(profile.kind==='guide'){assert(profile.quote&&profile.service?.price);assert(profile.service?.description.includes('演示'));}else{assert.equal(profile.service,undefined);assert(profile.bio.includes('旅行目标'));}const layout=demoLayout(profile);assert.equal(new Set(layout.blocks.map(b=>b.id)).size,layout.blocks.length);assert(layout.blocks.every(b=>BLOCK_TYPES.includes(b.type)));assert(!layout.blocks.some(b=>b.type==='gallery'),'Fixtures use published story/service artwork rather than invalid gallery upload references');}
- assert.equal(new Set(DEMO_PROFILES.map(d=>d.bio)).size,8);
+test('new cities and guide, traveler and agency fixtures use valid data references',()=>{
+ assert.equal(EXTRA_CITIES.length,16);
+ const countries=new Set(ENRICHED_COUNTRIES.map(c=>c.id));
+ const cities=new Set([...BASE_CITY_IDS,...EXTRA_CITIES.map(c=>c.id)]);
+ assert.equal(cities.size,66);
+ for(const city of EXTRA_CITIES){
+  assert(countries.has(city.parentId));assert(city.description.zh.length>30);
+  assert(city.lat>=-90&&city.lat<=90&&city.lng>=-180&&city.lng<=180);
+ }
+ assert.equal(DEMO_PROFILES.length,18);
+ assert.equal(DEMO_PROFILES.filter(d=>d.kind==='guide').length,11);
+ assert.equal(DEMO_PROFILES.filter(d=>d.kind==='traveler').length,5);
+ assert.equal(DEMO_PROFILES.filter(d=>d.kind==='agency').length,2);
+ assert.equal(new Set(DEMO_PROFILES.map(d=>d.id)).size,18,'demo identities are unique');
+ assert.equal(new Set(DEMO_PROFILES.map(d=>d.email)).size,18,'demo login addresses are unique');
+ assert.equal(new Set(DEMO_PROFILES.map(d=>d.bio)).size,18,'demo biographies are distinct');
+ for(const profile of DEMO_PROFILES){
+  assert(!profile.id.startsWith('load-'));assert(profile.name.includes('演示'));assert(profile.bio.includes('fictional'));
+  assert(countries.has(`country-${profile.countrySlug}`),`${profile.id}: valid home country`);
+  assert(profile.cityIds.length>0);assert(profile.cityIds.every(id=>cities.has(id)));
+  assert(profile.tags.length>=3);assert(profile.stories.length>=2);
+  assert(profile.stories.every(story=>profile.cityIds.includes(story.cityId)),`${profile.id}: stories reference its actual cities`);
+  if(profile.kind==='traveler'){
+   assert.equal(profile.service,undefined);assert(profile.bio.includes('旅行目标'));
+   assert.notEqual(profile.accountType,'agency');
+  }else{
+   assert(profile.quote&&profile.service?.price);
+   assert(profile.service.description.includes('演示'));
+   assert(Number(profile.service.price)>0);
+   assert(profile.priceRange&&profile.priceRange.min>=0&&profile.priceRange.max>=profile.priceRange.min);
+   assert(profile.experienceYears!=null&&profile.experienceYears>=0);
+   assert(profile.languages?.length);
+  }
+  if(profile.kind==='agency'){
+   assert.equal(profile.accountType,'agency');
+   assert(profile.id.startsWith('demo-agency-'));
+  }else assert.notEqual(profile.accountType,'agency');
+  const layout=demoLayout(profile);
+  assert.equal(new Set(layout.blocks.map(b=>b.id)).size,layout.blocks.length);
+  assert(layout.blocks.every(b=>BLOCK_TYPES.includes(b.type)));
+  assert(!layout.blocks.some(b=>b.type==='gallery'),'Fixtures use published story/service artwork rather than invalid gallery upload references');
+  const packages=layout.blocks.find(b=>b.type==='packages');
+  if(profile.service)assert.deepEqual(packages?.refs,[`package-${profile.id}`]);
+  else assert.equal(packages,undefined,'travelers have no invented service package');
+  const cityBlock=layout.blocks.find(b=>b.type==='cities');
+  assert.deepEqual(cityBlock?.refs,profile.cityIds);
+  if(profile.kind==='agency'){
+   assert.equal(layout.blocks.find(b=>b.type==='intro')?.title,'认识这家演示旅行社');
+   assert.equal(packages?.title,'演示行程');
+  }
+ }
 });
 test('re-running enrichment skips existing demo accounts instead of overwriting edits or load users',async()=>{
  const calls:{sql:string;values:any[]}[]=[];const byId=new Map(ENRICHED_COUNTRIES.map(c=>[c.id,c]));

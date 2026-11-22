@@ -10,7 +10,7 @@ body:has(.app-shell) :is(.eyebrow){font-size:12px;letter-spacing:0;text-transfor
 body:has(.app-shell) :is(.page-header .eyebrow,.person-photo-name .eyebrow,.profile-management>.eyebrow){display:none}/* taste-skill-ignore: removes ornamental labels */
 body:has(.app-shell) :is(.muted,.micro-note,.page-lede){font-size:14px;color:var(--ow-inkMuted);letter-spacing:0;line-height:1.55}
 body:has(.app-shell) :is(.button){min-height:48px;border-radius:24px;padding:12px 20px;font-size:14px;font-weight:600;box-shadow:none!important;transform:none!important}
-body:has(.app-shell) :is(.button.primary){background:linear-gradient(135deg,var(--ow-accent),var(--ow-accentEnd));color:var(--ow-ink)}
+body:has(.app-shell) :is(.button.primary){background:linear-gradient(135deg,var(--ow-accent),var(--ow-accentEnd));color:var(--ow-accentInk)}
 body:has(.app-shell) :is(.button.primary:hover:not(:disabled)){filter:brightness(1.08)}
 body:has(.app-shell) :is(.button.secondary){background:var(--ow-raised);border-color:transparent;color:var(--ow-ink)}
 body:has(.app-shell) :is(.button.ghost){color:var(--ow-inkMuted)}
@@ -32,7 +32,7 @@ body:has(.app-shell) :is(.sheet-handle){background:var(--ow-line)}
 .mobile-app .bottom-nav .active>span:before{background:var(--ow-raised)}
 .mobile-app .bottom-nav i{background:var(--ow-accent)}
 .mobile-app .tab-panel{height:calc(100% - 72px - env(safe-area-inset-bottom,0px))}
-.mobile-app .home-search{background:color-mix(in srgb,var(--ow-raised) 96%,transparent);color:var(--ow-inkMuted);border:0;box-shadow:none;min-height:50px}
+.mobile-app .home-search{background:color-mix(in srgb,var(--ow-space) 96%,transparent);color:var(--ow-inkMuted);border:0;box-shadow:none;min-height:50px}
 .mobile-app .home-search span{font-size:14px}
 .mobile-app .people-overlay{padding:0 0 12px;display:flex;flex-direction:column;gap:0;overflow-y:auto;overflow-x:hidden}
 .mobile-app .people-overlay>.page-header{flex-shrink:0;padding:16px 16px 10px}
@@ -54,8 +54,8 @@ body:has(.app-shell) :is(.sheet-handle){background:var(--ow-line)}
 .mobile-app .person-card-footer{padding-top:10px;border-top:0;gap:8px;align-items:center}
 .mobile-app .person-card-footer>span{font-size:14px;color:var(--ow-ink);min-width:0}
 .mobile-app .person-card-footer button{font-size:12px;min-height:36px;color:var(--ow-ink);flex-shrink:0}
-.mobile-app .people-actions{display:flex;gap:12px;padding:14px 20px 0;margin:0;flex-shrink:0}
-.mobile-app .people-actions>.button{flex:1;font-size:14px;min-height:50px}
+
+
 .mobile-app .swipe-guide{font-size:12px;color:var(--ow-inkMuted);padding:8px 22px 0;margin:0;flex-shrink:0}
 .mobile-app .swipe-glow{pointer-events:none;z-index:0}
 .mobile-app .swipe-stamp{font-size:22px;background:var(--ow-surface);color:var(--ow-nope);border:2px solid currentColor;box-shadow:none}
@@ -92,7 +92,7 @@ body:has(.app-shell) :is(.message.mine .message-bubble,.message-row.own .message
 body:has(.app-shell) :is(.message-meta){font-size:12px;color:var(--ow-inkMuted)}
 body:has(.app-shell) :is(.chat-composer,.composer){background:var(--ow-bg);border:0;padding-bottom:max(12px,env(safe-area-inset-bottom))}
 body:has(.app-shell) :is(.chat-composer textarea,.composer textarea){background:var(--ow-raised);border-radius:24px;font-size:16px}
-body:has(.app-shell) :is(.send-button){background:linear-gradient(135deg,var(--ow-accent),var(--ow-accentEnd));color:var(--ow-ink);min-width:44px;min-height:44px}
+body:has(.app-shell) :is(.send-button){background:linear-gradient(135deg,var(--ow-accent),var(--ow-accentEnd));color:var(--ow-accentInk);min-width:44px;min-height:44px}
 body:has(.app-shell) :is(.contact-card,.trip-card,.package-card,.notice,.agent-panel){background:var(--ow-raised);color:var(--ow-ink);border:0;box-shadow:none;border-radius:16px}
 body:has(.app-shell) :is(.notice,.error-box){font-size:14px;line-height:1.5}
 body:has(.app-shell) :is(.city-title-row h2){font-size:30px;font-weight:600;line-height:1.2}
@@ -108,7 +108,7 @@ body:has(.app-shell) :is(.editor-overlay){background:var(--ow-bg)}
 body:has(.app-shell) :is(.editor-toolbar,.layout-editor-block){background:var(--ow-raised);border-color:var(--ow-line);box-shadow:none}
 body:has(.app-shell) :is(.photo-credits){display:block;color:var(--ow-inkMuted);font-size:13px;margin:16px 0}
 @media(max-width:800px){.app-shell{padding:0}.mobile-app{width:100%;height:100dvh;min-height:0;border-radius:0;border:0}.mobile-app .person-card{flex-basis:360px;min-height:360px}body:has(.app-shell) .profile-portrait{height:300px}}
-@media(max-height:740px){.mobile-app .people-intro{display:none}.mobile-app .person-card{flex-basis:300px;min-height:300px}.mobile-app .person-photo{min-height:210px}.mobile-app .person-content{padding:10px 16px}.mobile-app .person-content>p{margin:6px 0;-webkit-line-clamp:1}.mobile-app .swipe-guide{display:none}.mobile-app .people-actions{padding-top:10px}}
+@media(max-height:740px){.mobile-app .people-intro{display:none}.mobile-app .person-card{flex-basis:300px;min-height:300px}.mobile-app .person-photo{min-height:210px}.mobile-app .person-content{padding:10px 16px}.mobile-app .person-content>p{margin:6px 0;-webkit-line-clamp:1}.mobile-app .swipe-guide{display:none}}
 @media(prefers-reduced-motion:reduce){body:has(.app-shell) *{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
 
 .mobile-app.earth-mode:has(.people-overlay,.stories-page) .bottom-nav{background:var(--ow-bg);color:var(--ow-inkMuted);border:0}
@@ -135,7 +135,7 @@ body:has(.app-shell) .message-info{font-size:12px;color:var(--ow-inkMuted)}
 body:has(.app-shell) .message-row.mine .message-info{color:var(--ow-inkMuted)}
 body:has(.app-shell) .thread-composer{background:var(--ow-bg);border:0}
 body:has(.app-shell) .thread-composer input{background:var(--ow-raised)}
-body:has(.app-shell) .thread-composer button[type=submit]{background:linear-gradient(135deg,var(--ow-accent),var(--ow-accentEnd));color:var(--ow-ink)}
+body:has(.app-shell) .thread-composer button[type=submit]{background:linear-gradient(135deg,var(--ow-accent),var(--ow-accentEnd));color:var(--ow-accentInk)}
 body:has(.app-shell) .profile-identity>p{opacity:1}
 .mobile-app .person-card{max-height:none}
 .mobile-app .person-photo{max-height:none}
@@ -199,7 +199,7 @@ body:has(.app-shell) .theme-swatches button :is(span,small){font-size:12px;color
 body:has(.app-shell) .accent-picker{font-size:12px;color:var(--ow-inkMuted);width:48px}
 body:has(.app-shell) .editor-theme .section-heading,.editor-content>.section-heading{font-size:14px;color:var(--ow-ink)}
 /* The shared satellite globe retains the native dark navigation and search. */
-.mobile-app.earth-mode:not(:has(.people-overlay,.stories-page)) .bottom-nav{background:var(--ow-bg);color:var(--ow-inkMuted)}
+.mobile-app.earth-mode:not(:has(.people-overlay,.stories-page)) .bottom-nav{background:var(--ow-space);color:var(--ow-inkMuted)}
 .mobile-app.earth-mode:not(:has(.people-overlay,.stories-page)) .bottom-nav .active{color:var(--ow-ink)}
 .mobile-app.earth-mode:not(:has(.people-overlay,.stories-page)) .bottom-nav .active>span:before{background:transparent}
 body:has(.app-shell) .editor-overlay :is(p,small,span,label,button){font-size:max(12px,1em)}
@@ -220,7 +220,44 @@ body:has(.app-shell) .editor-tabs>span{font-size:12px;color:var(--ow-inkMuted)}
 .mobile-app .person-photo-name h2{font-size:32px;line-height:1.12;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
 .mobile-app .person-photo-name>span{font-size:12px;line-height:1.5}
 .mobile-app .person-details{position:absolute;right:12px;bottom:16px;width:44px;height:44px;display:grid;place-items:center;color:white;background:transparent;border:0;padding:0}
-.mobile-app .people-actions{justify-content:center;align-items:center;gap:32px;padding:8px 12px;min-height:72px}
-.mobile-app .people-actions>.button{flex:0 0 56px;width:56px;min-width:56px;height:56px;min-height:56px;padding:0;border:0;border-radius:50%}
+
+
 .mobile-app .people-overlay>.error-box{flex-shrink:0;margin:6px 12px 0;font-size:12px}
 .mobile-app .person-photo-shade{inset:0;background:linear-gradient(180deg,transparent 50%,rgba(0,0,0,.72) 100%)}/* taste-skill-ignore: photo scrim protects white name readability */
+
+/* Profile R4 — the Michael (Tinder-style) owner layout: visitor-preview link,
+   completeness banner, info chips, photo strip, travel prompts, interest tiles.
+   Gold stays text/icon/border only on navy surfaces; any gold fill pairs with accentInk. */
+body:has(.app-shell) .preview-profile-button{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:9px 14px;border-radius:22px;background:var(--ow-raised);color:var(--ow-ink);font-size:13px;font-weight:600}
+body:has(.app-shell) .preview-profile-button svg{color:var(--ow-inkMuted)}
+body:has(.app-shell) .profile-banner{display:flex;align-items:center;gap:10px;background:var(--ow-surface);border:1px solid var(--ow-line);border-radius:16px;padding:12px;margin:0 0 16px}
+body:has(.app-shell) .profile-banner-donut{flex-shrink:0}
+body:has(.app-shell) .profile-banner-copy{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
+body:has(.app-shell) .profile-banner-copy strong{font-size:14px;color:var(--ow-ink)}
+body:has(.app-shell) .profile-banner-pills{display:flex;flex-wrap:wrap;gap:8px}
+body:has(.app-shell) .profile-banner-pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ow-inkMuted);background:var(--ow-raised);border-radius:16px;padding:6px 11px;min-height:34px}
+body:has(.app-shell) .profile-banner-pill:hover{color:var(--ow-ink)}
+body:has(.app-shell) .profile-chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
+body:has(.app-shell) .public-profile-shell .profile-chips{margin:0 16px 24px}
+body:has(.app-shell) .profile-chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;line-height:1.4;color:var(--ow-ink);background:var(--ow-surface);border:1px solid transparent;border-radius:16px;padding:7px 11px;max-width:100%}
+body:has(.app-shell) .profile-chip svg{color:var(--ow-inkMuted);flex-shrink:0}
+body:has(.app-shell) .profile-chip>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body:has(.app-shell) button.profile-chip.is-empty{background:transparent;border:1px dashed color-mix(in srgb,var(--ow-accent) 55%,transparent);color:var(--ow-accent);font-weight:600}
+body:has(.app-shell) .profile-photos{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x proximity;padding-bottom:4px;margin:0 0 10px;scrollbar-width:thin}
+body:has(.app-shell) .profile-photos .cover{flex:none;width:132px;height:176px;border-radius:14px;scroll-snap-align:start}
+body:has(.app-shell) .profile-photo-add{flex:none;width:104px;min-height:176px;border:1px dashed color-mix(in srgb,var(--ow-accent) 60%,transparent);border-radius:14px;background:transparent;color:var(--ow-accent);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-size:12px;font-weight:600}
+body:has(.app-shell) .profile-photos-foot{display:flex;align-items:center;justify-content:space-between;gap:10px}
+body:has(.app-shell) .profile-pro-tip{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ow-inkMuted);margin:0;min-width:0;line-height:1.5}
+body:has(.app-shell) .profile-pro-tip svg{color:var(--ow-accent);flex-shrink:0}
+body:has(.app-shell) .profile-photo-edit{display:inline-flex;align-items:center;gap:6px;flex-shrink:0;font-size:12px;font-weight:600;background:var(--ow-surface);color:var(--ow-ink);border:1px solid var(--ow-line);border-radius:16px;padding:7px 12px;min-height:34px}
+body:has(.app-shell) .profile-prompts{display:flex;flex-direction:column;gap:10px}
+body:has(.app-shell) .profile-prompt{display:flex;flex-direction:column;gap:6px;background:var(--ow-raised);border-radius:12px;padding:12px 14px}
+body:has(.app-shell) .profile-prompt-q{font-size:12px;color:var(--ow-inkMuted)}
+body:has(.app-shell) .profile-prompt-a{font-size:14px;color:var(--ow-ink);margin:0;line-height:1.6;white-space:pre-wrap}
+body:has(.app-shell) .profile-prompt-add{width:100%;min-height:60px;display:flex;align-items:center;justify-content:center;gap:8px;border:1px dashed color-mix(in srgb,var(--ow-accent) 55%,transparent);border-radius:12px;background:transparent;color:var(--ow-accent);font-size:13px;font-weight:600}
+body:has(.app-shell) .profile-tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+body:has(.app-shell) .profile-tile{display:flex;align-items:center;justify-content:center;gap:6px;min-height:48px;padding:10px 12px;background:var(--ow-raised);border:1px solid transparent;border-radius:12px;font-size:13px;line-height:1.35;color:var(--ow-ink);text-align:center;overflow-wrap:break-word}
+body:has(.app-shell) button.profile-tile.is-add{background:transparent;border:1px dashed color-mix(in srgb,var(--ow-accent) 55%,transparent);color:var(--ow-accent);font-weight:600}
+body:has(.app-shell) .prompt-editor{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+body:has(.app-shell) .prompt-editor-row{display:flex;gap:6px;align-items:flex-start}
+body:has(.app-shell) .prompt-editor-fields{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}

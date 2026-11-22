@@ -24,12 +24,17 @@ test('new clients receive photos from legacy fixtures without requiring a databa
  assert.equal(shapes.user({...row,id:'real-user'}).avatar,row.avatar);
  const place={id:'city-paris',kind:'city',image:'/api/v1/seed/city/paris.svg',description:{zh:'用户写下的介绍'}};
  assert.equal(shapes.place(place).image,'/api/v1/seed/city/paris.jpg');assert.equal(shapes.place(place).description.zh,place.description.zh);
+ const hongKong={...place,id:'city-hong-kong',image:'/api/v1/seed/country/china.svg'};
+ assert.equal(shapes.place(hongKong).image,'/api/v1/seed/city/hong-kong.jpg','Hong Kong uses its own skyline photo even with the legacy country illustration');
+ assert.equal(shapes.place({...hongKong,image:'/media/user-hong-kong.jpg'}).image,'/media/user-hong-kong.jpg');
 });
 test('bundled portrait endpoint supplies a decodable JPEG and safe errors',async()=>{
  const app=Fastify();registerPhotography(app);
  try{
   const response=await app.inject('/api/v1/seed/avatar/demo-local.jpg');assert.equal(response.statusCode,200);assert.match(String(response.headers['content-type']),/^image\/jpeg/);assert.deepEqual(response.rawPayload.subarray(0,3),Buffer.from([255,216,255]));
   assert.equal((await app.inject('/api/v1/seed/avatar/unknown.jpg')).statusCode,404);
+  const hongKong=await app.inject('/api/v1/seed/city/hong-kong.jpg');assert.equal(hongKong.statusCode,200);assert.match(String(hongKong.headers['content-type']),/^image\/jpeg/);assert.deepEqual(hongKong.rawPayload.subarray(0,3),Buffer.from([255,216,255]));
   const credits=await app.inject('/api/v1/photo-credits');assert.equal(credits.statusCode,200);assert.match(credits.body,/fictional adult demo/);
+  assert.match(credits.body,/Mk2010/);assert.match(credits.body,/Victoria_Harbour_\(Hong_Kong\)/);assert.match(credits.body,/resized display copy/);
  }finally{await app.close();}
 });

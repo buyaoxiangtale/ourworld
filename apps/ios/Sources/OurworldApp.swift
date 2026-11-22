@@ -6,7 +6,7 @@ import CoreText
 import UIKit
 
 let sky = Color(hex: "eef4f5")
-let night = OWVisual.bg
+let night = OWVisual.space
 let nightSurface = OWVisual.surface
 let moon = OWVisual.ink
 let moonMuted = OWVisual.inkMuted
@@ -39,38 +39,58 @@ extension Color { init(hex: String) { let value = UInt64(hex.replacingOccurrence
                     case "people": PeopleView()
                     case "public": PublicProfileView()
                     case "conversation": ChatView()
-                    case "edit": ProfileEditorView()
+                    case "profile-gallery": ProfileCardEditorView(section: "gallery")
+                    case "profile-prompts": ProfileCardEditorView(section: "prompts")
+                    case "profile-cities": ServiceCitiesView()
                     case "settings": SettingsView()
                     case "packages": PackagesView()
                     case "verification": VerificationView()
                     case "posts": StoriesView()
-                    default: if s.tab == 1 { ConversationsView() } else if s.tab == 2 { OwnProfileView() }
+                    default: if s.tab == 1 { ConversationsView() } else if s.tab == 2 { OwnProfileView() } else if s.tab == 3 { StoriesView(cityScoped: false) }
                 } }.frame(maxWidth: .infinity, maxHeight: .infinity)
-                if s.busy && !globePage { ProgressView().frame(maxWidth: .infinity).padding(5) }
+                if s.busy && !globePage { EarthLoading().frame(maxWidth: .infinity).padding(5) }
                 if !s.error.isEmpty { banner(s.error, error: true) { s.error = "" } }
             }
             if s.route != "conversation" && s.route != "public" {
-                HStack { nav(0, "globe.europe.africa", s.t("地球", "Earth")); nav(1, "bubble.left.and.bubble.right", s.t("聊天", "Chat")); nav(2, "person.crop.circle", "Profile") }.background(globePage ? night : paper)
+                HStack {
+                    nav(0, s.t("地球", "Earth"))
+                    nav(3, s.t("社区", "Community"))
+                    nav(1, s.t("聊天", "Chat"))
+                    nav(2, s.t("我的", "Profile"))
+                }.padding(.horizontal, OWVisual.spacing_gutter).background(OWVisual.space)
             }
-        }.background((globePage ? night : paper).ignoresSafeArea()).foregroundStyle(ink).preferredColorScheme(globePage ? .dark : .light)
+        }.starlight().foregroundStyle(ink).preferredColorScheme(.dark)
         .overlay(alignment: .bottom) { if !s.notice.isEmpty { Text(s.notice).font(ourFont(14)).padding(16).background(nightSurface).foregroundStyle(moon).clipShape(RoundedRectangle(cornerRadius: 16)).padding(.horizontal, 16).padding(.bottom, s.route == "conversation" ? 80 : 64).allowsHitTesting(false) } }
         .task(id: s.notice) { let value = s.notice; if !value.isEmpty { try? await Task.sleep(nanoseconds: 3_200_000_000); if !Task.isCancelled && s.notice == value { s.notice = "" } } }
         .sheet(isPresented: Binding(get: { s.route == "city" || s.route == "country" }, set: { if !$0 && ["city", "country"].contains(s.route) { s.route = "" } })) {
-            Group { if s.route == "country" { CountryView() } else { CityView() } }.environmentObject(s).foregroundStyle(ink).tint(ink).preferredColorScheme(.light).presentationDetents(s.route == "country" ? [.fraction(0.85), .large] : [.fraction(0.67), .large]).presentationDragIndicator(.visible)
+            Group { if s.route == "country" { CountryView() } else { CityView() } }.environmentObject(s).foregroundStyle(ink).tint(ink).preferredColorScheme(.dark).presentationDetents(s.route == "country" ? [.fraction(0.85), .large] : [.fraction(0.67), .large]).presentationDragIndicator(.visible)
         }
     }
-    private func nav(_ index: Int, _ symbol: String, _ label: String) -> some View { Button {
-        s.notice = ""; s.tab = index; s.route = ""; if index == 1 { s.newConversation = false; if s.requireLogin() { s.run { try await s.refreshConversations() } } }; if index == 2 { s.ownProfile() }
-    } label: { VStack(spacing: 4) { ZStack(alignment: .topTrailing) { Image(systemName: symbol).font(.system(size: 24)); if index == 1 && s.newConversation { Circle().fill(coral).frame(width: 7, height: 7).offset(x: 7, y: -3) } } }.foregroundStyle(globePage ? (s.tab == index ? moon : moonMuted) : (s.tab == index ? ink : ink.opacity(0.5))).frame(maxWidth: .infinity, minHeight: 44).contentShape(Rectangle()) }.buttonStyle(.plain).accessibilityLabel(label) }
+    private func nav(_ index: Int, _ label: String) -> some View {
+        Button {
+            s.notice = ""; s.tab = index; s.route = ""
+            if index == 1 { s.newConversation = false; if s.requireLogin() { s.run { try await s.refreshConversations() } } }
+            if index == 2 { s.ownProfile() }
+        } label: {
+            PlanetIcon(tab: index, selected: s.tab == index)
+                .overlay(alignment: .topTrailing) {
+                    if index == 1 && s.newConversation { Circle().fill(OWVisual.accent).frame(width: 7, height: 7) }
+                }
+                .frame(maxWidth: .infinity, minHeight: OWVisual.spacing_touch)
+                .contentShape(Rectangle())
+        }.buttonStyle(.plain).accessibilityLabel(label)
+            .accessibilityAddTraits(s.tab == index ? .isSelected : [])
+    }
     private func banner(_ value: String, error: Bool, dismiss: @escaping () -> Void) -> some View { HStack { Text(value).font(.footnote); Spacer(); Button(action: dismiss) { Image(systemName: "xmark") } }.padding(12).background(error ? Color(hex: "efc6c2") : Color(hex: "cbe8d4")) }
 }
 
 @MainActor struct Page<Content: View>: View {
     @EnvironmentObject var s: WorldStore
     let title: String
+    let showBack: Bool
     let content: Content
-    init(_ title: String, @ViewBuilder content: () -> Content) { self.title = title; self.content = content() }
-    var body: some View { VStack(spacing: 0) { HStack { Button(action: s.back) { Image(systemName: "arrow.left").padding(8) }; Text(title).font(ourFont(25, display: true)); Spacer(); Button(s.locale == "zh" ? "EN" : "中", action: s.language) }.padding(); ScrollView { VStack(alignment: .leading, spacing: 16) { content }.padding(20).frame(maxWidth: .infinity, alignment: .leading) } }.background(paper) }
+    init(_ title: String, showBack: Bool = true, @ViewBuilder content: () -> Content) { self.title = title; self.showBack = showBack; self.content = content() }
+    var body: some View { VStack(spacing: 0) { HStack { if showBack { Button(action: s.back) { Image(systemName: "arrow.left").padding(8) } }; Text(title).font(ourFont(25, display: true)); Spacer(); Button(s.locale == "zh" ? "EN" : "中", action: s.language) }.padding(); ScrollView { VStack(alignment: .leading, spacing: 16) { content }.padding(20).frame(maxWidth: .infinity, alignment: .leading) } }.starlight() }
 }
 @MainActor struct Action: View { let title: String; var disabled = false; let action: () -> Void; init(_ title: String, disabled: Bool = false, action: @escaping () -> Void) { self.title = title; self.disabled = disabled; self.action = action }; var body: some View { Button(action: action) { Text(title).fontWeight(.semibold).frame(maxWidth: .infinity).padding(15).background(ink).foregroundStyle(paper).clipShape(Capsule()) }.disabled(disabled).opacity(disabled ? 0.5 : 1) } }
 @MainActor struct Input: View { let label: String; @Binding var value: String; var body: some View { TextField(label, text: $value, axis: .vertical).textFieldStyle(.roundedBorder).padding(.vertical, 2) } }
@@ -84,7 +104,7 @@ extension Color { init(hex: String) { let value = UInt64(hex.replacingOccurrence
     var body: some View {
         Group {
             if let image { Image(uiImage: image).resizable().scaledToFill() }
-            else { Rectangle().fill(OWVisual.raised).overlay { if failed { Image(systemName: "photo").foregroundStyle(OWVisual.inkMuted).accessibilityLabel(s.t("照片暂不可用", "Photo unavailable")) } else { ProgressView() } } }
+            else { Rectangle().fill(OWVisual.raised).overlay { if failed { Image(systemName: "photo").foregroundStyle(OWVisual.inkMuted).accessibilityLabel(s.t("照片暂不可用", "Photo unavailable")) } else { EarthLoading() } } }
         }.frame(maxWidth: .infinity).frame(height: height).clipped().clipShape(RoundedRectangle(cornerRadius: cornerRadius))
         .task(id: url) {
             image = nil; failed = false
@@ -106,19 +126,23 @@ extension Color { init(hex: String) { let value = UInt64(hex.replacingOccurrence
     @FocusState private var searchFocused: Bool
     var body: some View {
         ZStack(alignment: .top) {
-            GlobeView(store: s).background(night).ignoresSafeArea(edges: .top)
+            GlobeView(store: s).background(OWVisual.space).ignoresSafeArea(edges: .top)
             VStack(spacing: 10) {
-                HStack(spacing: 10) {
-                    Button { s.search(); searchFocused = false } label: { Image(systemName: "magnifyingglass").frame(width: 44, height: 44) }.accessibilityLabel(s.t("搜索", "Search"))
-                    TextField("", text: Binding(get: { s.query }, set: { s.updateSearch($0) }), prompt: Text(s.t("搜索国家、城市或景点", "Search countries, cities or places")).foregroundColor(moonMuted))
+                HStack(spacing: 8) {
+                    TextField("", text: Binding(get: { s.query }, set: { s.updateSearch($0) }), prompt: Text(s.t("搜索国家、城市、景点", "Search countries, cities and landmarks")).foregroundColor(moonMuted))
                         .focused($searchFocused).submitLabel(.search).autocorrectionDisabled().textInputAutocapitalization(.never)
-                        .accessibilityLabel(s.t("搜索国家、城市或景点", "Search countries, cities or places"))
+                        .accessibilityLabel(s.t("搜索国家、城市、景点", "Search countries, cities and landmarks"))
                         .onSubmit { s.search(); searchFocused = false }
-                    if !s.query.isEmpty { Button { s.updateSearch("") } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(moonMuted).frame(width: 44, height: 44) }.accessibilityLabel(s.t("清除搜索", "Clear search")) }
-                }.padding(.horizontal, 15).padding(.vertical, 5).background(nightSurface.opacity(0.88)).clipShape(Capsule()).overlay(Capsule().stroke(moon.opacity(searchFocused ? 0.42 : 0.16), lineWidth: 1))
+                    if !s.query.isEmpty { Button { s.updateSearch("") } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(moonMuted).frame(width: OWVisual.spacing_searchButton, height: OWVisual.spacing_searchButton) }.accessibilityLabel(s.t("清除搜索", "Clear search")) }
+                    Button { s.search(); searchFocused = false } label: {
+                        Image(systemName: "magnifyingglass").frame(width: OWVisual.spacing_searchButton, height: OWVisual.spacing_searchButton).background(OWVisual.raised, in: Circle())
+                    }.accessibilityLabel(s.t("搜索", "Search"))
+                }.padding(.leading, OWVisual.spacing_gutter).padding(.trailing, 6)
+                    .frame(minHeight: OWVisual.spacing_searchHeight).background(nightSurface, in: Capsule())
+                    .overlay(Capsule().stroke(searchFocused ? moon : OWVisual.line, lineWidth: 1))
                 if !s.query.isEmpty && (s.searching || s.searchCompleted) {
                     VStack(spacing: 0) {
-                        if s.searching { ProgressView().padding(12) }
+                        if s.searching { EarthLoading().padding(12) }
                         if s.searchCompleted && s.results.isEmpty { Text(s.t("没有找到，试试其他名称", "No matches. Try another name.")).padding(20).frame(maxWidth: .infinity, alignment: .leading) }
                         if !s.results.isEmpty {
                             ScrollView {
@@ -139,7 +163,7 @@ extension Color { init(hex: String) { let value = UInt64(hex.replacingOccurrence
                         }
                     }.background(nightSurface.opacity(0.97)).clipShape(RoundedRectangle(cornerRadius: 22))
                 }
-            }.padding(.horizontal, 20).padding(.top, 12).foregroundStyle(moon).tint(moon).opacity(s.tab == 0 && ["", "country", "city"].contains(s.route) ? 1 : 0).allowsHitTesting(s.tab == 0 && ["", "country", "city"].contains(s.route))
+            }.padding(.horizontal, OWVisual.spacing_gutter).padding(.top, OWVisual.spacing_gutter).foregroundStyle(moon).tint(moon).opacity(s.tab == 0 && ["", "country", "city"].contains(s.route) ? 1 : 0).allowsHitTesting(s.tab == 0 && ["", "country", "city"].contains(s.route))
         }
         .task(id: s.query) { guard !s.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }; try? await Task.sleep(nanoseconds: 300_000_000); if !Task.isCancelled { s.search() } }
     }
@@ -147,20 +171,25 @@ extension Color { init(hex: String) { let value = UInt64(hex.replacingOccurrence
 
 @MainActor struct GlobeView: UIViewRepresentable {
     @ObservedObject var store: WorldStore
+    @Environment(\.scenePhase) private var scenePhase
     func makeCoordinator() -> Coordinator { Coordinator(store) }
     func makeUIView(context: Context) -> WKWebView {
         let configuration = WKWebViewConfiguration(); configuration.userContentController.add(context.coordinator, name: "globe")
         let view = WKWebView(frame: .zero, configuration: configuration); view.isOpaque = false; view.backgroundColor = UIColor(red: 5/255, green: 8/255, blue: 13/255, alpha: 1); view.scrollView.isScrollEnabled = false; view.navigationDelegate = context.coordinator; context.coordinator.web = view
-        if let url = Bundle.main.url(forResource: "index", withExtension: "html", subdirectory: "Resources/globe") ?? Bundle.main.url(forResource: "index", withExtension: "html", subdirectory: "globe") { view.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent()) } else { view.loadHTMLString("<body style='background:#05080d;color:#f1f3f5;font-family:serif;padding:40px'>Globe resources are not bundled. Run the shared globe build.</body>", baseURL: nil) }
+        if let url = globeResource("index", withExtension: "html") {
+            view.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
+        } else {
+            view.loadHTMLString("<body style='background:#05080d;color:#f5f5f5;padding:40px'>Globe resources are not bundled. Run the shared globe build.</body>", baseURL: nil)
+        }
         return view
     }
-    func updateUIView(_ uiView: WKWebView, context: Context) { context.coordinator.markers(); context.coordinator.activity(); if let command = store.globeCommand, let raw = try? JSONSerialization.data(withJSONObject: command, options: .sortedKeys), let text = String(data: raw, encoding: .utf8), text != context.coordinator.lastNativeCommand { context.coordinator.lastNativeCommand = text; context.coordinator.send(command) } }
+    func updateUIView(_ uiView: WKWebView, context: Context) { context.coordinator.markers(); context.coordinator.inForeground = scenePhase == .active; context.coordinator.activity(); if let command = store.globeCommand, let raw = try? JSONSerialization.data(withJSONObject: command, options: .sortedKeys), let text = String(data: raw, encoding: .utf8), text != context.coordinator.lastNativeCommand { context.coordinator.lastNativeCommand = text; context.coordinator.send(command) } }
     static func dismantleUIView(_ uiView: WKWebView, coordinator: Coordinator) { coordinator.send(["bridgeVersion": 1, "event": "setActive", "data": ["active": false]]); uiView.configuration.userContentController.removeScriptMessageHandler(forName: "globe"); uiView.stopLoading() }
     @MainActor final class Coordinator: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
-        let store: WorldStore; weak var web: WKWebView?; var lastCommand = ""; var lastMarkers = ""; var lastNativeCommand = ""; var lastActive: Bool?
+        let store: WorldStore; weak var web: WKWebView?; var lastCommand = ""; var lastMarkers = ""; var lastNativeCommand = ""; var lastActive: Bool?; var inForeground = true
         init(_ store: WorldStore) { self.store = store }
         func send(_ value: JSON) { guard let data = try? JSONSerialization.data(withJSONObject: value), let text = String(data: data, encoding: .utf8), text != lastCommand else { return }; lastCommand = text; web?.evaluateJavaScript("window.OurworldGlobe&&window.OurworldGlobe.receive(\(text));") }
-        func activity() { let active = store.tab == 0 && ["", "city", "country"].contains(store.route); if lastActive != active { lastActive = active; send(["bridgeVersion": 1, "event": "setActive", "data": ["active": active]]) } }
+        func activity() { let active = inForeground && store.tab == 0 && ["", "city", "country"].contains(store.route); if lastActive != active { lastActive = active; send(["bridgeVersion": 1, "event": "setActive", "data": ["active": active]]) } }
         func markers() { let value: JSON = ["bridgeVersion": 1, "event": "setMarkers", "data": ["places": store.places, "favoriteIds": Array(store.favorites)]]; guard let raw = try? JSONSerialization.data(withJSONObject: value), let text = String(data: raw, encoding: .utf8), text != lastMarkers else { return }; lastMarkers = text; send(value) }
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) { guard message.frameInfo.isMainFrame else { return }; let event: JSON; if let value = message.body as? JSON { event = value } else if let text = message.body as? String, let value = try? JSONSerialization.jsonObject(with: Data(text.utf8)) as? JSON { event = value } else { return }; guard event.int("bridgeVersion") == 1 else { return }; if event.str("event") == "rendererReady" { lastMarkers = ""; lastCommand = ""; lastActive = nil; markers(); activity(); if let camera = store.savedCamera { send(["bridgeVersion": 1, "event": "restoreCamera", "data": camera]) } }; if event.str("event") == "cameraChanged" { store.savedCamera = event.obj("data") }; if event.str("event") == "placeSelected" { let value = event.obj("data"); let id = value.str("placeId", value.str("id", value.obj("place").str("id"))); if let place = store.places.first(where: { $0.str("id") == id }) { store.select(place) } else if !value.obj("place").str("id").isEmpty { store.select(value.obj("place")) } else if !value.str("geoName").isEmpty { store.showUnlistedCountry(value) } } }
         func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) { let url = navigationAction.request.url; decisionHandler(url?.isFileURL == true || url?.absoluteString == "about:blank" ? .allow : .cancel) }
@@ -182,7 +211,7 @@ extension Color { init(hex: String) { let value = UInt64(hex.replacingOccurrence
                             Photo(url: place.str("image"), height: 140)
                             Text(place.localized("name", s.locale)).font(ourFont(22, display: true))
                             Text(place.localized("description", s.locale)).lineLimit(2)
-                        }.padding(14).frame(maxWidth: .infinity, alignment: .leading).background(.white).clipShape(RoundedRectangle(cornerRadius: 22))
+                        }.padding(14).frame(maxWidth: .infinity, alignment: .leading).background(OWVisual.surface).clipShape(RoundedRectangle(cornerRadius: 22))
                     }.buttonStyle(.plain)
                 }
             }
@@ -190,7 +219,7 @@ extension Color { init(hex: String) { let value = UInt64(hex.replacingOccurrence
     }
 }
 
-@MainActor struct CityView: View { @EnvironmentObject var s: WorldStore; @Environment(\.dismiss) var dismiss; var body: some View { ScrollView { VStack(alignment: .leading, spacing: 20) { if let city = s.city { HStack { Text(city.localized("name", s.locale)).font(ourFont(32, display: true)); Spacer(); Button(s.locale == "zh" ? "EN" : "中", action: s.language) }; Photo(url: city.str("image"), height: 220); Text(city.localized("description", s.locale)); Action(s.t("找当地人", "Meet a local")) { dismiss(); s.startPeople() }; Action(s.favorites.contains(city.str("id")) ? s.t("取消收藏", "Remove saved city") : s.t("收藏城市", "Save city"), action: s.favorite); Button(s.t("城市故事", "City stories")) { dismiss(); s.loadPosts() } } }.padding(24) }.background(paper) } }
+@MainActor struct CityView: View { @EnvironmentObject var s: WorldStore; @Environment(\.dismiss) var dismiss; var body: some View { ScrollView { VStack(alignment: .leading, spacing: 20) { if let city = s.city { HStack { Text(city.localized("name", s.locale)).font(ourFont(32, display: true)); Spacer(); Button(s.locale == "zh" ? "EN" : "中", action: s.language) }; Photo(url: city.str("image"), height: 220); Text(city.localized("description", s.locale)); Action(s.t("找当地人", "Meet a local")) { dismiss(); s.startPeople() }; Action(s.favorites.contains(city.str("id")) ? s.t("取消收藏", "Remove saved city") : s.t("收藏城市", "Save city"), action: s.favorite); Button(s.t("城市故事", "City stories")) { dismiss(); s.loadPosts() } } }.padding(24) }.starlight() } }
 
 @MainActor struct PeopleView: View { var body: some View { TravelPeopleView() } }
 @MainActor struct MultiCityView: View {
@@ -212,7 +241,7 @@ extension Color { init(hex: String) { let value = UInt64(hex.replacingOccurrence
                         HStack { Text(place.localized("name", s.locale)); Spacer(); Image(systemName: selected.contains(place.str("id")) ? "checkmark.circle.fill" : "circle") }
                     }
                 }
-            }.navigationTitle(s.t("选择城市", "Choose cities"))
+            }.scrollContentBackground(.hidden).starlight().navigationTitle(s.t("选择城市", "Choose cities"))
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) { Button(s.t("取消", "Cancel")) { dismiss() } }
                     ToolbarItem(placement: .confirmationAction) { Button(s.t("开始", "Start")) { s.feedCities = selected; s.coverage = coverage; s.restartPeople(); dismiss() }.disabled(selected.isEmpty) }
@@ -281,74 +310,8 @@ func layoutRows(_ blocks: [JSON]) -> [[JSON]] { var rows: [[JSON]] = []; var hal
     default: EmptyView()
     } }.frame(maxWidth: .infinity, alignment: .leading).padding(publicView ? 0 : block.str("size") == "expanded" ? 24 : 16).background(publicView && layout.str("theme") == "nocturne" ? Color.clear : OWVisual.bg).clipShape(RoundedRectangle(cornerRadius: 24)) } }
 
-@MainActor struct OwnProfileView: View { @EnvironmentObject var s: WorldStore; var body: some View { if let user = s.user { Page("Profile") { Photo(url: user.str("avatar"), height: 300); Text(user.str("name")).font(ourFont(32, display: true)); Text(user.str("id").hasPrefix("demo-") ? s.t("AI 演示人物", "AI demo profile") : user.str("providerStatus")).font(ourFont(12)).foregroundStyle(OWVisual.inkMuted); HStack { Button(s.t("搭建主页", "Build profile"), action: s.edit); Spacer(); Button(s.t("设置", "Settings")) { s.route = "settings" } }; HStack { Button(s.t("发布服务", "Publish service")) { s.route = "packages" }; Spacer(); Button(s.t("资料认证", "Verification")) { s.route = "verification" } }; ProfileRenderer(resource: s.profile) } } else { AuthView() } } }
+@MainActor struct OwnProfileView: View { @EnvironmentObject var s: WorldStore; var body: some View { if s.user == nil { AuthView() } else if s.profile.obj("user").str("id") != s.user?.str("id") { EarthLoading().frame(maxWidth: .infinity, maxHeight: .infinity).task { s.ownProfile() } } else { TravelOwnerProfileView() } } }
 @MainActor struct PublicProfileView: View { var body: some View { TravelPublicProfileView() } }
-
-@MainActor struct ProfileEditorView: View {
-    @EnvironmentObject var s: WorldStore
-    @State private var prompt = ""
-    @State private var preview = false
-    @State private var dragging: String?
-    @State private var showHistory = false
-    @State private var photo: PhotosPickerItem?
-    let types = ["intro", "gallery", "experiences", "skills", "cities", "packages", "posts", "reviews", "social"]
-    var body: some View { Page(s.t("搭建我的主页", "Build my profile")) {
-        Text(s.t("拖动组件排序；先预览，再发布。", "Drag to reorder. Preview before publishing."))
-        Picker(s.t("主题", "Theme"), selection: Binding(get: { s.layout.str("theme", "nocturne") }, set: { s.updateLayout("theme", $0) })) { Text("Ocean").tag("ocean"); Text("Forest").tag("forest"); Text("Nocturne").tag("nocturne") }.pickerStyle(.segmented)
-        Input(label: s.t("强调色 HEX", "Accent HEX"), value: Binding(get: { s.layout.str("accent") }, set: { s.updateLayout("accent", $0) }))
-        Input(label: s.t("描述你想要的主页", "Describe your ideal profile"), value: $prompt)
-        Action(s.t("让 Agent 排版", "Design with Agent"), disabled: prompt.isEmpty || s.busy) { s.generate(prompt) }
-        if let job = s.job { Text(job.str("status") + " " + job.str("error")); if job.str("status") == "ready" { ProfileRenderer(resource: s.profile, custom: job.obj("layout")); Action(s.t("应用预览到草稿", "Apply preview to draft"), action: s.applyJob) }; Button(s.t("取消生成", "Cancel generation"), action: s.cancelJob) }
-        HStack { Toggle(s.t("预览", "Preview"), isOn: $preview); PhotosPicker(selection: $photo, matching: .images) { Image(systemName: "photo.badge.plus") }; Button(s.t("撤销", "Undo"), action: s.undoLayout); Button(s.t("历史版本", "History")) { showHistory = true } }
-        if preview { ProfileRenderer(resource: s.profile, custom: s.layout) } else { ForEach(Array(s.layout.rows("blocks").enumerated()), id: \.offset) { index, block in editorBlock(index, block).onDrag { dragging = block.str("id"); return NSItemProvider(object: block.str("id") as NSString) }.onDrop(of: [UTType.text], isTargeted: nil) { _ in guard let dragging, let from = s.layout.rows("blocks").firstIndex(where: { $0.str("id") == dragging }) else { return false }; move(from, index); self.dragging = nil; return true } } }
-        Menu(s.t("添加组件", "Add component")) { ForEach(types, id: \.self) { type in Button(blockTitle(type, s)) { var blocks = s.layout.rows("blocks"); blocks.append(["id": UUID().uuidString, "type": type, "span": 2, "size": "compact"]); s.updateLayout("blocks", blocks) } } }
-        Action(s.t("保存草稿", "Save draft"), disabled: s.busy) { s.save() }; Action(s.t("发布主页", "Publish profile"), disabled: s.busy) { s.save(true) }
-    }.sheet(isPresented: $showHistory) { ProfileHistoryView().environmentObject(s) }.onChange(of: photo) { value in guard let value else { return }; s.run { if let raw = try await value.loadTransferable(type: Data.self), let image = UIImage(data: raw), let data = image.jpegData(compressionQuality: 0.85) { let file = try await s.api.upload(data, name: "profile.jpg", mime: "image/jpeg", purpose: "public"); var blocks = s.layout.rows("blocks"); let index = blocks.firstIndex { $0.str("type") == "gallery" } ?? blocks.count; if index == blocks.count { blocks.append(["id": UUID().uuidString, "type": "gallery", "span": 2, "size": "expanded"]) }; blocks[index]["refs"] = blocks[index].strings("refs") + [file.str("url")]; s.updateLayout("blocks", blocks) } } } }
-    private func change(_ index: Int, _ key: String, _ value: Any) { var blocks = s.layout.rows("blocks"); guard blocks.indices.contains(index) else { return }; blocks[index][key] = value; s.updateLayout("blocks", blocks) }
-    private func move(_ from: Int, _ to: Int) { var blocks = s.layout.rows("blocks"); guard blocks.indices.contains(from), blocks.indices.contains(to) else { return }; let block = blocks.remove(at: from); blocks.insert(block, at: to); s.updateLayout("blocks", blocks) }
-    private func editorBlock(_ index: Int, _ block: JSON) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Image(systemName: "line.3.horizontal")
-                Text(blockTitle(block.str("type"), s)).font(ourFont(18, display: true))
-                Spacer()
-                Button {
-                    var blocks = s.layout.rows("blocks")
-                    blocks.remove(at: index)
-                    s.updateLayout("blocks", blocks)
-                } label: { Image(systemName: "trash") }
-            }
-            Input(label: s.t("标题", "Title"), value: Binding(get: { block.str("title") }, set: { change(index, "title", $0) }))
-            if ["intro", "experiences"].contains(block.str("type")) {
-                Input(label: s.t("内容", "Content"), value: Binding(get: { block.str("content") }, set: { change(index, "content", $0) }))
-            }
-            HStack {
-                Button("Up") { move(index, index - 1) }
-                Button("Down") { move(index, index + 1) }
-                Button(block.int("span") == 2 ? s.t("整宽", "Full") : s.t("半宽", "Half")) { change(index, "span", block.int("span") == 2 ? 1 : 2) }
-                Button(s.t("尺寸", "Size")) { change(index, "size", block.str("size") == "compact" ? "expanded" : "compact") }
-            }
-        }.padding(18).background(.white).clipShape(RoundedRectangle(cornerRadius: 20))
-    }
-}
-
-@MainActor struct ProfileHistoryView: View {
-    @EnvironmentObject var s: WorldStore
-    @Environment(\.dismiss) var dismiss
-    @State private var items: [JSON] = []
-    var body: some View {
-        NavigationStack {
-            List {
-                if items.isEmpty { Text(s.t("暂无历史版本", "No published history yet")) }
-                ForEach(Array(items.enumerated()), id: \.offset) { _, item in
-                    Button(s.t("恢复版本 ", "Restore revision ") + String(item.int("revision"))) {
-                        s.run { try await s.restoreRevision(item.int("revision")); dismiss() }
-                    }
-                }
-            }.navigationTitle(s.t("主页历史", "Profile history")).toolbar { ToolbarItem(placement: .cancellationAction) { Button(s.t("关闭", "Close")) { dismiss() } } }
-        }.task { s.run { items = try await s.api.call("/profile/history").rows() } }
-    }
-}
 
 @MainActor struct AuthView: View { @EnvironmentObject var s: WorldStore; @State private var email = ""; @State private var password = ""; @State private var name = ""; @State private var token = ""; @State private var mode = "login"; var body: some View { Page(s.t("欢迎来到 Ourworld", "Welcome to Ourworld")) {
     if s.tab == 2 && s.user == nil {
@@ -369,8 +332,17 @@ func layoutRows(_ blocks: [JSON]) -> [[JSON]] { var rows: [[JSON]] = []; var hal
     @State private var name = ""
     @State private var bio = ""
     @State private var tags = ""
-    @State private var cityIds = ""
+    @State private var school = ""
+    @State private var educationLevel = ""
+    @State private var citiesOpen = false
+    @State private var initialized = false
     @State private var quote = ""
+    @State private var years = ""
+    @State private var languages = ""
+    @State private var priceMin = ""
+    @State private var priceMax = ""
+    @State private var priceCurrency = "USD"
+    @State private var priceUnit = "day"
     @State private var avatar: PhotosPickerItem?
     var body: some View {
         Page(s.t("设置与资料", "Settings & details")) {
@@ -380,33 +352,44 @@ func layoutRows(_ blocks: [JSON]) -> [[JSON]] { var rows: [[JSON]] = []; var hal
             Input(label: s.t("个人简介", "Bio"), value: $bio)
             Input(label: s.t("特长，逗号分隔", "Skills, comma separated"), value: $tags)
             Input(label: s.t("展示报价", "Displayed quote"), value: $quote)
-            Text(s.t("选择服务城市", "Choose service cities"))
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())]) {
-                ForEach(Array(s.places.filter { $0.str("kind") == "city" }.enumerated()), id: \.offset) { _, place in
-                    Button {
-                        var ids = Set(cityIds.split(separator: ",").map(String.init))
-                        if ids.contains(place.str("id")) { ids.remove(place.str("id")) } else { ids.insert(place.str("id")) }
-                        cityIds = ids.sorted().joined(separator: ",")
-                    } label: {
-                        Text((cityIds.split(separator: ",").map(String.init).contains(place.str("id")) ? "✓ " : "") + place.localized("name", s.locale))
-                            .padding(10).frame(maxWidth: .infinity).background(.white).clipShape(Capsule())
-                    }
-                }
-            }
+            Input(label: s.t("从业年限（年）", "Years of experience"), value: $years)
+            Input(label: s.t("语言，逗号分隔", "Languages, comma separated"), value: $languages)
+            Input(label: s.t("报价下限", "Price from"), value: $priceMin)
+            Input(label: s.t("报价上限", "Price to"), value: $priceMax)
+            Picker(s.t("币种", "Currency"), selection: $priceCurrency) { ForEach(["USD", "CNY", "EUR", "GBP", "JPY"], id: \.self) { code in Text(code).tag(code) } }
+            Picker(s.t("计价单位", "Unit"), selection: $priceUnit) { Text(s.t("小时", "Hour")).tag("hour"); Text(s.t("半日", "Half-day")).tag("half-day"); Text(s.t("天", "Day")).tag("day"); Text(s.t("次", "Experience")).tag("experience") }.pickerStyle(.segmented)
+            Input(label: s.t("学校", "School"), value: $school)
+            Picker(s.t("学历", "Education level"), selection: $educationLevel) { Text(s.t("暂不填写", "Prefer not to say")).tag(""); ForEach(profileEducationLevels, id: \.self) { level in Text(profileEducationLabel(level, s.locale)).tag(level) } }
+            Button { citiesOpen = true } label: { HStack { Label(s.t("服务城市", "Service cities"), systemImage: "mappin.and.ellipse"); Spacer(); Image(systemName: "chevron.right") }.frame(minHeight: 48) }
             Action(s.t("保存资料", "Save details")) {
+                var payload: JSON = ["name": name, "bio": bio, "tags": tags.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }, "quote": quote]
+                payload["school"] = school.trimmingCharacters(in: .whitespacesAndNewlines)
+                if educationLevel.isEmpty { payload["educationLevel"] = NSNull() } else { payload["educationLevel"] = educationLevel }
+                if let value = Int(years), (0...90).contains(value) { payload["experienceYears"] = value }
+                let languageList = languages.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+                if !languageList.isEmpty { payload["languages"] = languageList }
+                if let minimum = Double(priceMin), let maximum = Double(priceMax), minimum >= 0, maximum >= minimum, maximum <= 1_000_000 { payload["priceRange"] = ["min": minimum, "max": maximum, "currency": priceCurrency, "unit": priceUnit] }
                 s.run {
-                    s.user = try await s.api.call("/me", method: "PATCH", body: ["name": name, "bio": bio, "tags": tags.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }, "cityIds": cityIds.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }, "quote": quote])
+                    s.user = try await s.api.call("/me", method: "PATCH", body: payload)
+                    if let id = s.user?.str("id"), s.profile.obj("user").str("id") == id { s.profile = try await s.api.call("/users/\(id)") }
                     s.notice = s.t("已保存", "Saved")
                 }
             }
             Action(s.t("切换中英文", "Switch language"), action: s.language)
             GlobeCreditsView()
             Button(s.t("退出登录", "Sign out"), action: s.logout)
-        }.onAppear {
+        }.fullScreenCover(isPresented: $citiesOpen) { ServiceCitiesView(onClose: { citiesOpen = false }).environmentObject(s) }.onAppear {
+            guard !initialized else { return }; initialized = true
             name = s.user?.str("name") ?? ""; bio = s.user?.str("bio") ?? ""
             tags = s.user?.strings("tags").joined(separator: ",") ?? ""
-            cityIds = s.user?.strings("cityIds").joined(separator: ",") ?? ""
+            school = currentProfileDetails(s).str("school"); educationLevel = currentProfileDetails(s).str("educationLevel")
             quote = s.user?.str("quote") ?? ""
+            let range = s.user?.obj("priceRange") ?? [:]
+            years = (s.user?.has("experienceYears") ?? false) ? String(s.user?.int("experienceYears") ?? 0) : ""
+            languages = s.user?.strings("languages").joined(separator: ",") ?? ""
+            priceMin = range.has("min") ? travelNumber(range.dbl("min")) : ""
+            priceMax = range.has("max") ? travelNumber(range.dbl("max")) : ""
+            priceCurrency = range.str("currency", "USD"); priceUnit = range.str("unit", "day")
         }.onChange(of: avatar) { value in
             guard let value else { return }
             s.run {
@@ -425,7 +408,7 @@ func layoutRows(_ blocks: [JSON]) -> [[JSON]] { var rows: [[JSON]] = []; var hal
         DisclosureGroup(s.t("地球影像来源", "Earth imagery credits")) {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Earth surface: NASA Earth Observatory / Reto Stöckli. Boundaries: Natural Earth, via world-atlas. NASA does not endorse this app.")
-                Text(s.t("地表基于2004年7月历史影像统一调色；无云层，不随昼夜变化。", "Recolored July 2004 surface imagery. No clouds or day/night changes."))
+                Text(s.t("地表采用 2004 年卫星合成影像，云层包含在影像中，无实时昼夜变化。", "Composite satellite imagery from 2004, with clouds in the texture and no live day/night cycle."))
                 if let url = nativeMediaURL("/api/v1/photo-credits", base: s.api.base) { Link(s.t("摄影素材与来源", "Photography credits"), destination: url) }
                 Link(s.t("日间影像 · NASA", "Day imagery · NASA"), destination: URL(string: "https://science.nasa.gov/earth/earth-observatory/blue-marble-next-generation/base-topography/")!)
             }.font(ourFont(14)).padding(.top, 12).frame(maxWidth: .infinity, alignment: .leading)
@@ -468,7 +451,7 @@ func layoutRows(_ blocks: [JSON]) -> [[JSON]] { var rows: [[JSON]] = []; var hal
                         Button(s.t("发布", "Publish")) { s.run { _ = try await s.api.call("/packages/\(item.str("id"))", method: "PATCH", body: ["status": "published"]); try await refresh() } }
                         Button(s.t("下架", "Archive")) { s.run { _ = try await s.api.call("/packages/\(item.str("id"))", method: "DELETE"); try await refresh() } }
                     }
-                }.padding(16).background(.white).clipShape(RoundedRectangle(cornerRadius: 18))
+                }.padding(16).background(OWVisual.surface).clipShape(RoundedRectangle(cornerRadius: 18))
             }
         }.task { try? await refresh() }.onChange(of: photo) { value in
             guard let value else { return }
@@ -492,6 +475,9 @@ func layoutRows(_ blocks: [JSON]) -> [[JSON]] { var rows: [[JSON]] = []; var hal
 
 @MainActor struct StoriesView: View {
     @EnvironmentObject var s: WorldStore
+    var cityScoped = true
+    @State private var communityPosts: [JSON] = []
+    @State private var cityId = ""
     @State private var title = ""
     @State private var bodyText = ""
     @State private var images: [String] = []
@@ -500,19 +486,28 @@ func layoutRows(_ blocks: [JSON]) -> [[JSON]] { var rows: [[JSON]] = []; var hal
     @State private var comments: [JSON] = []
     @State private var comment = ""
     var body: some View {
-        Page(s.t("城市故事", "City stories")) {
+        Page(cityScoped ? s.t("城市故事", "City stories") : s.t("社区", "Community"), showBack: cityScoped) {
+            if !cityScoped {
+                Picker(s.t("城市", "City"), selection: $cityId) {
+                    Text(s.t("选择城市", "Choose a city")).tag("")
+                    ForEach(Array(s.places.filter { $0.str("kind") == "city" }.enumerated()), id: \.offset) { _, place in
+                        Text(place.localized("name", s.locale)).tag(place.str("id"))
+                    }
+                }
+            }
             Input(label: s.t("标题", "Title"), value: $title)
             Input(label: s.t("分享你的故事", "Share your story"), value: $bodyText)
             ForEach(images, id: \.self) { Photo(url: $0) }
             PhotosPicker(selection: $photo, matching: .images) { Text(s.t("添加照片", "Add photo")) }
             Action(s.t("发布故事", "Publish story")) {
+                guard cityScoped || !cityId.isEmpty else { s.error = s.t("请选择城市", "Choose a city"); return }
                 guard s.requireLogin() else { return }
                 s.run {
-                    _ = try await s.api.call("/posts", method: "POST", body: ["title": title, "body": bodyText, "cityId": s.city?.str("id") ?? "", "images": images])
+                    _ = try await s.api.call("/posts", method: "POST", body: ["title": title, "body": bodyText, "cityId": cityScoped ? s.city?.str("id") ?? "" : cityId, "images": images])
                     title = ""; bodyText = ""; images = []; try await refresh()
                 }
             }
-            ForEach(Array(s.posts.enumerated()), id: \.offset) { _, post in story(post) }
+            ForEach(Array((cityScoped ? s.posts : communityPosts).enumerated()), id: \.offset) { _, post in story(post) }
             if let selected {
                 Text(s.t("评论", "Comments")).font(ourFont(20, display: true))
                 ForEach(Array(comments.enumerated()), id: \.offset) { _, item in Text(item.str("body")) }
@@ -525,7 +520,7 @@ func layoutRows(_ blocks: [JSON]) -> [[JSON]] { var rows: [[JSON]] = []; var hal
                     }
                 }
             }
-        }.onChange(of: photo) { value in
+        }.task { if !cityScoped { s.run { try await refresh() } } }.onChange(of: photo) { value in
             guard let value, s.requireLogin() else { return }
             s.run {
                 if let raw = try await value.loadTransferable(type: Data.self), let image = UIImage(data: raw), let data = image.jpegData(compressionQuality: 0.85) {
@@ -548,7 +543,13 @@ func layoutRows(_ blocks: [JSON]) -> [[JSON]] { var rows: [[JSON]] = []; var hal
                 Button(s.t("评论", "Comments")) { selected = post; s.run { comments = try await s.api.call("/posts/\(post.str("id"))/comments").rows() } }
                 Button(s.t("举报", "Report")) { s.report("post", id: post.str("id")) }
             }
-        }.padding(18).frame(maxWidth: .infinity, alignment: .leading).background(.white).clipShape(RoundedRectangle(cornerRadius: 22))
+        }.padding(18).frame(maxWidth: .infinity, alignment: .leading).background(OWVisual.surface).clipShape(RoundedRectangle(cornerRadius: 22))
     }
-    private func refresh() async throws { s.posts = try await s.api.call("/posts?cityId=\(s.city?.str("id") ?? "")").rows() }
+    private func refresh() async throws {
+        if cityScoped {
+            s.posts = try await s.api.call("/posts?cityId=\(s.city?.str("id") ?? "")").rows()
+        } else {
+            communityPosts = try await s.api.call("/posts").rows()
+        }
+    }
 }

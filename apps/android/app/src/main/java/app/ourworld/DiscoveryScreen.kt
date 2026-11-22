@@ -82,7 +82,7 @@ import kotlin.math.abs
         Box(Modifier.weight(1f).fillMaxWidth().padding(horizontal=16.dp,vertical=8.dp).onSizeChanged{width=it.width.toFloat()},contentAlignment=Alignment.Center){
             if(person==null){
                 Column(Modifier.fillMaxWidth().background(OWVisual.surface,RoundedCornerShape(24.dp)).padding(24.dp),verticalArrangement=Arrangement.spacedBy(16.dp)){
-                    if(vm.peopleLoading)CircularProgressIndicator(color=OWVisual.ink,modifier=Modifier.size(28.dp))
+                    if(vm.peopleLoading)EarthLoading(diameter=28.dp)
                     else {
                         Text(if(vm.peopleError.isNotEmpty())vm.t("暂时无法载入人物","Couldn't load people") else vm.t("这一轮，先到这里","You've explored this round"),fontSize=22.sp,color=OWVisual.ink)
                         Text(vm.peopleError.ifEmpty{vm.t("重新开始，或返回地图探索另一座城市。","Start again or discover another city.")},color=OWVisual.inkMuted,fontSize=14.sp)
@@ -137,7 +137,7 @@ import kotlin.math.abs
         if(vm.peopleError.isNotBlank() && person!=null)Row(Modifier.padding(horizontal=16.dp).background(OWVisual.surface,RoundedCornerShape(12.dp)).padding(horizontal=12.dp),verticalAlignment=Alignment.CenterVertically){Text(vm.peopleError,color=OWVisual.ink,fontSize=14.sp,modifier=Modifier.weight(1f));TextButton(onClick={choose(1)},enabled=!locked){Text(vm.t("重试","Retry"),color=OWVisual.ink)}}
         if(person!=null)Row(Modifier.fillMaxWidth().height(80.dp),horizontalArrangement=Arrangement.spacedBy(32.dp,Alignment.CenterHorizontally),verticalAlignment=Alignment.CenterVertically){
             FilledIconButton(onClick={choose(-1)},enabled=!locked,modifier=Modifier.size(56.dp),colors=IconButtonDefaults.filledIconButtonColors(containerColor=OWVisual.nope,contentColor=OWVisual.bg)){Icon(Icons.Outlined.Close,vm.t("略过","Pass"),Modifier.size(26.dp))}
-            FilledIconButton(onClick={choose(1)},enabled=!locked,modifier=Modifier.size(60.dp),colors=IconButtonDefaults.filledIconButtonColors(containerColor=OWVisual.like,contentColor=OWVisual.bg)){if(locked && vm.connectingPerson.isNotBlank())CircularProgressIndicator(Modifier.size(22.dp),color=OWVisual.bg,strokeWidth=2.dp) else Icon(Icons.Outlined.ChatBubbleOutline,vm.t("加入对话","Add to chat"),Modifier.size(26.dp))}
+            FilledIconButton(onClick={choose(1)},enabled=!locked,modifier=Modifier.size(60.dp),colors=IconButtonDefaults.filledIconButtonColors(containerColor=OWVisual.like,contentColor=OWVisual.bg)){if(locked && vm.connectingPerson.isNotBlank())EarthLoading(diameter=22.dp) else Icon(Icons.Outlined.ChatBubbleOutline,vm.t("加入对话","Add to chat"),Modifier.size(26.dp))}
         }
     }
 }

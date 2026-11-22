@@ -34,7 +34,7 @@ internal fun messageSummary(value:String)=value.replace(Regex("^\\[image]\\s*.*"
 private fun localTime(value:String)=runCatching{Instant.parse(value).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("HH:mm"))}.getOrDefault("")
 
 @Composable fun TravelConversations(vm:WorldModel){
-    Column(Modifier.fillMaxSize().background(OWVisual.bg)){
+    Column(Modifier.fillMaxSize().starlight()){
         Text(vm.t("对话","Conversations"),fontSize=26.sp,fontWeight=FontWeight.SemiBold,modifier=Modifier.padding(20.dp))
         if(!vm.online)Text(vm.t("正在重连，消息会自动同步","Reconnecting. Messages will sync."),fontSize=14.sp,color=OWVisual.inkMuted,modifier=Modifier.padding(horizontal=20.dp,vertical=8.dp))
         if(vm.conversations.isEmpty())Column(Modifier.padding(24.dp),verticalArrangement=Arrangement.spacedBy(16.dp)){
@@ -51,7 +51,7 @@ private fun localTime(value:String)=runCatching{Instant.parse(value).atZone(Zone
                 }
                 Column(horizontalAlignment=Alignment.End,verticalArrangement=Arrangement.spacedBy(8.dp)){
                     Text(localTime(c.s("updatedAt")),fontSize=12.sp,color=OWVisual.inkMuted)
-                    if(c.optInt("unread")>0)Badge(containerColor=OWVisual.accent){Text(c.optInt("unread").toString())}
+                    if(c.optInt("unread")>0)Badge(containerColor=OWVisual.accent,contentColor=OWVisual.accentInk){Text(c.optInt("unread").toString())}
                 }
             }}
         }}
@@ -82,7 +82,7 @@ private fun localTime(value:String)=runCatching{Instant.parse(value).atZone(Zone
     LaunchedEffect(list){snapshotFlow{list.layoutInfo.visibleItemsInfo.lastOrNull()?.index?:0}.collect{last->nearBottom=last>=list.layoutInfo.totalItemsCount-2}}
     LaunchedEffect(rows.lastOrNull()?.s("id")){if(rows.isNotEmpty() && (nearBottom || rows.last().s("senderId")==vm.user?.s("id")))list.animateScrollToItem(rows.size)}
     LaunchedEffect(panel){if(panel=="packages"){panelLoading=true;panelError="";try{packages=vm.api.call("/packages?userId=${vm.user?.s("id")}").a("items").objects().filter{it.s("status")=="published"}}catch(e:Exception){panelError=e.message.orEmpty()}finally{panelLoading=false}}}
-    Column(Modifier.fillMaxSize().background(OWVisual.bg).imePadding()){
+    Column(Modifier.fillMaxSize().starlight().imePadding()){
         Row(Modifier.fillMaxWidth().heightIn(min=64.dp).padding(horizontal=8.dp),verticalAlignment=Alignment.CenterVertically){
             IconButton(onClick={vm.route=""}){Icon(Icons.Outlined.ArrowBack,vm.t("返回","Back"))}
             Surface(onClick={vm.openProfile(peer.s("id"))},color=Color.Transparent,modifier=Modifier.weight(1f)){
@@ -101,7 +101,7 @@ private fun localTime(value:String)=runCatching{Instant.parse(value).atZone(Zone
             LazyColumn(state=list,modifier=Modifier.fillMaxSize(),contentPadding=PaddingValues(horizontal=16.dp,vertical=12.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
                 item(key="start"){
                     if(vm.hasOlderMessages)TextButton(onClick=vm::history,enabled=!vm.historyLoading){Text(vm.t("更早的消息","Earlier messages"))}
-                    if(vm.messagesLoading && rows.isEmpty())CircularProgressIndicator(Modifier.size(24.dp))
+                    if(vm.messagesLoading && rows.isEmpty())EarthLoading(diameter=24.dp)
                     if(!vm.messagesLoading && rows.isEmpty())Column(Modifier.fillMaxWidth().padding(top=32.dp,bottom=24.dp),verticalArrangement=Arrangement.spacedBy(16.dp),horizontalAlignment=Alignment.CenterHorizontally){
                         NativePhoto(peer.s("avatar"),Modifier.size(80.dp).clip(CircleShape),peer.s("name"))
                         Text(vm.t("和 ${peer.s("name")} 聊聊这座城市","Discover the city with ${peer.s("name")}"),fontSize=22.sp,fontWeight=FontWeight.SemiBold)
@@ -112,9 +112,9 @@ private fun localTime(value:String)=runCatching{Instant.parse(value).atZone(Zone
                 items(rows,key={it.s("id")}){m->
                     val mine=m.s("senderId")==vm.user?.s("id")
                     Column(Modifier.fillMaxWidth(),horizontalAlignment=if(mine)Alignment.End else Alignment.Start){
-                        Surface(color=if(mine)OWVisual.ink else Color.White,shape=RoundedCornerShape(20.dp),modifier=Modifier.widthIn(max=310.dp).combinedClickable(onClick={},onLongClick={report=json("type" to "message","id" to m.s("id"))})){
+                        Surface(color=if(mine)OWVisual.ink else OWVisual.surface,shape=RoundedCornerShape(20.dp),modifier=Modifier.widthIn(max=310.dp).combinedClickable(onClick={},onLongClick={report=json("type" to "message","id" to m.s("id"))})){
                             Column(Modifier.padding(12.dp),verticalArrangement=Arrangement.spacedBy(6.dp)){
-                                val color=if(mine)Color.White else OWVisual.ink
+                                val color=if(mine)OWVisual.accentInk else OWVisual.ink
                                 when(m.s("type")){
                                     "image"->NativePhoto(m.o("data").s("url",m.s("body")),Modifier.width(240.dp).height(220.dp).clip(RoundedCornerShape(12.dp)),vm.t("聊天图片","Chat photo"))
                                     "contact"->{Text(m.o("data").s("label",vm.t("联系方式","Contact")),color=color,fontWeight=FontWeight.SemiBold);Text(m.o("data").s("value",m.s("body")),color=color)}
@@ -141,12 +141,12 @@ private fun localTime(value:String)=runCatching{Instant.parse(value).atZone(Zone
         Row(Modifier.fillMaxWidth().padding(horizontal=8.dp,vertical=10.dp),verticalAlignment=Alignment.Bottom,horizontalArrangement=Arrangement.spacedBy(4.dp)){
             IconButton(onClick={panel="attachments"},modifier=Modifier.size(48.dp)){Icon(Icons.Outlined.Add,vm.t("添加附件","Add attachment"))}
             OutlinedTextField(value=text,onValueChange={text=it},modifier=Modifier.weight(1f).heightIn(min=48.dp,max=140.dp),placeholder={Text(vm.t("写一条消息…","Write a message…"))},maxLines=4,shape=RoundedCornerShape(24.dp))
-            FilledIconButton(onClick={if(text.isNotBlank()){vm.send(text.trim());text=""}},enabled=text.isNotBlank(),modifier=Modifier.size(48.dp),colors=IconButtonDefaults.filledIconButtonColors(containerColor=OWVisual.accent)){Icon(Icons.Outlined.Send,vm.t("发送","Send"),tint=Color.White)}
+            FilledIconButton(onClick={if(text.isNotBlank()){vm.send(text.trim());text=""}},enabled=text.isNotBlank(),modifier=Modifier.size(48.dp),colors=IconButtonDefaults.filledIconButtonColors(containerColor=OWVisual.accent,contentColor=OWVisual.accentInk)){Icon(Icons.Outlined.Send,vm.t("发送","Send"),tint=OWVisual.accentInk)}
         }
     }
-    if(report!=null)AlertDialog(onDismissRequest={report=null},title={Text(vm.t("举报此内容？","Report this content?"))},text={Text(vm.t("提交后由审核人员处理。","A moderator will review the report."))},confirmButton={TextButton(onClick={report?.let{vm.report(it.s("type"),it.s("id"),"Reported from conversation")};report=null}){Text(vm.t("提交举报","Report"))}},dismissButton={TextButton(onClick={report=null}){Text(vm.t("取消","Cancel"))}})
-    if(panel=="block")AlertDialog(onDismissRequest={panel=""},title={Text(vm.t("拉黑 ${peer.s("name")}？","Block ${peer.s("name")}?"))},text={Text(vm.t("对方将不能继续给你发消息。","This person will no longer be able to message you."))},confirmButton={TextButton(onClick={panel="";vm.block(peer.s("id"))}){Text(vm.t("拉黑","Block"))}},dismissButton={TextButton(onClick={panel=""}){Text(vm.t("取消","Cancel"))}})
-    else if(panel.isNotEmpty())ModalBottomSheet(onDismissRequest={panel=""},containerColor=OWVisual.bg){
+    if(report!=null)AlertDialog(onDismissRequest={report=null},modifier=Modifier.clip(RoundedCornerShape(OWVisual.radii_card.dp)).starlight(),shape=RoundedCornerShape(OWVisual.radii_card.dp),containerColor=Color.Transparent,title={Text(vm.t("举报此内容？","Report this content?"))},text={Text(vm.t("提交后由审核人员处理。","A moderator will review the report."))},confirmButton={TextButton(onClick={report?.let{vm.report(it.s("type"),it.s("id"),"Reported from conversation")};report=null}){Text(vm.t("提交举报","Report"))}},dismissButton={TextButton(onClick={report=null}){Text(vm.t("取消","Cancel"))}})
+    if(panel=="block")AlertDialog(onDismissRequest={panel=""},modifier=Modifier.clip(RoundedCornerShape(OWVisual.radii_card.dp)).starlight(),shape=RoundedCornerShape(OWVisual.radii_card.dp),containerColor=Color.Transparent,title={Text(vm.t("拉黑 ${peer.s("name")}？","Block ${peer.s("name")}?"))},text={Text(vm.t("对方将不能继续给你发消息。","This person will no longer be able to message you."))},confirmButton={TextButton(onClick={panel="";vm.block(peer.s("id"))}){Text(vm.t("拉黑","Block"))}},dismissButton={TextButton(onClick={panel=""}){Text(vm.t("取消","Cancel"))}})
+    else if(panel.isNotEmpty())ModalBottomSheet(onDismissRequest={panel=""},modifier=Modifier.clip(RoundedCornerShape(topStart=OWVisual.radii_card.dp,topEnd=OWVisual.radii_card.dp)).starlight(),shape=RoundedCornerShape(topStart=OWVisual.radii_card.dp,topEnd=OWVisual.radii_card.dp),containerColor=Color.Transparent){
         LazyColumn(contentPadding=PaddingValues(20.dp),verticalArrangement=Arrangement.spacedBy(12.dp)){
             when(panel){
                 "attachments"->item{Column(verticalArrangement=Arrangement.spacedBy(12.dp)){
@@ -156,7 +156,7 @@ private fun localTime(value:String)=runCatching{Instant.parse(value).atZone(Zone
                 }}
                 "contact"->item{Column(verticalArrangement=Arrangement.spacedBy(14.dp)){Text(vm.t("分享联系方式","Share contact details"),fontSize=22.sp);Field(contactLabel,vm.t("类型","Type")){contactLabel=it};Field(contactValue,vm.t("账号或号码","Handle or number")){contactValue=it};Action(vm.t("发送到当前对话","Send to this chat"),contactValue.isNotBlank()){vm.send(contactValue,"contact",json("label" to contactLabel,"value" to contactValue));contactValue="";panel=""}}}
                 "places"->{item{Text(vm.t("分享地点","Share a place"),fontSize=22.sp)};items(vm.places.filter{it.s("kind")!="country"},key={it.s("id")}){place->TextButton(onClick={vm.send(place.localized("name",vm.locale),"place",json("placeId" to place.s("id")));panel=""},modifier=Modifier.fillMaxWidth().heightIn(min=48.dp)){Text(place.localized("name",vm.locale))}}}
-                "packages"->{item{Text(vm.t("分享服务","Share an experience"),fontSize=22.sp);if(panelLoading)CircularProgressIndicator(Modifier.size(24.dp));if(panelError.isNotBlank())Text(panelError);if(!panelLoading && packages.isEmpty())Text(vm.t("你还没有已发布的服务。","You have no published experiences."))};items(packages,key={it.s("id")}){p->TextButton(onClick={vm.send(p.s("title"),"package",json("packageId" to p.s("id")));panel=""}){Text(p.s("title"))}}}
+                "packages"->{item{Text(vm.t("分享服务","Share an experience"),fontSize=22.sp);if(panelLoading)EarthLoading(diameter=24.dp);if(panelError.isNotBlank())Text(panelError);if(!panelLoading && packages.isEmpty())Text(vm.t("你还没有已发布的服务。","You have no published experiences."))};items(packages,key={it.s("id")}){p->TextButton(onClick={vm.send(p.s("title"),"package",json("packageId" to p.s("id")));panel=""}){Text(p.s("title"))}}}
                 "trips"->{item{Text(vm.t("行程与评价","Trips & reviews"),fontSize=22.sp)};items(vm.trips,key={it.s("id")}){TripCard(vm,it)};item{Column(verticalArrangement=Arrangement.spacedBy(12.dp)){Field(title,vm.t("行程名称","Trip title")){title=it};EndDateField(vm,date){date=it};Action(vm.t("发送行程邀请","Send trip invitation"),title.isNotBlank() && date.isNotBlank()){vm.createTrip(title,date);title="";date=""}}}}
             }
             item{Spacer(Modifier.height(24.dp))}

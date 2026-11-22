@@ -188,7 +188,7 @@ class WorldModel(app:Application):AndroidViewModel(app) {
     fun tripAction(trip:JSONObject,action:String){run{try{api.call("/trips/${trip.s("id")}/$action","POST",if(action=="accept")json("expectedEndAt" to trip.s("endAt")) else JSONObject())}catch(e:Exception){runCatching{loadTrips()};throw e};loadTrips()}}
     fun editTrip(trip:JSONObject,date:String){run{api.call("/trips/${trip.s("id")}","PATCH",json("endAt" to date));loadTrips();notice=t("结束时间已修改，等待对方重新确认","End time updated; waiting for the other person to accept again.")}}
     fun review(trip:JSONObject,rating:Int,body:String){run{api.call("/trips/${trip.s("id")}/reviews","POST",json("rating" to rating,"body" to body));notice=t("评价已提交","Review submitted")}}
-    fun edit(){if(!requireLogin())return;run{draft=api.call("/profile/draft");layout=JSONObject(draft.o("layout").toString());route="edit"}}
+    fun editProfileCard(section:String){if(!requireLogin() || section !in listOf("gallery","prompts"))return;run{draft=api.call("/profile/draft");layout=JSONObject(draft.o("layout").toString());route="profile-$section"}}
     fun changeLayout(value:JSONObject){layoutUndo.add(layout.toString());layout=JSONObject(value.toString())}
     fun undoLayout(){if(layoutUndo.isNotEmpty())layout=JSONObject(layoutUndo.removeAt(layoutUndo.lastIndex))}
     fun restoreRevision(revision:Int){run{draft=api.call("/profile/restore","POST",json("revision" to revision));layout=JSONObject(draft.o("layout").toString());layoutUndo.clear()}}

@@ -15,6 +15,10 @@ export async function migrate():Promise<void> {
    const sql=await readFile(new URL('../migrations/002_profile_upgrade.sql',import.meta.url),'utf8');
    await c.query('BEGIN'); await c.query(sql); await c.query("INSERT INTO schema_migrations(version) VALUES('002')"); await c.query('COMMIT');
   }
+  if(!(await c.query("SELECT 1 FROM schema_migrations WHERE version='003'")).rowCount) {
+   const sql=await readFile(new URL('../migrations/003_profile_education.sql',import.meta.url),'utf8');
+   await c.query('BEGIN'); await c.query(sql); await c.query("INSERT INTO schema_migrations(version) VALUES('003')"); await c.query('COMMIT');
+  }
  } catch(error) { await c.query('ROLLBACK').catch(()=>{}); throw error; }
  finally { await c.query('SELECT pg_advisory_unlock(74821091)').catch(()=>{}); c.release(); }
 }

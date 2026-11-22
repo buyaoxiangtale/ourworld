@@ -1,5 +1,6 @@
+import {SlidePresence} from './SlidePresence';
 import { useEffect, useRef, useState } from 'react';
-import { ArrowDown, ArrowLeft, ArrowRight, Bookmark, Check, Compass, Globe2, HeartHandshake, Info, MapPin, MessageCircle, Search, SlidersHorizontal, Sparkles, Star, Trophy, Users, X } from 'lucide-react';
+import { ArrowDown, ArrowLeft, ArrowRight, Bookmark, Check, Compass, Globe2, HeartHandshake, Info, MapPin, Search, SlidersHorizontal, Sparkles, Star, Trophy, Users, X } from 'lucide-react';
 import type { GlobeCommand, GlobeEvent, PeopleFeed, Person, Place, Conversation } from '@ourworld/contracts';
 import { api, send } from './api';
 import { useApp } from './context';
@@ -7,34 +8,41 @@ import { errorMessage, useLoad } from './hooks';
 import { Avatar, Button, Cover, Empty, ErrorBox, IconButton, Loading, Modal, PageHeader, Sheet } from './ui';
 import { Stories } from './Stories';
 import { useSwipeDeck } from './useSwipeDeck';
-import { unitLabels } from './Profile';
+import { unitLabels } from './features/profile/Profile';
+import {CountryDialog} from './features/explore/CountryDialog';
+import {CountryCities,type CountryTarget} from './features/explore/CountryCities';
 
 export function Explore({active}:{active:boolean}){
  const {t,locale,user,requireAuth,toast}=useApp();
  const iframe=useRef<HTMLIFrameElement>(null);
  const [ready,setReady]=useState(false);const [globeError,setGlobeError]=useState(false);
+ const [globeVersion,setGlobeVersion]=useState(0);const [frameLoad,setFrameLoad]=useState(0);const recoveryAttempts=useRef(0);
  const [query,setQuery]=useState('');const [results,setResults]=useState<Place[]>([]);const [searching,setSearching]=useState(false);const [searchError,setSearchError]=useState('');
  const [showSearch,setShowSearch]=useState(false);const [searchCountry,setSearchCountry]=useState<Place|null>(null);const [searchScope,setSearchScope]=useState<'all'|'country'>('all');
  const [selected,setSelected]=useState<Place|null>(null);const [unknownCountry,setUnknownCountry]=useState<{name:string;lat:number;lng:number}|null>(null);
+ const [browsingCountry,setBrowsingCountry]=useState<{country:CountryTarget;index:number}|null>(null);const [browserCity,setBrowserCity]=useState<Place|null>(null);
  const [peopleCity,setPeopleCity]=useState<Place|null>(null);const [storyCity,setStoryCity]=useState<Place|null>(null);
  const [favoriteIds,setFavoriteIds]=useState<string[]>([]);const [saving,setSaving]=useState(false);const [placeError,setPlaceError]=useState('');
  const camera=useRef<Record<string,unknown>|null>(null);
  const catalog=useLoad(async()=>{const [countries,cities]=await Promise.all([api<{items:Place[]}>('/places?kind=country'),api<{items:Place[]}>('/places?kind=city')]);return [...countries.items,...cities.items];},[]);
  const command=(event:GlobeCommand['event'],data:Record<string,unknown>)=>iframe.current?.contentWindow?.postMessage({bridgeVersion:1,event,data} satisfies GlobeCommand,location.origin);
+ const reloadGlobe=()=>{setReady(false);setGlobeError(false);setGlobeVersion(version=>version+1);};
  useEffect(()=>{if(!user){setFavoriteIds([]);return;}api<{items:Place[]}>('/favorites').then(r=>setFavoriteIds(r.items.map(p=>p.id))).catch(()=>{});},[user?.id]);
  useEffect(()=>{const refresh=()=>{if(user)api<{items:Place[]}>('/favorites').then(r=>setFavoriteIds(r.items.map(p=>p.id))).catch(()=>{});};window.addEventListener('ourworld:favorites',refresh);return()=>window.removeEventListener('ourworld:favorites',refresh);},[user?.id]);
- useEffect(()=>{if(ready)command('setMarkers',{places:catalog.data||[],favoriteIds});},[ready,catalog.data,favoriteIds]);
- useEffect(()=>{if(ready){command('setActive',{active:active&&!peopleCity&&!storyCity});if(active&&!peopleCity&&camera.current)command('restoreCamera',camera.current);}},[active,ready,peopleCity?.id,storyCity?.id]);
- useEffect(()=>{const timeout=window.setTimeout(()=>{if(ready)return;const bridge=iframe.current?.contentWindow as (Window&{OurworldGlobe?:unknown})|null;if(bridge?.OurworldGlobe)setReady(true);else setGlobeError(true);},10000);return()=>clearTimeout(timeout);},[ready]);
+ useEffect(()=>{if(ready)command('setMarkers',{places:catalog.data||[],favoriteIds});},[ready,frameLoad,catalog.data,favoriteIds]);
+ const globeActive=active&&!peopleCity&&!storyCity&&!browsingCountry;
+ useEffect(()=>{if(ready){command('setActive',{active:globeActive});if(globeActive&&camera.current)command('restoreCamera',camera.current);}},[globeActive,ready,frameLoad]);
+ useEffect(()=>{if(ready)return;const timeout=window.setTimeout(()=>{const bridge=iframe.current?.contentWindow as (Window&{OurworldGlobe?:{ready?:boolean}})|null;if(bridge?.OurworldGlobe?.ready===true)setReady(true);else setGlobeError(true);},15000);return()=>clearTimeout(timeout);},[ready,globeVersion,frameLoad]);
+ useEffect(()=>{if(!globeError||recoveryAttempts.current>=1)return;const timer=window.setTimeout(()=>{recoveryAttempts.current++;reloadGlobe();},1000);return()=>clearTimeout(timer);},[globeError]);
  useEffect(()=>{
   const receive=(e:MessageEvent<GlobeEvent>)=>{
    if(e.source!==iframe.current?.contentWindow||e.origin!==location.origin||e.data?.bridgeVersion!==1)return;
    const {event,data}=e.data;
-   if(event==='rendererReady'){setReady(true);setGlobeError(false);}
-   if(event==='rendererError')setGlobeError(true);
+   if(event==='rendererReady'){recoveryAttempts.current=0;setReady(true);setGlobeError(false);}
+   if(event==='rendererError'){setReady(false);setGlobeError(true);}
    if(event==='cameraChanged')camera.current=data;
    if(event==='placeSelected'){
-    setPlaceError('');
+    setPlaceError('');setBrowsingCountry(null);setBrowserCity(null);
     if(data.place){setUnknownCountry(null);setSelected(data.place as Place);}
     else if(data.geoName){
      const name=String(data.geoName);const unknown={name,lat:Number(data.lat)||0,lng:Number(data.lng)||0};
@@ -55,46 +63,47 @@ export function Explore({active}:{active:boolean}){
   }catch(e){if(alive)setSearchError(errorMessage(e));}finally{if(alive)setSearching(false);}},250);
   return()=>{alive=false;clearTimeout(timer);};
  },[query,showSearch,searchScope,searchCountry?.id]);
- const choose=(place:Place)=>{setShowSearch(false);setQuery('');setUnknownCountry(null);setSelected(place);command('focusPlace',{place});};
+ const choose=(place:Place)=>{setShowSearch(false);setQuery('');setUnknownCountry(null);setBrowsingCountry(null);setBrowserCity(null);setSelected(place);command('focusPlace',{place});};
  const openSearch=(country?:Place)=>{setSearchCountry(country||null);setSearchScope(country?'country':'all');setQuery('');setShowSearch(true);};
- const favorite=async()=>{if(!selected||selected.kind!=='city'||saving)return;if(!requireAuth(()=>void favorite()))return;setSaving(true);const exists=favoriteIds.includes(selected.id);try{await send(`/favorites/${selected.id}`,undefined,exists?'DELETE':'PUT');setFavoriteIds(ids=>exists?ids.filter(id=>id!==selected.id):[...ids,selected.id]);toast(exists?t('已取消收藏','Removed from your places'):t('地图上为你留下一颗红点','A little red dot, saved for you'));}catch(e){toast(errorMessage(e));}finally{setSaving(false);}};
+ const cityForDetails=browserCity||(selected?.kind!=='country'?selected:null);
+ const favorite=async()=>{const city=cityForDetails;if(!city||city.kind!=='city'||saving)return;if(!requireAuth(()=>void favorite()))return;setSaving(true);const exists=favoriteIds.includes(city.id);try{await send(`/favorites/${city.id}`,undefined,exists?'DELETE':'PUT');setFavoriteIds(ids=>exists?ids.filter(id=>id!==city.id):[...ids,city.id]);toast(exists?t('已取消收藏','Removed from your places'):t('已在地图上标记这座城市','City saved to your map'));}catch(e){toast(errorMessage(e));}finally{setSaving(false);}};
  return <section className={`explore-page pure-earth ${peopleCity?'is-discovering':''}`} aria-label={t('探索地球','Explore the world')}>
   <button className="search-pill home-search" aria-label={t('搜索国家、城市、景点','Search countries, cities and landmarks')} onClick={()=>openSearch()}><span className="home-search-field"><Search size={18}/><span>{t('搜索国家、城市、景点','Search countries, cities and landmarks')}</span></span><span className="home-search-submit"><Search size={18}/></span></button>
-  <div className="earth-stage"><iframe ref={iframe} title={t('可交互地球','Interactive globe')} src="/globe/index.html" className="globe-frame" loading="eager"/>{globeError&&<button className="globe-fallback" aria-label={t('地球暂不可用，浏览地点','Globe unavailable, browse places')} onClick={()=>openSearch()}><Globe2 size={120}/></button>}</div>
-  {showSearch&&<Sheet label={t('探索地点','Explore places')} onClose={()=>setShowSearch(false)}><div className="search-sheet-input"><Search size={20}/><input autoFocus placeholder={t('搜索国家、城市、景点','Search a country, city or landmark')} value={query} onChange={e=>setQuery(e.target.value)}/><IconButton label={t('关闭','Close')} onClick={()=>setShowSearch(false)}><X size={18}/></IconButton></div>{searchCountry&&<div className="place-search-scopes"><button className={searchScope==='country'?'active':''} onClick={()=>setSearchScope('country')}>{searchCountry.name[locale]}</button><button className={searchScope==='all'?'active':''} onClick={()=>setSearchScope('all')}>{t('全部目的地','All destinations')}</button></div>}<div className="section-heading"><span className="eyebrow">{query?t('搜索结果','SEARCH RESULTS'):t('探索地点','EXPLORE PLACES')}</span><span>{results.length}</span></div><ErrorBox message={searchError}/>{searching?<Loading/>:results.length?<div className="place-results">{results.map(place=><button className="place-result" key={place.id} onClick={()=>choose(place)}><Cover src={place.image} alt={place.name[locale]}/><span><strong>{place.name[locale]}</strong><small>{place.country} · {place.kind==='country'?t('国家','Country'):place.kind==='city'?t('城市','City'):t('景点','Landmark')}</small></span><ArrowRight size={17}/></button>)}</div>:<Empty title={t('还没有找到这个地方','No places found')} description={t('换一个名称，或试试中英文别名。','Try another name or an alias in Chinese or English.')}/>}</Sheet>}
-  {selected&&!showSearch&&!peopleCity&&!storyCity&&<CitySheet place={selected} favorite={favoriteIds.includes(selected.id)} busy={saving} onFavorite={favorite} onClose={()=>setSelected(null)} onChoose={choose} onSearch={openSearch} onPeople={setPeopleCity} onStories={setStoryCity}/>}
-  {unknownCountry&&!showSearch&&<Sheet label={unknownCountry.name} onClose={()=>setUnknownCountry(null)}><div className="unknown-country"><MapPin size={27}/><h2>{unknownCountry.name}</h2><p>{t('这个国家的详细图片与介绍尚未收录。','Detailed images and information for this country are not available yet.')}</p><ErrorBox message={placeError||catalog.error}/><Button kind="secondary" onClick={()=>openSearch()}><Search size={16}/>{t('探索已收录地点','Explore available places')}</Button></div></Sheet>}
+  <div className="earth-stage"><iframe key={globeVersion} ref={iframe} title={t('可交互地球','Interactive globe')} src="/globe/index.html" className="globe-frame" loading="eager" onLoad={()=>{setFrameLoad(load=>load+1);const bridge=iframe.current?.contentWindow as (Window&{OurworldGlobe?:{ready?:boolean}})|null;setReady(bridge?.OurworldGlobe?.ready===true);setGlobeError(false);}} onError={()=>setGlobeError(true)}/>{globeError&&<button className="globe-fallback" aria-label={t('重新加载地球','Reload globe')} onClick={()=>{recoveryAttempts.current=0;reloadGlobe();}}><Globe2 size={120}/><span>{t('点击重新加载地球','Tap to reload the globe')}</span></button>}</div>
+  <SlidePresence>{showSearch&&<Sheet label={t('探索地点','Explore places')} onClose={()=>setShowSearch(false)}><div className="search-sheet-input"><Search size={20}/><input autoFocus placeholder={t('搜索国家、城市、景点','Search a country, city or landmark')} value={query} onChange={e=>setQuery(e.target.value)}/><IconButton label={t('关闭','Close')} onClick={()=>setShowSearch(false)}><X size={18}/></IconButton></div>{searchCountry&&<div className="place-search-scopes"><button className={searchScope==='country'?'active':''} onClick={()=>setSearchScope('country')}>{searchCountry.name[locale]}</button><button className={searchScope==='all'?'active':''} onClick={()=>setSearchScope('all')}>{t('全部目的地','All destinations')}</button></div>}<div className="section-heading"><span className="eyebrow">{query?t('搜索结果','SEARCH RESULTS'):t('探索地点','EXPLORE PLACES')}</span><span>{results.length}</span></div><ErrorBox message={searchError}/>{searching?<Loading/>:results.length?<div className="place-results">{results.map(place=><button className="place-result" key={place.id} onClick={()=>choose(place)}><Cover src={place.image} alt={place.name[locale]}/><span><strong>{place.name[locale]}</strong><small>{place.country} · {place.kind==='country'?t('国家','Country'):place.kind==='city'?t('城市','City'):t('景点','Landmark')}</small></span><ArrowRight size={17}/></button>)}</div>:<Empty title={t('还没有找到这个地方','No places found')} description={t('换一个名称，或试试中英文别名。','Try another name or an alias in Chinese or English.')}/>}</Sheet>}</SlidePresence>
+  {selected?.kind==='country'&&!browsingCountry&&!showSearch&&!peopleCity&&!storyCity&&<CountryDialog key={selected.id} country={selected} onClose={()=>setSelected(null)} onBrowse={country=>setBrowsingCountry({country,index:0})}/>}
+  {unknownCountry&&!browsingCountry&&!showSearch&&<Modal title={unknownCountry.name} className="country-info-modal" onClose={()=>setUnknownCountry(null)} footer={<Button onClick={()=>setBrowsingCountry({country:{name:{zh:unknownCountry.name,en:unknownCountry.name}},index:0})}>{t('浏览城市','Browse cities')}<ArrowRight size={18}/></Button>}><div className="unknown-country"><MapPin size={27}/><p>{t('这个国家的详细图片与介绍尚未收录。','Detailed images and information for this country are not available yet.')}</p><ErrorBox message={placeError||catalog.error}/><Button kind="secondary" onClick={()=>openSearch()}><Search size={16}/>{t('探索已收录地点','Explore available places')}</Button></div></Modal>}
+  <SlidePresence>{browsingCountry&&!showSearch&&!peopleCity&&!storyCity&&<CountryCities key={browsingCountry.country.id||browsingCountry.country.name.en} country={browsingCountry.country} initialIndex={browsingCountry.index} inert={!!browserCity} onIndexChange={index=>setBrowsingCountry(value=>value?{...value,index}:value)} onClose={()=>setBrowsingCountry(null)} onChoose={city=>{setBrowserCity(city);command('focusPlace',{place:city});}} onSearch={()=>openSearch()}/>}</SlidePresence>
+  <SlidePresence>{cityForDetails&&!showSearch&&!peopleCity&&!storyCity&&<div className="city-detail-layer"><CitySheet place={cityForDetails} favorite={favoriteIds.includes(cityForDetails.id)} busy={saving} onFavorite={favorite} onClose={()=>browserCity?setBrowserCity(null):setSelected(null)} backLabel={browserCity?t('返回城市卡片','Back to city cards'):undefined} onChoose={choose} onSearch={openSearch} onPeople={setPeopleCity} onStories={setStoryCity}/></div>}</SlidePresence>
   {peopleCity&&<PeopleCards city={peopleCity} onClose={()=>setPeopleCity(null)}/>}
   {storyCity&&<div className="full-overlay"><Stories city={storyCity} onClose={()=>setStoryCity(null)}/></div>}
  </section>;
 }
 
-function CitySheet({place,favorite,busy,onFavorite,onClose,onChoose,onPeople,onStories,onSearch}:{place:Place;favorite:boolean;busy:boolean;onFavorite:()=>void;onClose:()=>void;onChoose:(place:Place)=>void;onPeople:(place:Place)=>void;onStories:(place:Place)=>void;onSearch:(country?:Place)=>void}){
+function CitySheet({place,favorite,busy,onFavorite,onClose,backLabel,onChoose,onPeople,onStories,onSearch}:{place:Place;favorite:boolean;busy:boolean;onFavorite:()=>void;onClose:()=>void;backLabel?:string;onChoose:(place:Place)=>void;onPeople:(place:Place)=>void;onStories:(place:Place)=>void;onSearch:(country?:Place)=>void}){
  const {locale,t,setLocale}=useApp();
  const details=useLoad(()=>api<Place>(`/places/${encodeURIComponent(place.id)}`),[place.id]);
  const current=details.data||place;
- const children=useLoad(async()=>place.kind==='country'?(await api<{items:Place[]}>(`/places?kind=city&parentId=${encodeURIComponent(place.id)}`)).items:place.kind==='attraction'&&place.parentId?[await api<Place>(`/places/${place.parentId}`)]:[],[place.id]);
+ const children=useLoad(async()=>place.kind==='attraction'&&place.parentId?[await api<Place>(`/places/${place.parentId}`)]:[],[place.id]);
  const start=useRef<{x:number;y:number}|null>(null);
- return <Sheet className={place.kind==='country'?'country-details-sheet':''} label={current.name[locale]} onClose={onClose}>
+ return <Sheet className="city-details-page" label={current.name[locale]} onClose={onClose}>
   <div className={`place-details kind-${place.kind}`}>
-   <div className="place-detail-toolbar"><button onClick={onClose}><ArrowLeft size={17}/>{t('返回地球','Back to globe')}</button><span><IconButton label={t('搜索地点','Search places')} onClick={()=>onSearch(place.kind==='country'?current:undefined)}><Search size={18}/></IconButton><button className="detail-language" aria-label={t('切换语言','Change language')} onClick={()=>setLocale(locale==='zh'?'en':'zh')}>{locale==='zh'?'EN':'中'}</button></span></div>
+   <div className="place-detail-toolbar"><button onClick={onClose}><ArrowLeft size={17}/>{backLabel||t('返回地球','Back to globe')}</button><span><IconButton label={t('搜索地点','Search places')} onClick={()=>onSearch()}><Search size={18}/></IconButton><button className="detail-language" aria-label={t('切换语言','Change language')} onClick={()=>setLocale(locale==='zh'?'en':'zh')}>{locale==='zh'?'EN':'中'}</button></span></div>
    <div onPointerDown={e=>{start.current={x:e.clientX,y:e.clientY};}} onPointerUp={e=>{if(start.current&&place.kind==='city'&&e.clientX-start.current.x>e.currentTarget.clientWidth*.25&&Math.abs(e.clientY-start.current.y)<70)onFavorite();start.current=null;}}>
     {current.image&&<div className="city-cover place-detail-cover"><Cover src={current.image} alt={current.name[locale]}/></div>}
-    <div className="city-title-row"><div><span className="eyebrow">{place.kind==='country'?t('探索一个国家','EXPLORE A COUNTRY'):current.country}</span><h2>{current.name[locale]}</h2>{locale==='zh'&&current.name.en!==current.name.zh&&<span className="place-secondary-name">{current.name.en}</span>}</div>{place.kind==='city'&&<IconButton label={favorite?t('取消收藏','Unsave'):t('收藏城市','Save city')} onClick={onFavorite} disabled={busy} className={favorite?'is-saved':''}><Bookmark size={24} fill={favorite?'currentColor':'none'}/></IconButton>}</div>
+    <div className="city-title-row"><div><span className="eyebrow">{current.country}</span><h2>{current.name[locale]}</h2>{locale==='zh'&&current.name.en!==current.name.zh&&<span className="place-secondary-name">{current.name.en}</span>}</div>{place.kind==='city'&&<IconButton label={favorite?t('取消收藏','Unsave'):t('收藏城市','Save city')} onClick={onFavorite} disabled={busy} className={favorite?'is-saved':''}><Bookmark size={24} fill={favorite?'currentColor':'none'}/></IconButton>}</div>
     <div className="place-detail-description">{current.description[locale]?current.description[locale].split(/\n\s*\n/).map((paragraph,i)=><p key={i}>{paragraph}</p>):<p className="muted">{t('详细介绍正在整理中。','More information is being prepared.')}</p>}</div>
     <ErrorBox message={details.error} retry={details.reload}/>
     {place.kind==='city'&&<><div className="city-actions"><Button onClick={()=>onPeople(current)}><Users size={18}/>{t('找当地人','Meet the locals')}<ArrowRight size={17}/></Button><Button kind="secondary" onClick={()=>onStories(current)}>{t('城市故事','City stories')}</Button></div><p className="micro-note"><span className="red-dot"/>{t('右滑收藏，让这个地方留在你的地图上','Swipe right to keep this place on your map')}</p></>}
    </div>
-   {place.kind==='country'&&<div className="section-heading country-city-heading"><h3>{t('从一座城市开始','Begin with a city')}</h3><span>{children.data?.length||0}</span></div>}
    {children.loading&&place.kind!=='city'&&<Loading/>}<ErrorBox message={children.error} retry={children.reload}/>
-   <div className={place.kind==='country'?'country-city-list':''}>{children.data?.map(child=><button key={child.id} className="place-result" onClick={()=>onChoose(child)}><Cover src={child.image} alt={child.name[locale]}/><span><strong>{child.name[locale]}</strong><small>{child.description[locale].slice(0,65)}</small></span><ArrowRight size={18}/></button>)}</div>
-   {place.kind==='country'&&children.data?.length===0&&!children.loading&&<Empty title={t('这里的城市尚未收录','No cities have been added here yet')} action={<Button kind="secondary" onClick={()=>onSearch()}>{t('探索其他地点','Explore other places')}</Button>}/>}
+   <div>{children.data?.map(child=><button key={child.id} className="place-result" onClick={()=>onChoose(child)}><Cover src={child.image} alt={child.name[locale]}/><span><strong>{child.name[locale]}</strong><small>{child.description[locale].slice(0,65)}</small></span><ArrowRight size={18}/></button>)}</div>
   </div>
  </Sheet>;
 }
 
 function PeopleCards({city,onClose}:{city:Place;onClose:()=>void}){
- const {t,locale,requireAuth,toast,openProfile,conversationAdded}=useApp();const [feed,setFeed]=useState<PeopleFeed|null>(null);const [index,setIndex]=useState(0);const [error,setError]=useState('');const [feedError,setFeedError]=useState('');const [loading,setLoading]=useState(true);const [busy,setBusy]=useState(false);const loadedCursor=useRef<string|null>(null);const generation=useRef(0);const [rangeOpen,setRangeOpen]=useState(false);const [cityIds,setCityIds]=useState<string[]>([city.id]);const [coverage,setCoverage]=useState<'any'|'all'>('any');
+ const {t,locale,requireAuth,toast,openProfile,conversationAdded}=useApp();const [feed,setFeed]=useState<PeopleFeed|null>(null);const [index,setIndex]=useState(0);const [error,setError]=useState('');const [feedError,setFeedError]=useState('');const [loading,setLoading]=useState(true);const loadedCursor=useRef<string|null>(null);const generation=useRef(0);const [rangeOpen,setRangeOpen]=useState(false);const [cityIds,setCityIds]=useState<string[]>([city.id]);const [coverage,setCoverage]=useState<'any'|'all'>('any');
  const load=async(reset=false)=>{const requestGeneration=reset?++generation.current:generation.current;setLoading(true);setFeedError('');if(reset){setFeed(null);setIndex(0);loadedCursor.current=null;}try{const query=!reset&&feed?`?feedId=${encodeURIComponent(feed.feedId)}&cursor=${encodeURIComponent(feed.nextCursor||'')}`:`?cityIds=${encodeURIComponent(cityIds.join(','))}&coverage=${coverage}`;const result=await api<PeopleFeed>(`/cities/${city.id}/people-feed${query}`);if(requestGeneration!==generation.current)return;setFeed(prev=>!reset&&prev?{...result,items:[...prev.items,...result.items.filter(p=>!prev.items.some(q=>q.id===p.id))]}:result);if(reset)setIndex(0);}catch(e){if(requestGeneration===generation.current)setFeedError(errorMessage(e));}finally{if(requestGeneration===generation.current)setLoading(false);}};
  useEffect(()=>{void load(true);},[city.id,cityIds.join(','),coverage]);
  useEffect(()=>{if(feed&&feed.items.length-index<=3&&feed.nextCursor&&loadedCursor.current!==feed.nextCursor&&!loading){loadedCursor.current=feed.nextCursor;void load();}},[index,feed,loading]);
@@ -104,7 +113,7 @@ function PeopleCards({city,onClose}:{city:Place;onClose:()=>void}){
  useEffect(()=>()=>{generation.current++;},[]);
  const person=feed?.items[index];
  const advance=()=>setIndex(n=>n+1);
- const join=async()=>{if(!person)return false;const requestGeneration=generation.current;setBusy(true);setError('');try{await send<Conversation>('/conversations/direct',{userId:person.id,cityId:cityIds.find(id=>person.cityIds.includes(id))||city.id});conversationAdded();toast(t('已加入对话，继续认识下一位','Added to chats. Keep exploring.'));return requestGeneration===generation.current;}catch(e){if(requestGeneration===generation.current)setError(errorMessage(e));return false;}finally{setBusy(false);}};
+ const join=async()=>{if(!person)return false;const requestGeneration=generation.current;setError('');try{await send<Conversation>('/conversations/direct',{userId:person.id,cityId:cityIds.find(id=>person.cityIds.includes(id))||city.id});conversationAdded();toast(t('已加入对话，继续认识下一位','Added to chats. Keep exploring.'));return requestGeneration===generation.current;}catch(e){if(requestGeneration===generation.current)setError(errorMessage(e));return false;}};
  const resumeSwipe=useRef<()=>void>(()=>{});
  const swipe=useSwipeDeck(person?.id,()=>requireAuth(()=>resumeSwipe.current()),join,advance);resumeSwipe.current=()=>void swipe.choose(1);
  return <div className="people-overlay">
@@ -121,11 +130,7 @@ function PeopleCards({city,onClose}:{city:Place;onClose:()=>void}){
      </div>
     </article>
    </div>
-   <ErrorBox message={error} retry={()=>void swipe.choose(1)}/><ErrorBox message={feedError} retry={()=>void load()}/>
-   <div className="people-actions">
-    <Button kind="secondary" aria-label={t('略过','Pass')} title={t('略过','Pass')} disabled={busy||swipe.busy} onClick={()=>void swipe.choose(-1)}><X size={26}/></Button>
-    <Button aria-label={t('加入对话','Add to chats')} title={t('加入对话','Add to chats')} busy={busy||swipe.busy} onClick={()=>void swipe.choose(1)}>{!busy&&<MessageCircle size={24}/>}</Button>
-   </div>
+   <ErrorBox message={error}/><ErrorBox message={feedError} retry={()=>void load()}/>
   </>:<><ErrorBox message={feedError} retry={()=>void load(!feed)}/>{!loading&&<Empty title={t(feed?.items.length?'这一轮，先到这里':'这座城市正在等待相遇',feed?.items.length?'A lovely place to pause':'Someone new is on the way')} description={t('可以重新开始，或去另一个城市看看。','Start a new round, or explore another city.')} action={<Button onClick={()=>{loadedCursor.current=null;void load(true);}}>{t('重新开始','A fresh round')}<ArrowRight size={16}/></Button>}/>}</>}
   {rangeOpen&&<PeopleRange city={city} selected={cityIds} coverage={coverage} onClose={()=>setRangeOpen(false)} onApply={(ids,mode)=>{setCityIds(ids);setCoverage(mode);setRangeOpen(false);}}/>}
  </div>;

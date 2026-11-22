@@ -1,28 +1,36 @@
 # Ourworld iOS
 
-The current design shares a deep-sea globe with offline country borders, generated `VisualTokens.swift`, Manrope/Noto typography, floating cards, velocity-aware swipes, full-screen profiles and light chat surfaces. Windows syntax validation is recorded in `artifacts/deep-sea/ios-syntax.json`; it is not an Xcode build or simulator result. See `docs/DEEP_SEA_UI.md` for the implementation and remaining Mac/device checks.
+SwiftUI 应用，目标 iOS 16+；仅离线地球使用 WKWebView。Keychain 保存会话，Core Data 保存缓存。
 
-Native SwiftUI app targeting iOS 16+. Only the globe uses WKWebView. Authentication, random people, gestures, messaging, contact/trip cards, Profile renderer/editor, model jobs, services, verification and stories are native views. Keychain stores tokens and Core Data stores cached resources.
+## 构建
 
-The night globe home has one native rounded search box and three navigation icons. Search calls `/places?q=` after a short typing pause or keyboard submission, with tappable results opening native place details. Country sheets include images, introductions and city entries; unknown countries have a preparation state. Guide and traveler examples are accessible from the unauthenticated Profile screen.
+需要 macOS、兼容的 Xcode 和 XcodeGen，以及根目录说明中的 uv / Node.js 工具链。
 
-On a Mac with a compatible Xcode and XcodeGen:
+在仓库根目录运行：
 
 ```sh
-xcodegen generate
-xcodebuild -list -project Ourworld.xcodeproj
-xcrun simctl list devices available
-xcodebuild -project Ourworld.xcodeproj -scheme Ourworld -configuration Debug -sdk iphonesimulator -destination 'platform=iOS Simulator,id=YOUR_SIMULATOR_UDID' API_BASE_URL=http://192.168.1.10:8188/api/v1 CODE_SIGNING_ALLOWED=NO build
+uv sync --locked
+uv run ourworld setup
+uv run ourworld prepare
+uv run --directory apps/ios xcodegen generate
+uv run --directory apps/ios xcodebuild -list -project Ourworld.xcodeproj
+uv run xcrun simctl list devices available
 ```
 
-The minimum deployment version is independent of installed simulator runtimes. Choose an actually available simulator UDID. For an iPhone installation set your Apple signing team. For Release supply an HTTPS `API_BASE_URL`. Only Info-Debug.plist permits local HTTP.
+选择实际存在的模拟器，然后构建：
 
-Root builds the shared globe and copies its standalone files to `Resources/globe/`. XcodeGen copies Resources as a folder. Native sends `window.OurworldGlobe.receive(envelope)`; globe sends `window.webkit.messageHandlers.globe.postMessage(envelope)`. All envelopes use bridgeVersion 1; the renderer receives no authentication tokens.
+```sh
+uv run --directory apps/ios xcodebuild -project Ourworld.xcodeproj -scheme Ourworld -configuration Debug -sdk iphonesimulator -destination 'platform=iOS Simulator,id=YOUR_SIMULATOR_UDID' API_BASE_URL=http://127.0.0.1:8188/api/v1 CODE_SIGNING_ALLOWED=NO build
+```
 
-Replace the LAN address above with the Docker server address reachable from the Mac/iPhone. `127.0.0.1` only applies when the backend is on the Mac itself.
+后端在另一台电脑时，将 API 地址改为其局域网地址。真机安装需要配置 Apple 签名团队；Release 使用 HTTPS。只有 Debug 的 plist 允许本地 HTTP。
 
-Required verification: actual Xcode build; simulator registration/globe/swipe/chat; paired cross-platform sync; Profile drag/drop, Agent preview/publish and conflict; service verification/upload; trip review rules; network reconnection. Windows file generation is not proof of iOS compilation. App Store publishing, payment processing and push credentials are outside this local build.
+## 共享资源
 
-Secondary multiple-city selection supports `any`/`all`. Trip cards can revise end time, and acceptance sends `expectedEndAt` to reject stale confirmations. Profile offers local undo and a published-revision picker. Native photos support authenticated relative media URLs. Fonts are registered from bundled Resources/fonts using CoreText.
+`Resources/globe` 由 `uv run ourworld prepare` 生成，源文件位于 `packages/globe`。XcodeGen 按 `project.yml` 的目录资源配置复制地球；字体和来源许可保留在资源目录中。
 
-`syntax-validation.json` records syntax and plist parsing only. XcodeGen resource configuration follows its official ProjectSpec: Resources is a folder entry under target sources with `buildPhase: resources`.
+原生通过 bridge v1 调用共享地球，地图不接收 API 身份令牌。Swift 源码和共享设计令牌继续由各自构建检查。
+
+## 验收范围
+
+Linux 上的 TypeScript、资源和网页检查不代表完成 Xcode、模拟器或真机验收。原生验收应覆盖登录、地球、人物卡、聊天、照片和主页编辑、服务城市、发布与冲突重试。历史语法与设计记录见[归档](../../docs/archive/README.md)。

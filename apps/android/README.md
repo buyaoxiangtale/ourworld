@@ -1,31 +1,38 @@
 # Ourworld Android
 
-The current design uses a deep-sea globe with offline vector country borders, floating photographic cards, velocity-aware interruptible swipes, full-screen profiles and light chat surfaces. Generated `VisualTokens.kt` shares visual and gesture settings with web/iOS. Current packages are `releases/ourworld-deep-sea-phone-debug.apk` and `ourworld-deep-sea-emulator-debug.apk`; implementation, 19 JVM tests, signatures and outstanding device checks are documented in `docs/DEEP_SEA_UI.md` at the repository root.
+Kotlin / Jetpack Compose 原生应用，仅共享离线地球使用 WebView。会话使用 Android Keystore，缓存使用 Room。
 
-Native Kotlin/Compose application. Only the packaged globe uses WebView; all cards, messaging, authentication, Profile editing, services, verification and stories are native.
+## 环境
 
-The night home screen has a globe, one native rounded search box and three navigation icons. Search calls `/places?q=` after a short typing pause or keyboard submission; selecting a result focuses the globe and opens native place details. Country details include a picture, introduction and cities; unknown countries show an honest preparation state. The unauthenticated Profile screen offers guide and traveler demo profiles.
+- JDK 17、Android SDK platform 35 / build-tools 35.0.0。
+- Gradle 8.11.1 由已入库的 wrapper 固定；AGP、Kotlin 和应用依赖由 Gradle 配置管理。
+- 仓库工具使用 uv，JavaScript 构建工具需要 Node.js 24+。
 
-Requirements: JDK 17, Android SDK platform 35/build-tools 35.0.0. The checked-in Gradle wrapper pins Gradle 8.11.1. AGP 8.9.1 and Kotlin 2.1.20 are pinned in the project.
+在仓库根目录准备依赖和共享资源：
 
-From this directory:
-
-```powershell
-.\gradlew.bat assembleDebug -PapiBase=http://192.168.1.10:8188/api/v1
+```sh
+uv sync --locked
+uv run ourworld setup
+uv run ourworld prepare
+uv run --directory apps/android sh gradlew --no-daemon assembleDebug -PapiBase=http://10.0.2.2:8188/api/v1
 ```
 
-Linux/Docker: `sh gradlew --no-daemon assembleDebug -PapiBase=http://192.168.1.10:8188/api/v1`.
+Windows 使用 `uv run --directory apps/android .\gradlew.bat assembleDebug`。真机的 API 地址应改为电脑的局域网地址；Release 使用 HTTPS。
 
-APK: `app/build/outputs/apk/debug/app-debug.apk`. Default emulator API is `http://10.0.2.2:8188/api/v1`. A physical device must use the Docker host's LAN address. Release configuration rejects HTTP API addresses.
+APK 输出：`app/build/outputs/apk/debug/app-debug.apk`。当前源码构建结果应以本次 Gradle 和设备测试为准；历史安装包说明位于[归档](../../docs/archive/deep-sea-ui.md)。
 
-The debug signing key is kept in Gradle user home (`ourworld-debug.keystore`). This workspace's original Docker volume is `ourworld-gradle-cache`: mount it at `/root/.gradle` to retain the certificate. A fresh volume creates a different key. The current packages were verified against the original certificate. Release publishing requires your own signing configuration.
+## 资源和签名
 
-The root globe build must copy its standalone output into `app/src/main/assets/globe/`. Bridge is version 1: native sends `window.OurworldGlobe.receive(envelope)`; globe sends `window.AndroidGlobe.postMessage(JSON.stringify(envelope))`. Local resources load using WebViewAssetLoader. No API token is exposed to the renderer.
+`app/src/main/assets/globe` 由 `uv run ourworld prepare` 生成。源地图纹理与脚本位于 `packages/globe`。字体和原始素材署名继续随应用打包。
 
-Tests to run on a device: registration and verification; globe selection; 25% person swipe and return; repeat connect; paired chat, offline retry and read sync; Profile ordering/theme/Agent preview/publish; document verification; service publish/archive; city stories and reports. Local sessions use Android Keystore; resource/message snapshots use Room. Payment is not implemented.
+debug 密钥位于 Gradle 用户目录的 `ourworld-debug.keystore`。既有 Docker 构建可复用 `ourworld-gradle-cache` 卷以保留签名。清理工具不删除密钥或该卷。
 
-The people screen's secondary multiple-city chooser supports `any` and `all`, while the initial flow remains single-city random. Trip cards can revise end time using a native date/time picker; acceptance includes `expectedEndAt` and reloads cards on stale-date errors. Profile includes local undo and published revision selection.
+可选构建容器：`uv run docker build -f infra/docker/android.Dockerfile -t ourworld-android-builder:local .`。
 
-Actual build/package/signature checks are recorded in `build-validation.log` and `apk-validation.json`. Android emulator and physical-device UI testing remain separate from compilation.
+## 验证
 
-The wrapper JAR was downloaded from the Gradle v8.11.1 official GitHub source. SHA256: `2db75c40782f5e8ba1fc278a5574bab070adccb2d21ca5a6e5ed840888448046`.
+```sh
+uv run --directory apps/android sh gradlew --no-daemon testDebugUnitTest
+```
+
+编译、JVM 测试、模拟器和真机分别验收。设备上应检查登录、地球选择、人物卡滑动、消息收发、照片与主页编辑、服务城市、审核上传及断网恢复。共享 WebGL 修复会随生成的地球资源进入原生应用。

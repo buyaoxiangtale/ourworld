@@ -1,32 +1,39 @@
-// Generated from packages/contracts/assets/visual.json. Run node scripts/sync-design.mjs.
+// Generated from packages/contracts/assets/visual.json. Run node scripts/generate/sync-design.mjs.
 import SwiftUI
 enum OWVisual {
     static let bg = Color(hex: "05080D")
-    static let surface = Color(hex: "181C21")
-    static let raised = Color(hex: "232B33")
-    static let line = Color(hex: "2A333D")
-    static let ink = Color(hex: "E8EDF0")
-    static let inkMuted = Color(hex: "A5AFB8")
-    static let inkFaint = Color(hex: "67737F")
-    static let accent = Color(hex: "FD5068")
-    static let accentEnd = Color(hex: "FF7854")
-    static let like = Color(hex: "2ED573")
-    static let nope = Color(hex: "FF4757")
-    static let focus = Color(hex: "6496E6")
-    static let focusDeep = Color(hex: "0064C8")
+    static let surface = Color(hex: "141414")
+    static let raised = Color(hex: "222222")
+    static let line = Color(hex: "414141")
+    static let ink = Color(hex: "F5F5F5")
+    static let inkMuted = Color(hex: "B7B7B7")
+    static let inkFaint = Color(hex: "929292")
+    static let accent = Color(hex: "E7E7E7")
+    static let accentEnd = Color(hex: "BDBDBD")
+    static let accentInk = Color(hex: "111111")
+    static let like = Color(hex: "EEEEEE")
+    static let nope = Color(hex: "AAAAAA")
+    static let focus = Color(hex: "D1D1D1")
+    static let focusDeep = Color(hex: "6A6A6A")
     static let sea = Color(hex: "091725")
     static let seaShelf = Color(hex: "102535")
     static let land = Color(hex: "26343C")
     static let highland = Color(hex: "3A4A50")
-    static let nebula = Color(hex: "0A1122")
+    static let nebula = Color(hex: "13161C")
     static let starSoft = Color(hex: "D7E1F0")
     static let starBright = Color(hex: "F5F9FF")
+    static let space = Color(hex: "05080D")
+    static let atmosphere = Color(hex: "6496E6")
     static let radii_card: CGFloat = 24
     static let radii_control: CGFloat = 24
     static let radii_field: CGFloat = 12
     static let spacing_gutter: CGFloat = 16
     static let spacing_gap: CGFloat = 16
     static let spacing_touch: CGFloat = 48
+    static let spacing_planetIcon: CGFloat = 42
+    static let spacing_planetViewport: CGFloat = 40
+    static let spacing_searchButton: CGFloat = 38
+    static let spacing_searchHeight: CGFloat = 52
     static let type_title: CGFloat = 26
     static let type_name: CGFloat = 32
     static let type_body: CGFloat = 16

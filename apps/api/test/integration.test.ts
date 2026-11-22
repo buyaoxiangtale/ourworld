@@ -34,6 +34,32 @@ test('authentication and verification gates protect write operations',async()=>{
  assert.equal((await request('GET','/admin/users',tokenA)).statusCode,403);
  const me=await request('GET','/me',tokenA);assert.equal(me.statusCode,200);assert.equal(me.json().password_hash,undefined);
 });
+test('school and education can be saved, read publicly, cleared and validated independently',async()=>{
+ const saved=await request('PATCH','/me',tokenC,{school:'  复旦大学  ',educationLevel:'bachelor'});assert.equal(saved.statusCode,200);assert.equal(saved.json().school,'复旦大学');assert.equal(saved.json().educationLevel,'bachelor');
+ const publicProfile=await request('GET',`/users/${c}`);assert.equal(publicProfile.statusCode,200);assert.equal(publicProfile.json().user.school,'复旦大学');assert.equal(publicProfile.json().user.educationLevel,'bachelor');
+ const invalid=await request('PATCH','/me',tokenC,{educationLevel:'made-up-degree'});assert.equal(invalid.statusCode,400);
+ const tooLong=await request('PATCH','/me',tokenC,{school:'学'.repeat(121)});assert.equal(tooLong.statusCode,400);
+ const retained=await request('GET','/me',tokenC);assert.equal(retained.json().school,'复旦大学');assert.equal(retained.json().educationLevel,'bachelor');
+ const cleared=await request('PATCH','/me',tokenC,{school:null,educationLevel:null});assert.equal(cleared.statusCode,200);assert.equal(cleared.json().school,undefined);assert.equal(cleared.json().educationLevel,undefined);
+});
+
+test('the city catalogue paginates completely and supports bilingual and alias search',async()=>{
+ const expected=(await query("SELECT id FROM places WHERE kind='city' ORDER BY name->>'en',id")).map(row=>row.id);const collected:string[]=[];let offset=0;
+ do{const result=await request('GET',`/places?kind=city&limit=7&offset=${offset}`);assert.equal(result.statusCode,200);const page=result.json();assert(page.items.length<=7);assert(page.items.every((place:any)=>place.kind==='city'));collected.push(...page.items.map((place:any)=>place.id));if(page.nextOffset===null)break;assert(page.nextOffset>offset);offset=page.nextOffset;}while(true);
+ assert.deepEqual(collected,expected);assert.equal(new Set(collected).size,collected.length);
+ for(const search of ['巴黎','Paris','city of light']){const result=await request('GET',`/places?kind=city&q=${encodeURIComponent(search)}&limit=7`);assert.equal(result.statusCode,200);assert(result.json().items.some((place:any)=>place.id==='city-paris'));}
+ for(const query of ['limit=0','limit=251','offset=-1','offset=abc'])assert.equal((await request('GET',`/places?kind=city&${query}`)).statusCode,400);
+});
+
+test('dedicated service-city updates preserve education and reject non-city references',async()=>{
+ assert.equal((await request('PATCH','/me',tokenC,{school:'同济大学',educationLevel:'master'})).statusCode,200);
+ const cities=['city-paris','city-tokyo'];const saved=await request('PATCH','/me',tokenC,{cityIds:cities});assert.equal(saved.statusCode,200);assert.deepEqual(saved.json().cityIds,cities);assert.equal(saved.json().school,'同济大学');assert.equal(saved.json().educationLevel,'master');
+ const details=await request('PATCH','/me',tokenC,{school:'上海交通大学'});assert.equal(details.statusCode,200);assert.deepEqual(details.json().cityIds,cities);
+ const invalid=await request('PATCH','/me',tokenC,{cityIds:['country-france']});assert.equal(invalid.statusCode,400);assert.equal(invalid.json().code,'INVALID_CITY');
+ const unchanged=await request('GET','/me',tokenC);assert.deepEqual(unchanged.json().cityIds,cities);assert.equal(unchanged.json().school,'上海交通大学');
+ const cleared=await request('PATCH','/me',tokenC,{cityIds:[]});assert.equal(cleared.statusCode,200);assert.deepEqual(cleared.json().cityIds,[]);assert.equal(cleared.json().educationLevel,'master');
+});
+
 test('concurrent right swipes produce a single conversation',async()=>{
  const responses=await Promise.all(Array.from({length:8},()=>request('POST','/conversations/direct',tokenA,{userId:b,cityId:'city-paris'})));
  for(const response of responses)assert.equal(response.statusCode,200,response.body);
@@ -72,6 +98,50 @@ test('private drafts never leak and stale candidates cannot overwrite edits',asy
  assert.equal((await request('GET','/profile/draft',tokenA)).json().layout.theme,'nocturne');
  assert.equal((await request('GET',`/profile/jobs/${jobId}`,tokenB)).statusCode,404);
 });
+test('independent travel prompt cards save, publish and reject stale revisions',async()=>{
+ const before=await request('GET','/profile/draft',tokenC);assert.equal(before.statusCode,200);const draft=before.json();
+ const prompts=[{question:'我最爱的城市角落',answer:'清晨安静的河岸。'}];
+ const layout={...draft.layout,blocks:[...draft.layout.blocks.filter((b:any)=>b.type!=='prompts'),{id:'card-prompts',type:'prompts',span:2,size:'compact',prompts}]};
+ const saved=await request('PUT','/profile/draft',tokenC,{revision:draft.revision,layout});assert.equal(saved.statusCode,200);const revision=saved.json().revision;
+ const published=await request('POST','/profile/publish',tokenC,{revision});assert.equal(published.statusCode,200);
+ const profile=await request('GET',`/users/${c}`,tokenC);assert.equal(profile.statusCode,200);assert.deepEqual(profile.json().layout.blocks.find((b:any)=>b.type==='prompts').prompts,prompts);
+ const stale=await request('PUT','/profile/draft',tokenC,{revision:draft.revision,layout});assert.equal(stale.statusCode,409);assert.equal(stale.json().code,'REVISION_CONFLICT');
+ const unchanged=await request('GET',`/users/${c}`,tokenC);assert.deepEqual(unchanged.json().layout.blocks.find((b:any)=>b.type==='prompts').prompts,prompts);
+});
+
+test('bio and photo stories save independently and publish only owned public photos',async()=>{
+ const before=(await request('GET','/me',tokenC)).json();
+ const biography='喜欢城市漫步，愿意分享照片背后的故事。';
+ const updated=await request('PATCH','/me',tokenC,{bio:biography});assert.equal(updated.statusCode,200,updated.body);
+ assert.equal(updated.json().name,before.name);assert.deepEqual(updated.json().tags,before.tags);
+ const photo=randomUUID(),foreign=randomUUID(),privatePhoto=randomUUID();
+ for(const [id,owner,purpose]of [[photo,c,'public'],[foreign,a,'public'],[privatePhoto,c,'verification']])await query("INSERT INTO files(id,user_id,storage_key,mime,size,purpose) VALUES($1,$2,'test/photo-story','image/jpeg',1,$3)",[id,owner,purpose]);
+ const draft=(await request('GET','/profile/draft',tokenC)).json();
+ const caption={id:'photo-caption',type:'gallery',span:2,size:'expanded',title:'这张照片背后的故事',content:'清晨，沿着安静的河岸散步。',refs:[mediaUrl(photo)]};
+ const second={...caption,id:'photo-caption-second-story',title:'旅行中最难忘的一刻',content:'另一段独立保存的照片故事。'};
+ const layout={...draft.layout,blocks:[...draft.layout.blocks,caption,second]};
+ const saved=await request('PUT','/profile/draft',tokenC,{revision:draft.revision,layout});assert.equal(saved.statusCode,200,saved.body);
+ assert.equal((await request('POST','/profile/publish',tokenC,{revision:saved.json().revision})).statusCode,200);
+ const published=(await request('GET',`/users/${c}`)).json();assert.equal(published.user.bio,biography);
+ assert.deepEqual(published.layout.blocks.find((block:any)=>block.id==='photo-caption'),caption);
+ assert.deepEqual(published.layout.blocks.find((block:any)=>block.id===second.id),second);
+ for(const id of [foreign,privatePhoto]){
+  const invalid={...layout,blocks:[{...caption,refs:[mediaUrl(id)]}]};
+  assert.equal((await request('PUT','/profile/draft',tokenC,{revision:saved.json().revision,layout:invalid})).statusCode,400);
+ }
+ const editedLayout={...layout,blocks:layout.blocks.map((block:any)=>block.id===caption.id?{...block,content:'已编辑的第一条故事。'}:block)};
+ const edited=await request('PUT','/profile/draft',tokenC,{revision:saved.json().revision,layout:editedLayout});assert.equal(edited.statusCode,200,edited.body);
+ assert.equal((await request('POST','/profile/publish',tokenC,{revision:edited.json().revision})).statusCode,200);
+ const afterEdit=(await request('GET',`/users/${c}`)).json();assert.equal(afterEdit.layout.blocks.find((block:any)=>block.id===caption.id).content,'已编辑的第一条故事。');assert.deepEqual(afterEdit.layout.blocks.find((block:any)=>block.id===second.id),second);
+ const remaining={...editedLayout,blocks:editedLayout.blocks.filter((block:any)=>block.id!==caption.id)};
+ const removedOne=await request('PUT','/profile/draft',tokenC,{revision:edited.json().revision,layout:remaining});assert.equal(removedOne.statusCode,200,removedOne.body);
+ assert.equal((await request('POST','/profile/publish',tokenC,{revision:removedOne.json().revision})).statusCode,200);
+ const afterRemove=(await request('GET',`/users/${c}`)).json();assert(!afterRemove.layout.blocks.some((block:any)=>block.id===caption.id));assert.deepEqual(afterRemove.layout.blocks.find((block:any)=>block.id===second.id),second);
+ const removed=await request('PUT','/profile/draft',tokenC,{revision:removedOne.json().revision,layout:draft.layout});assert.equal(removed.statusCode,200,removed.body);
+ assert.equal((await request('POST','/profile/publish',tokenC,{revision:removed.json().revision})).statusCode,200);
+ const restored=(await request('GET',`/users/${c}`)).json();assert.deepEqual(restored.layout.blocks,draft.layout.blocks);assert.equal(restored.user.bio,biography);
+});
+
 test('gallery references cannot expose private verification files or foreign media',async()=>{
  const fileId=randomUUID();await query("INSERT INTO files(id,user_id,storage_key,mime,size,purpose) VALUES($1,$2,'test/private','image/png',1,'verification')",[fileId,a]);
  const d=(await request('GET','/profile/draft',tokenA)).json();

@@ -9,11 +9,16 @@
     "packages/globe"
   ],
   "scripts": {
-    "build": "node scripts/sync-design.mjs && npm run build -w @ourworld/contracts && npm run build -w @ourworld/globe && node scripts/sync-globe.mjs && npm run build -w @ourworld/api && npm run build -w @ourworld/web",
+    "build": "npm run prepare:assets && npm run build -w @ourworld/api && npm run build -w @ourworld/web",
     "dev:api": "npm run dev -w @ourworld/api",
     "dev:web": "npm run dev -w @ourworld/web",
-    "test": "npm run test -w @ourworld/api && node apps/web/test/color-tokens.mjs",
-    "typecheck": "npm run typecheck -w @ourworld/contracts && npm run typecheck -w @ourworld/globe && npm run typecheck -w @ourworld/api && npm run typecheck -w @ourworld/web"
+    "frontend:watch": "docker compose up -d --build --no-deps --wait frontend-watch gateway",
+    "frontend:logs": "docker compose logs -f --tail=80 frontend-watch",
+    "test:frontend-watch": "node --test tests/unit/frontend-watch.test.mjs",
+    "test": "npm run build -w @ourworld/contracts && npm run test -w @ourworld/api && node tests/unit/color-tokens.mjs && node --test tests/unit/*.test.mjs && node tests/unit/profile-refs.mjs",
+    "typecheck": "npm run build -w @ourworld/contracts && npm run typecheck -w @ourworld/contracts && npm run typecheck -w @ourworld/globe && npm run typecheck -w @ourworld/api && npm run typecheck -w @ourworld/web",
+    "prepare:assets": "node scripts/generate/sync-design.mjs && node scripts/generate/generate-openapi.mjs && npm run build -w @ourworld/contracts && npm run build -w @ourworld/globe && node scripts/generate/sync-globe.mjs",
+    "dev:worker": "npm run worker:dev -w @ourworld/api"
   },
   "engines": {
     "node": ">=24"

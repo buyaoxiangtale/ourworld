@@ -39,6 +39,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -60,7 +62,7 @@ import org.json.JSONObject
 import java.util.UUID
 import kotlinx.coroutines.delay
 
-private val Night=OWVisual.bg
+private val Night=OWVisual.space
 private val NightSurface=OWVisual.surface
 private val Moon=OWVisual.ink
 private val MoonMuted=OWVisual.inkMuted
@@ -78,7 +80,13 @@ class MainActivity:ComponentActivity(){
             val display=body
             val base=Typography()
             val typography=base.copy(bodyLarge=base.bodyLarge.copy(fontFamily=body),bodyMedium=base.bodyMedium.copy(fontFamily=body),bodySmall=base.bodySmall.copy(fontFamily=body),labelLarge=base.labelLarge.copy(fontFamily=body),headlineLarge=base.headlineLarge.copy(fontFamily=display),headlineSmall=base.headlineSmall.copy(fontFamily=display),titleLarge=base.titleLarge.copy(fontFamily=display),titleMedium=base.titleMedium.copy(fontFamily=display))
-            MaterialTheme(colorScheme=lightColorScheme(primary=Coral,onPrimary=OWVisual.bg,secondary=Coral,background=Paper,onBackground=Ink,surface=OWVisual.surface,onSurface=Ink,surfaceVariant=OWVisual.raised,onSurfaceVariant=OWVisual.inkMuted,outline=OWVisual.line,secondaryContainer=OWVisual.raised,onSecondaryContainer=Ink),typography=typography){Ourworld(vm)}
+            MaterialTheme(colorScheme=darkColorScheme(primary=Coral,onPrimary=OWVisual.accentInk,secondary=Coral,background=Paper,onBackground=Ink,surface=OWVisual.surface,onSurface=Ink,surfaceVariant=OWVisual.raised,onSurfaceVariant=OWVisual.inkMuted,outline=OWVisual.line,secondaryContainer=OWVisual.raised,onSecondaryContainer=Ink,
+                onSecondary=OWVisual.accentInk,primaryContainer=OWVisual.raised,onPrimaryContainer=Ink,
+                tertiary=Coral,onTertiary=OWVisual.accentInk,tertiaryContainer=OWVisual.raised,onTertiaryContainer=Ink,
+                error=OWVisual.ink,errorContainer=OWVisual.raised,onError=OWVisual.accentInk,onErrorContainer=Ink,
+                inverseSurface=OWVisual.ink,inverseOnSurface=OWVisual.accentInk,inversePrimary=OWVisual.inkFaint,surfaceTint=OWVisual.surface,
+                surfaceContainerLowest=OWVisual.space,surfaceContainerLow=OWVisual.surface,surfaceContainer=OWVisual.surface,
+                surfaceContainerHigh=OWVisual.raised,surfaceContainerHighest=OWVisual.raised),typography=typography){Ourworld(vm)}
         }
     }
 }
@@ -92,8 +100,8 @@ class MainActivity:ComponentActivity(){
     SideEffect {
         activity?.window?.let { window ->
             WindowCompat.getInsetsController(window,view).apply {
-                isAppearanceLightStatusBars=!globePage
-                isAppearanceLightNavigationBars=!globePage
+                isAppearanceLightStatusBars=false
+                isAppearanceLightNavigationBars=false
             }
             if(android.os.Build.VERSION.SDK_INT<35){
                 window.statusBarColor=(if(globePage)Night else Paper).toArgb()
@@ -102,10 +110,16 @@ class MainActivity:ComponentActivity(){
         }
     }
     BackHandler(enabled=vm.route.isNotEmpty()){vm.back()}
-    Scaffold(containerColor=if(globePage)Night else Paper,bottomBar={
+    Scaffold(modifier=Modifier.starlight(),containerColor=Color.Transparent,bottomBar={
         if(vm.route!="conversation" && vm.route!="public")NavigationBar(containerColor=if(globePage)Night else Paper,tonalElevation=0.dp) {
-            listOf(Icons.Outlined.Public to t("地球","Earth"),Icons.Outlined.ChatBubbleOutline to t("聊天","Chat"),Icons.Outlined.PersonOutline to "Profile").forEachIndexed { index,item ->
-                NavigationBarItem(selected=vm.tab==index,onClick={vm.notice="";vm.tab=index;vm.route="";if(index==1){vm.newConversation=false;if(vm.requireLogin())vm.run{vm.refreshConversations()}};if(index==2)vm.ownProfile()},icon={BadgedBox(badge={if(index==1 && vm.newConversation)Badge()}){Icon(item.first,item.second)}},alwaysShowLabel=false,colors=if(globePage)NavigationBarItemDefaults.colors(selectedIconColor=Moon,unselectedIconColor=MoonMuted,indicatorColor=Color.Transparent) else NavigationBarItemDefaults.colors())
+            listOf(0 to t("地球","Earth"),3 to t("社区","Community"),1 to t("聊天","Chat"),2 to t("我的","Profile")).forEach { (index,label) ->
+                NavigationBarItem(
+                    selected=vm.tab==index,
+                    onClick={vm.notice="";vm.tab=index;vm.route="";if(index==1){vm.newConversation=false;if(vm.requireLogin())vm.run{vm.refreshConversations()}};if(index==2)vm.ownProfile()},
+                    icon={BadgedBox(badge={if(index==1 && vm.newConversation)Badge()}){PlanetIcon(index,vm.tab==index)}},
+                    modifier=Modifier.semantics { contentDescription=label },
+                    colors=NavigationBarItemDefaults.colors(indicatorColor=Color.Transparent)
+                )
             }
         }
     }) { padding ->
@@ -117,20 +131,22 @@ class MainActivity:ComponentActivity(){
                 "people" -> People(vm)
                 "public" -> PublicProfile(vm)
                 "conversation" -> ConversationView(vm)
-                "edit" -> ProfileEditor(vm)
+                "profile-gallery" -> NativeProfileCardEditor(vm,"gallery")
+                "profile-prompts" -> NativeProfileCardEditor(vm,"prompts")
+                "profile-cities" -> NativeServiceCities(vm)
                 "settings" -> Settings(vm)
                 "packages" -> PackageForm(vm)
                 "verification" -> VerificationForm(vm)
                 "posts" -> Community(vm)
-                else -> when(vm.tab){1->ConversationList(vm);2->OwnProfile(vm)}
+                else -> when(vm.tab){1->ConversationList(vm);2->OwnProfile(vm);3->Community(vm,global=true)}
             }
-            if(vm.busy && !globePage)LinearProgressIndicator(Modifier.fillMaxWidth().align(Alignment.TopCenter))
+            if(vm.busy && !globePage)EarthLoading(Modifier.align(Alignment.TopCenter))
             if(vm.error.isNotEmpty())Box(Modifier.align(Alignment.TopCenter)){Status(vm.error,true){vm.error=""}}
             if(vm.notice.isNotEmpty())Box(Modifier.align(Alignment.BottomCenter).padding(12.dp)){Surface(shape=RoundedCornerShape(16.dp),color=OWVisual.surface){Text(vm.notice,color=OWVisual.ink,fontSize=14.sp,modifier=Modifier.padding(16.dp))}}
         }
     }
     LaunchedEffect(vm.notice){val current=vm.notice;if(current.isNotEmpty()){delay(3200);if(vm.notice==current)vm.notice=""}}
-    if(vm.route=="country" && vm.country!=null)ModalBottomSheet(onDismissRequest={vm.route=""},containerColor=Paper){
+    if(vm.route=="country" && vm.country!=null)ModalBottomSheet(onDismissRequest={vm.route=""},modifier=Modifier.clip(RoundedCornerShape(topStart=OWVisual.radii_card.dp,topEnd=OWVisual.radii_card.dp)).starlight(),shape=RoundedCornerShape(topStart=OWVisual.radii_card.dp,topEnd=OWVisual.radii_card.dp),containerColor=Color.Transparent){
         Column(Modifier.fillMaxWidth().fillMaxHeight(.85f)) {
             Header(vm,vm.country!!.localized("name",vm.locale))
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal=24.dp),verticalArrangement=Arrangement.spacedBy(18.dp)) {
@@ -151,7 +167,7 @@ class MainActivity:ComponentActivity(){
             }
         }
     }
-    if(vm.route=="city" && vm.city!=null)ModalBottomSheet(onDismissRequest={vm.route=""},containerColor=Paper){
+    if(vm.route=="city" && vm.city!=null)ModalBottomSheet(onDismissRequest={vm.route=""},modifier=Modifier.clip(RoundedCornerShape(topStart=OWVisual.radii_card.dp,topEnd=OWVisual.radii_card.dp)).starlight(),shape=RoundedCornerShape(topStart=OWVisual.radii_card.dp,topEnd=OWVisual.radii_card.dp),containerColor=Color.Transparent){
         Column(Modifier.fillMaxWidth().fillMaxHeight(.67f).verticalScroll(rememberScrollState()).padding(24.dp),verticalArrangement=Arrangement.spacedBy(16.dp)){
             Row(verticalAlignment=Alignment.CenterVertically){Text(vm.city!!.localized("name",vm.locale),style=MaterialTheme.typography.headlineLarge,modifier=Modifier.weight(1f));TextButton(onClick=vm::language){Text(if(vm.locale=="zh")"EN" else "中")}}
             Picture(vm.city!!.s("image"),220)
@@ -166,13 +182,13 @@ class MainActivity:ComponentActivity(){
 @Composable fun Status(value:String,error:Boolean=false,onDismiss:()->Unit){Surface(color=if(error)OWVisual.nope.copy(alpha=.16f) else OWVisual.like.copy(alpha=.16f)){Row(Modifier.fillMaxWidth().padding(start=14.dp),verticalAlignment=Alignment.CenterVertically){Text(value,Modifier.weight(1f),color=OWVisual.ink);IconButton(onClick=onDismiss){Icon(Icons.Outlined.Close,"Close",tint=OWVisual.ink)}}}}
 @Composable fun Action(text:String,enabled:Boolean=true,onClick:()->Unit){Button(onClick=onClick,enabled=enabled,modifier=Modifier.fillMaxWidth().heightIn(min=OWVisual.spacing_touch.dp),shape=RoundedCornerShape(OWVisual.radii_control.dp)){Text(text,fontWeight=FontWeight.SemiBold)}}
 @Composable fun Field(value:String,label:String,secret:Boolean=false,onChange:(String)->Unit){OutlinedTextField(value,onChange,label={Text(label)},modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(16.dp),visualTransformation=if(secret)androidx.compose.ui.text.input.PasswordVisualTransformation() else androidx.compose.ui.text.input.VisualTransformation.None)}
-@Composable fun Header(vm:WorldModel,title:String,back:()->Unit={vm.back()}){Row(Modifier.fillMaxWidth().padding(12.dp),verticalAlignment=Alignment.CenterVertically){IconButton(onClick=back){Icon(Icons.Outlined.ArrowBack,vm.t("返回","Back"))};Text(title,style=MaterialTheme.typography.titleLarge,modifier=Modifier.weight(1f));TextButton(onClick=vm::language){Text(if(vm.locale=="zh")"EN" else "中")}}}
-@Composable fun Form(vm:WorldModel,title:String,content:@Composable ColumnScope.()->Unit){Column(Modifier.fillMaxSize().background(Paper)){Header(vm,title);Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),verticalArrangement=Arrangement.spacedBy(14.dp),content=content)}}
+@Composable fun Header(vm:WorldModel,title:String,showBack:Boolean=true,back:()->Unit={vm.back()}){Row(Modifier.fillMaxWidth().padding(12.dp),verticalAlignment=Alignment.CenterVertically){if(showBack)IconButton(onClick=back){Icon(Icons.Outlined.ArrowBack,vm.t("返回","Back"))};Text(title,style=MaterialTheme.typography.titleLarge,modifier=Modifier.weight(1f));TextButton(onClick=vm::language){Text(if(vm.locale=="zh")"EN" else "中")}}}
+@Composable fun Form(vm:WorldModel,title:String,showBack:Boolean=true,content:@Composable ColumnScope.()->Unit){Column(Modifier.fillMaxSize().starlight()){Header(vm,title,showBack=showBack);Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),verticalArrangement=Arrangement.spacedBy(14.dp),content=content)}}
 @Composable fun NativePhoto(url:String,modifier:Modifier=Modifier,description:String?=null){
     val context=LocalContext.current
     val resolved=nativeMediaUrl(url)
     val request=ImageRequest.Builder(context).data(resolved).apply{if(sameMediaOrigin(resolved))addHeader("Authorization","Bearer ${SecureSession(context).get("access")}")}.build()
-    SubcomposeAsyncImage(model=request,contentDescription=description,modifier=modifier.background(OWVisual.raised),contentScale=ContentScale.Crop,alignment=Alignment.TopCenter,loading={Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){CircularProgressIndicator(Modifier.size(24.dp),strokeWidth=2.dp)}},error={Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){Icon(Icons.Outlined.ImageNotSupported,description,tint=OWVisual.inkMuted)}})
+    SubcomposeAsyncImage(model=request,contentDescription=description,modifier=modifier.background(OWVisual.raised),contentScale=ContentScale.Crop,alignment=Alignment.TopCenter,loading={Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){EarthLoading(diameter=24.dp)}},error={Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){Icon(Icons.Outlined.ImageNotSupported,description,tint=OWVisual.inkMuted)}})
 }
 @Composable fun Picture(url:String,height:Int=180){if(url.isNotBlank())NativePhoto(url,Modifier.fillMaxWidth().height(height.dp).clip(RoundedCornerShape(OWVisual.radii_card.dp)))}
 @Composable fun EndDateField(vm:WorldModel,value:String,onChange:(String)->Unit){
@@ -187,19 +203,25 @@ class MainActivity:ComponentActivity(){
     LaunchedEffect(vm.query){if(vm.query.isNotBlank()){delay(300);vm.search()}}
     Box(Modifier.fillMaxSize().background(Night)) {
         Globe(vm)
-        if(vm.tab==0 && vm.route in listOf("","country","city"))Column(Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(horizontal=20.dp,vertical=14.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){
+        if(vm.tab==0 && vm.route in listOf("","country","city"))Column(Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(horizontal=OWVisual.spacing_gutter.dp,vertical=OWVisual.spacing_gutter.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){
             OutlinedTextField(
                 value=vm.query,onValueChange=vm::updateSearch,
-                placeholder={Text(vm.t("搜索国家、城市或景点","Search countries, cities or places"),maxLines=1)},
-                leadingIcon={IconButton(onClick={vm.search();keyboard?.hide()}){Icon(Icons.Outlined.Search,vm.t("搜索","Search"))}},
-                trailingIcon={if(vm.query.isNotEmpty())IconButton(onClick={vm.updateSearch("")}){Icon(Icons.Outlined.Close,vm.t("清除搜索","Clear search"))}},
-                modifier=Modifier.fillMaxWidth(),singleLine=true,shape=RoundedCornerShape(28.dp),
+                placeholder={Text(vm.t("搜索国家、城市、景点","Search countries, cities and landmarks"),maxLines=1)},
+                trailingIcon={Row(verticalAlignment=Alignment.CenterVertically){
+                    if(vm.query.isNotEmpty())IconButton(onClick={vm.updateSearch("")}){Icon(Icons.Outlined.Close,vm.t("清除搜索","Clear search"))}
+                    IconButton(onClick={vm.search();keyboard?.hide()},modifier=Modifier.size(OWVisual.spacing_touch.dp)){
+                        Box(Modifier.size(OWVisual.spacing_searchButton.dp).background(OWVisual.raised,CircleShape),contentAlignment=Alignment.Center){
+                            Icon(Icons.Outlined.Search,vm.t("搜索","Search"))
+                        }
+                    }
+                }},
+                modifier=Modifier.fillMaxWidth(),singleLine=true,shape=RoundedCornerShape(50),
                 keyboardOptions=KeyboardOptions(imeAction=ImeAction.Search),keyboardActions=KeyboardActions(onSearch={vm.search();keyboard?.hide()}),
                 colors=OutlinedTextFieldDefaults.colors(focusedContainerColor=NightSurface.copy(alpha=.90f),unfocusedContainerColor=NightSurface.copy(alpha=.88f),focusedTextColor=Moon,unfocusedTextColor=Moon,focusedPlaceholderColor=MoonMuted,unfocusedPlaceholderColor=MoonMuted,focusedLeadingIconColor=Moon,unfocusedLeadingIconColor=Moon,focusedTrailingIconColor=MoonMuted,unfocusedTrailingIconColor=MoonMuted,cursorColor=Moon,selectionColors=TextSelectionColors(handleColor=Moon,backgroundColor=Moon.copy(alpha=.25f)),focusedBorderColor=Moon.copy(alpha=.42f),unfocusedBorderColor=Moon.copy(alpha=.16f))
             )
             if(vm.query.isNotBlank() && (vm.searching || vm.searchCompleted))Surface(shape=RoundedCornerShape(22.dp),color=NightSurface.copy(alpha=.97f),contentColor=Moon){
                 Column(Modifier.fillMaxWidth().heightIn(max=320.dp).verticalScroll(rememberScrollState())){
-                    if(vm.searching)LinearProgressIndicator(Modifier.fillMaxWidth(),color=MoonMuted,trackColor=Moon.copy(alpha=.12f))
+                    if(vm.searching)EarthLoading()
                     if(vm.searchCompleted && vm.searchResults.isEmpty())Text(vm.t("没有找到，试试其他名称","No matches. Try another name."),Modifier.padding(20.dp))
                     vm.searchResults.forEach{place ->
                         TextButton(onClick={keyboard?.hide();vm.select(place)},modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(12.dp),colors=ButtonDefaults.textButtonColors(contentColor=Moon)){
@@ -223,7 +245,7 @@ class MainActivity:ComponentActivity(){
     fun command(value:JSONObject){web?.evaluateJavascript("window.OurworldGlobe&&window.OurworldGlobe.receive(${value});",null)}
     AndroidView(factory={
         WebView(context).apply {
-            setBackgroundColor(OWVisual.bg.toArgb());settings.javaScriptEnabled=true;settings.domStorageEnabled=false;settings.allowFileAccess=false;settings.allowContentAccess=false
+            setBackgroundColor(OWVisual.space.toArgb());settings.javaScriptEnabled=true;settings.domStorageEnabled=false;settings.allowFileAccess=false;settings.allowContentAccess=false
             val loader=WebViewAssetLoader.Builder().addPathHandler("/assets/",WebViewAssetLoader.AssetsPathHandler(context)).build()
             webViewClient=object:WebViewClientCompat(){override fun shouldInterceptRequest(view:WebView,request:android.webkit.WebResourceRequest)=loader.shouldInterceptRequest(request.url);override fun shouldOverrideUrlLoading(view:WebView,request:android.webkit.WebResourceRequest)=request.url.host!="appassets.androidplatform.net"}
             addJavascriptInterface(object {
@@ -257,6 +279,7 @@ class MainActivity:ComponentActivity(){
             loadUrl("https://appassets.androidplatform.net/assets/globe/index.html");web=this
         }
     },modifier=Modifier.fillMaxSize())
+    PauseWebViewWithActivity(web)
     LaunchedEffect(vm.places,vm.favorites){command(json("bridgeVersion" to 1,"event" to "setMarkers","data" to json("places" to JSONArray(vm.places),"favoriteIds" to JSONArray(vm.favorites.toList()))))}
     LaunchedEffect(vm.globeCommand){vm.globeCommand?.let(::command)}
     LaunchedEffect(vm.tab,vm.route){command(json("bridgeVersion" to 1,"event" to "setActive","data" to json("active" to (vm.tab==0 && vm.route in listOf("","city","country")))))}
@@ -270,6 +293,9 @@ class MainActivity:ComponentActivity(){
     DiscoveryDeck(vm){pendingCities=vm.feedCities;pendingCoverage=vm.coverage;chooseCities=true}
     if(chooseCities)AlertDialog(
         onDismissRequest={chooseCities=false},
+        modifier=Modifier.clip(RoundedCornerShape(OWVisual.radii_card.dp)).starlight(),
+        shape=RoundedCornerShape(OWVisual.radii_card.dp),
+        containerColor=Color.Transparent,
         title={Text(vm.t("选择服务城市","Choose service cities"))},
         text={Column(verticalArrangement=Arrangement.spacedBy(10.dp)){
             Row { FilterChip(selected=pendingCoverage=="any",onClick={pendingCoverage="any"},label={Text(vm.t("分别找人","Find separately"))});Spacer(Modifier.width(8.dp));FilterChip(selected=pendingCoverage=="all",onClick={pendingCoverage="all"},label={Text(vm.t("一人覆盖全部","One person, all cities"))}) }
@@ -326,21 +352,8 @@ class MainActivity:ComponentActivity(){
 @Composable fun OwnProfile(vm:WorldModel){
     if(vm.user==null){Auth(vm);return}
     LaunchedEffect(vm.user?.s("id")){vm.ownProfile()}
-    Form(vm,"Profile"){
-        Picture(vm.user!!.s("avatar"),300)
-        Text(vm.user!!.s("name"),style=MaterialTheme.typography.headlineLarge)
-        Text(vm.user!!.s("bio"))
-        Text(if(vm.user!!.s("id").startsWith("demo-"))vm.t("AI 演示人物","AI demo profile") else vm.user!!.s("providerStatus"),color=OWVisual.inkMuted,fontSize=12.sp)
-        Row(horizontalArrangement=Arrangement.spacedBy(12.dp)){
-            Button(onClick=vm::edit){Text(vm.t("搭建主页","Build profile"))}
-            OutlinedButton(onClick={vm.route="settings"}){Text(vm.t("设置","Settings"))}
-        }
-        Row{
-            TextButton(onClick={vm.route="packages"}){Text(vm.t("发布服务","Publish service"))}
-            TextButton(onClick={vm.route="verification"}){Text(vm.t("资料认证","Verification"))}
-        }
-        RenderProfile(vm,vm.profile)
-    }
+    if(vm.profile.o("user").s("id")!=vm.user?.s("id")){Box(Modifier.fillMaxSize(),contentAlignment=Alignment.Center){EarthLoading()};return}
+    NativeOwnerProfile(vm)
 }
 @Composable fun PublicProfile(vm:WorldModel){TravelPublicProfile(vm)}
 
@@ -349,10 +362,10 @@ fun profileRows(blocks:List<JSONObject>):List<List<JSONObject>> {
     blocks.forEach { block -> if(block.optInt("span")==2) {half?.let{rows.add(listOf(it))};half=null;rows.add(listOf(block))} else if(half!=null) {rows.add(listOf(half!!,block));half=null} else half=block }
     half?.let{rows.add(listOf(it))};return rows
 }
-@Composable fun RenderProfile(vm:WorldModel,resource:JSONObject,custom:JSONObject?=null,publicView:Boolean=false){
+@Composable fun RenderProfile(vm:WorldModel,resource:JSONObject,custom:JSONObject?=null,publicView:Boolean=false,hide:Set<String>=emptySet()){
     val profileLayout=custom?:resource.o("layout")
     Column(verticalArrangement=Arrangement.spacedBy(12.dp)) {
-        profileRows(profileLayout.a("blocks").objects().filter{!publicView || profileBlockVisible(resource,it)}).forEach { row ->
+        profileRows(profileLayout.a("blocks").objects().filter{it.s("type") !in hide}.filter{!publicView || profileBlockVisible(resource,it)}).forEach { row ->
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(12.dp)) {
                 row.forEach { block -> Box(Modifier.weight(1f)){ProfileBlockView(vm,resource,profileLayout,block,publicView)} }
                 if(row.size==1 && row.first().optInt("span")==1)Spacer(Modifier.weight(1f))
@@ -368,6 +381,7 @@ fun profileRows(blocks:List<JSONObject>):List<List<JSONObject>> {
             Text(block.s("title").ifEmpty{blockTitle(vm,type)},style=MaterialTheme.typography.titleMedium,color=accent)
             when(type){
                 "intro" -> Text(block.s("content").ifEmpty{source.s("bio")})
+                "prompts" -> block.a("prompts").objects().filter{it.s("answer").isNotBlank()}.forEach{p->Text(p.s("question"),fontSize=13.sp,fontWeight=FontWeight.SemiBold,color=accent);Text(p.s("answer"))}
                 "skills" -> Text(source.a("tags").join(" · "))
                 "cities" -> Text(referencedResources(resource.a("places").objects().filter{it.s("id") in source.a("cityIds").let{a->(0 until a.length()).map{a.optString(it)}}},refs){it.s("id")}.joinToString(" · "){it.localized("name",vm.locale)})
                 "gallery" -> block.a("refs").let{refs->(0 until refs.length()).forEach{Picture(refs.optString(it))}}
@@ -380,51 +394,7 @@ fun profileRows(blocks:List<JSONObject>):List<List<JSONObject>> {
         }
     }
 }
-fun blockTitle(vm:WorldModel,type:String)=when(type){"intro"->vm.t("关于我","About");"gallery"->vm.t("照片","Gallery");"experiences"->vm.t("旅行经历","Experiences");"skills"->vm.t("特长与兴趣","Skills");"cities"->vm.t("服务城市","Cities");"packages"->vm.t("服务套餐","Services");"posts"->vm.t("我的动态","Stories");"reviews"->vm.t("服务评价","Reviews");else->vm.t("社交链接","Social")}
-
-@Composable fun ProfileEditor(vm:WorldModel){
-    var prompt by remember{mutableStateOf("")};var preview by remember{mutableStateOf(false)};var history by remember{mutableStateOf(listOf<JSONObject>())};var showHistory by remember{mutableStateOf(false)}
-    fun update(blocks:List<JSONObject>){vm.changeLayout(JSONObject(vm.layout.toString()).put("blocks",JSONArray(blocks)))}
-    fun move(index:Int,delta:Int){val blocks=vm.layout.a("blocks").objects().toMutableList();val target=index+delta;if(target in blocks.indices){val a=blocks.removeAt(index);blocks.add(target,a);update(blocks)}}
-    val photo=rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()){uri->uri?.let{vm.upload(it,"public"){file->val blocks=vm.layout.a("blocks").objects().map{JSONObject(it.toString())}.toMutableList();val gallery=blocks.firstOrNull{b->b.s("type")=="gallery"}?:json("id" to UUID.randomUUID().toString(),"type" to "gallery","span" to 2,"size" to "expanded").also{blocks.add(it)};gallery.put("refs",gallery.a("refs").put(file.s("url")));update(blocks)}}}
-    Form(vm,vm.t("搭建我的主页","Build my profile")){
-        Text(vm.t("长按拖动组件，或使用箭头排序。先预览，再发布。","Long press to reorder, or use arrows. Preview before publishing."))
-        Row{listOf("ocean","forest","nocturne").forEach{theme->TextButton(onClick={vm.changeLayout(JSONObject(vm.layout.toString()).put("theme",theme))}){Text(theme)}}}
-        Field(vm.layout.s("accent"),vm.t("强调色 HEX","Accent HEX")){vm.changeLayout(JSONObject(vm.layout.toString()).put("accent",it))}
-        Field(prompt,vm.t("用自然语言描述你想要的主页","Describe your ideal profile")){prompt=it}
-        Action(vm.t("让 Agent 排版","Design with Agent"),prompt.isNotBlank()&&!vm.busy){vm.generate(prompt)}
-        vm.job?.let{j->Text(j.s("status")+" "+j.s("error"));if(j.s("status")=="ready"){RenderProfile(vm,vm.profile,j.o("layout"));Action(vm.t("应用此预览到草稿","Apply preview to draft")){vm.applyJob()}};TextButton(onClick=vm::cancelJob){Text(vm.t("取消生成","Cancel generation"))}}
-        Row{TextButton(onClick={preview=!preview}){Text(vm.t("切换预览","Toggle preview"))};TextButton(onClick={photo.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))}){Text(vm.t("添加照片","Add photo"))};TextButton(onClick=vm::undoLayout){Text(vm.t("撤销","Undo"))};TextButton(onClick={vm.run{history=vm.api.call("/profile/history").a("items").objects();showHistory=true}}){Text(vm.t("历史版本","History"))}}
-        if(preview)RenderProfile(vm,vm.profile,vm.layout) else vm.layout.a("blocks").objects().forEachIndexed{index,block->
-            var dy by remember(block.s("id")){mutableFloatStateOf(0f)}
-            OutlinedCard(Modifier.fillMaxWidth().pointerInput(block.s("id")){detectDragGesturesAfterLongPress(onDragEnd={if(kotlin.math.abs(dy)>50)move(index,if(dy>0)1 else -1);dy=0f},onDragCancel={dy=0f}){change,amount->change.consume();dy+=amount.y}}){Column(Modifier.padding(14.dp)){
-                Text(blockTitle(vm,block.s("type")),style=MaterialTheme.typography.titleMedium)
-                Field(block.s("title"),vm.t("标题","Title")){value->val blocks=vm.layout.a("blocks").objects().map{JSONObject(it.toString())};blocks[index].put("title",value);update(blocks)}
-                if(block.s("type") in listOf("intro","experiences"))Field(block.s("content"),vm.t("内容","Content")){value->val blocks=vm.layout.a("blocks").objects().map{JSONObject(it.toString())};blocks[index].put("content",value);update(blocks)}
-                Row{TextButton(onClick={move(index,-1)}){Text("↑")};TextButton(onClick={move(index,1)}){Text("↓")};TextButton(onClick={val list=vm.layout.a("blocks").objects().map{JSONObject(it.toString())};list[index].put("span",if(block.optInt("span")==2)1 else 2);update(list)}){Text(if(block.optInt("span")==2)vm.t("整宽","Full") else vm.t("半宽","Half"))};TextButton(onClick={val list=vm.layout.a("blocks").objects().map{JSONObject(it.toString())};list[index].put("size",if(block.s("size")=="compact")"expanded" else "compact");update(list)}){Text(vm.t("尺寸","Size"))};IconButton(onClick={update(vm.layout.a("blocks").objects().filterIndexed{i,_->i!=index})}){Icon(Icons.Outlined.Delete,"Remove")}}
-            }}
-        }
-        Text(vm.t("添加组件","Add component"));listOf("intro","gallery","experiences","skills","cities","packages","posts","reviews","social").chunked(3).forEach{row->Row{row.forEach{type->TextButton(onClick={update(vm.layout.a("blocks").objects()+json("id" to UUID.randomUUID().toString(),"type" to type,"span" to 2,"size" to "compact"))}){Text(blockTitle(vm,type))}}}}
-        Action(vm.t("保存草稿","Save draft"),!vm.busy){vm.save()};Action(vm.t("发布主页","Publish profile"),!vm.busy){vm.save(true)}
-    }
-    if(showHistory)AlertDialog(
-        onDismissRequest={showHistory=false},
-        title={Text(vm.t("主页历史","Profile history"))},
-        text={
-            Column(Modifier.heightIn(max=360.dp).verticalScroll(rememberScrollState())) {
-                if(history.isEmpty())Text(vm.t("暂无历史版本","No published history yet"))
-                history.forEach { item ->
-                    TextButton(onClick={vm.restoreRevision(item.optInt("revision"));showHistory=false}) {
-                        Text(vm.t("恢复版本 ","Restore revision ")+item.optInt("revision"))
-                    }
-                }
-            }
-        },
-        confirmButton={TextButton(onClick={showHistory=false}){Text(vm.t("关闭","Close"))}}
-    )
-
-
-}
+fun blockTitle(vm:WorldModel,type:String)=when(type){"intro"->vm.t("关于我","About");"prompts"->vm.t("旅行问答","Travel prompts");"gallery"->vm.t("照片","Gallery");"experiences"->vm.t("旅行经历","Experiences");"skills"->vm.t("特长与兴趣","Skills");"cities"->vm.t("服务城市","Cities");"packages"->vm.t("服务套餐","Services");"posts"->vm.t("我的动态","Stories");"reviews"->vm.t("服务评价","Reviews");else->vm.t("社交链接","Social")}
 
 @Composable fun Auth(vm:WorldModel){var email by remember{mutableStateOf("")};var password by remember{mutableStateOf("")};var name by remember{mutableStateOf("")};var token by remember{mutableStateOf("")};var mode by remember{mutableStateOf("login")};Form(vm,vm.t("欢迎来到 Ourworld","Welcome to Ourworld")){
     if(vm.tab==2 && vm.user==null){
@@ -453,9 +423,13 @@ fun blockTitle(vm:WorldModel,type:String)=when(type){"intro"->vm.t("关于我","
     var name by remember{mutableStateOf(vm.user?.s("name").orEmpty())}
     var bio by remember{mutableStateOf(vm.user?.s("bio").orEmpty())}
     var tags by remember{mutableStateOf(vm.user?.a("tags")?.join(",").orEmpty())}
-    var cities by remember{mutableStateOf(vm.user?.a("cityIds")?.join(",").orEmpty())}
+    var showCities by remember{mutableStateOf(false)}
+    var school by remember{mutableStateOf(currentProfileDetails(vm).s("school"))}
+    var education by remember{mutableStateOf(currentProfileDetails(vm).s("educationLevel"))}
+    var educationMenu by remember{mutableStateOf(false)}
     var quote by remember{mutableStateOf(vm.user?.s("quote").orEmpty())}
     val portrait=rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()){uri->uri?.let{vm.upload(it,"public"){file->vm.run{vm.user=vm.api.call("/me","PATCH",json("avatar" to file.s("url")))}}}}
+    if(showCities){NativeServiceCities(vm,onClose={showCities=false});return}
     Form(vm,vm.t("设置与个人资料","Settings & details")){
         Picture(vm.user?.s("avatar").orEmpty(),160)
         OutlinedButton(onClick={portrait.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))}){Text(vm.t("更换头像","Change portrait"))}
@@ -463,15 +437,11 @@ fun blockTitle(vm:WorldModel,type:String)=when(type){"intro"->vm.t("关于我","
         Field(bio,vm.t("个人简介","Bio")){bio=it}
         Field(tags,vm.t("特长，逗号分隔","Skills, comma separated")){tags=it}
         Field(quote,vm.t("展示报价","Displayed quote")){quote=it}
-        Text(vm.t("选择服务城市","Choose service cities"))
-        vm.places.filter{it.s("kind")=="city"}.chunked(2).forEach { pair ->
-            Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) { pair.forEach { place ->
-                val selected=cities.split(',').contains(place.s("id"))
-                FilterChip(selected=selected,onClick={val ids=cities.split(',').filter{it.isNotBlank()}.toMutableSet();if(selected)ids.remove(place.s("id")) else ids.add(place.s("id"));cities=ids.joinToString(",")},label={Text(place.localized("name",vm.locale))})
-            } }
-        }
+        Field(school,vm.t("学校","School")){school=it.take(120)}
+        Box{OutlinedButton(onClick={educationMenu=true},modifier=Modifier.fillMaxWidth()){Icon(Icons.Outlined.School,null);Spacer(Modifier.width(8.dp));Text(educationLabel(vm,education).ifBlank{vm.t("学历 · 暂不填写","Education · Prefer not to say")})};DropdownMenu(expanded=educationMenu,onDismissRequest={educationMenu=false}){(listOf("")+educationLevels).forEach{level->DropdownMenuItem(text={Text(educationLabel(vm,level).ifBlank{vm.t("暂不填写","Prefer not to say")})},onClick={education=level;educationMenu=false})}}}
+        OutlinedButton(onClick={showCities=true},modifier=Modifier.fillMaxWidth()){Icon(Icons.Outlined.LocationOn,null);Spacer(Modifier.width(8.dp));Text(vm.t("服务城市","Service cities"),Modifier.weight(1f));Icon(Icons.Outlined.ChevronRight,null)}
         Action(vm.t("保存资料","Save details")){
-            vm.run{vm.user=vm.api.call("/me","PATCH",json("name" to name,"bio" to bio,"tags" to JSONArray(tags.split(',').map{it.trim()}.filter{it.isNotEmpty()}),"cityIds" to JSONArray(cities.split(',').map{it.trim()}.filter{it.isNotEmpty()}),"quote" to quote));vm.notice=vm.t("已保存","Saved")}
+            vm.run{vm.user=vm.api.call("/me","PATCH",json("name" to name,"bio" to bio,"tags" to JSONArray(tags.split(',').map{it.trim()}.filter{it.isNotEmpty()}),"quote" to quote,"school" to school.trim(),"educationLevel" to (education.ifBlank{null}?:JSONObject.NULL)));vm.profile=vm.api.call("/users/${vm.user!!.s("id")}");vm.notice=vm.t("已保存","Saved")}
         }
         Action(vm.t("切换中英文","Switch language")){vm.language()}
         GlobeCredits(vm)
@@ -489,7 +459,7 @@ fun blockTitle(vm:WorldModel,type:String)=when(type){"intro"->vm.t("关于我","
     if(expanded)Column(verticalArrangement=Arrangement.spacedBy(10.dp)){
         TextButton(onClick={browser.openUri(nativeMediaUrl("/api/v1/photo-credits"))}){Text(vm.t("摄影素材与来源","Photography credits"))}
         Text("Earth surface: NASA Earth Observatory / Reto Stöckli. Boundaries: Natural Earth, via world-atlas. NASA does not endorse this app.",style=MaterialTheme.typography.bodySmall)
-        Text(vm.t("地表基于2004年7月历史影像统一调色；无云层，不随昼夜变化。","Recolored July 2004 surface imagery. No clouds or day/night changes."),style=MaterialTheme.typography.bodySmall)
+        Text(vm.t("地表采用 2004 年卫星合成影像，云层包含在影像中，无实时昼夜变化。","Composite satellite imagery from 2004, with clouds in the texture and no live day/night cycle."),style=MaterialTheme.typography.bodySmall)
         listOf(
             vm.t("日间影像 · NASA","Day imagery · NASA") to "https://science.nasa.gov/earth/earth-observatory/blue-marble-next-generation/base-topography/"
         ).forEach{(label,url)->TextButton(onClick={browser.openUri(url)}){Text(label);Icon(Icons.Outlined.OpenInNew,null,Modifier.padding(start=8.dp).size(16.dp))}}
@@ -539,7 +509,12 @@ fun blockTitle(vm:WorldModel,type:String)=when(type){"intro"->vm.t("关于我","
     Text(kind);Field(description,vm.t("经历或资质说明","Experience or credentials")){description=it};OutlinedButton(onClick={picker.launch(arrayOf("image/*","application/pdf"))}){Text(vm.t("上传审核材料","Upload documents"))};Text("${fileIds.size} "+vm.t("份材料","documents"));Action(vm.t("提交审核","Submit for review")){vm.run{status=vm.api.call("/verification","POST",json("kind" to kind,"name" to vm.user?.s("name"),"description" to description,"fileIds" to JSONArray(fileIds)))}}
 }}
 
-@Composable fun Community(vm:WorldModel){
+@Composable fun Community(vm:WorldModel,global:Boolean=false){
+    var communityPosts by remember{mutableStateOf(listOf<JSONObject>())}
+    var storyCity by remember{mutableStateOf("")}
+    var pickingCity by remember{mutableStateOf(false)}
+    suspend fun refreshCommunity(){communityPosts=vm.api.call("/posts").a("items").objects()}
+    LaunchedEffect(global){if(global)vm.run{refreshCommunity()}}
     var title by remember{mutableStateOf("")}
     var body by remember{mutableStateOf("")}
     var images by remember{mutableStateOf(listOf<String>())}
@@ -547,15 +522,32 @@ fun blockTitle(vm:WorldModel,type:String)=when(type){"intro"->vm.t("关于我","
     var comments by remember{mutableStateOf(listOf<JSONObject>())}
     var comment by remember{mutableStateOf("")}
     val photo=rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()){uri->uri?.let{if(vm.requireLogin())vm.upload(it,"public"){file->images=images+file.s("url")}}}
-    Form(vm,vm.t("城市故事","City stories")){
+    val cityId=if(global)storyCity else vm.city?.s("id").orEmpty()
+    Form(vm,if(global)vm.t("社区","Community") else vm.t("城市故事","City stories"),showBack=!global){
+        if(global)Box {
+            OutlinedButton(onClick={pickingCity=true}){
+                Text(vm.places.firstOrNull{it.s("id")==storyCity}?.localized("name",vm.locale) ?: vm.t("选择城市","Choose a city"))
+            }
+            DropdownMenu(expanded=pickingCity,onDismissRequest={pickingCity=false}){
+                vm.places.filter{it.s("kind")=="city"}.forEach{city->
+                    DropdownMenuItem(text={Text(city.localized("name",vm.locale))},onClick={storyCity=city.s("id");pickingCity=false})
+                }
+            }
+        }
         Field(title,vm.t("标题","Title")){title=it}
         Field(body,vm.t("分享你的经历","Share your story")){body=it}
         images.forEach{Picture(it)}
         OutlinedButton(onClick={photo.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))}){Text(vm.t("添加照片","Add photo"))}
         Action(vm.t("发布故事","Publish story")){
-            if(vm.requireLogin())vm.run{vm.api.call("/posts","POST",json("cityId" to vm.city?.s("id"),"title" to title,"body" to body,"images" to JSONArray(images)));title="";body="";images=emptyList();vm.posts=vm.api.call("/posts?cityId=${vm.city?.s("id").orEmpty()}").a("items").objects()}
+            if(global && cityId.isBlank()){
+                vm.notice=vm.t("请选择城市","Choose a city")
+            }else if(vm.requireLogin())vm.run{
+                vm.api.call("/posts","POST",json("cityId" to cityId,"title" to title,"body" to body,"images" to JSONArray(images)))
+                title="";body="";images=emptyList()
+                if(global)refreshCommunity() else vm.posts=vm.api.call("/posts?cityId=$cityId").a("items").objects()
+            }
         }
-        vm.posts.forEach { post ->
+        (if(global)communityPosts else vm.posts).forEach { post ->
             OutlinedCard {
                 Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
                     TextButton(onClick={vm.openProfile(post.s("userId"))}){Text(post.o("author").s("name"))}
@@ -563,7 +555,13 @@ fun blockTitle(vm:WorldModel,type:String)=when(type){"intro"->vm.t("关于我","
                     Text(post.s("body"))
                     post.a("images").let{photos->(0 until photos.length()).forEach{Picture(photos.optString(it))}}
                     Row {
-                        TextButton(onClick={vm.like(post)}){Text("Likes ${post.optInt("likes")}")}
+                        TextButton(onClick={
+                            if(!global)vm.like(post)
+                            else if(vm.requireLogin())vm.run{
+                                vm.api.call("/posts/${post.s("id")}/like",if(post.optBoolean("liked"))"DELETE" else "PUT")
+                                refreshCommunity()
+                            }
+                        }){Text("Likes ${post.optInt("likes")}")}
                         TextButton(onClick={commentPost=post;vm.run{comments=vm.api.call("/posts/${post.s("id")}/comments").a("items").objects()}}){Text(vm.t("评论","Comments"))}
                         TextButton(onClick={vm.report("post",post.s("id"),"Story report")}){Text(vm.t("举报","Report"))}
                     }

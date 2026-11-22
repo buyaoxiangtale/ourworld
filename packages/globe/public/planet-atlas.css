@@ -1,0 +1,42 @@
+.planet-atlas {
+  display: block;
+  background: var(--planet-atlas) 0 0 / 800% 1200% no-repeat;
+  animation: planet-rotation 8s linear infinite;
+}
+.planet-atlas[hidden] { display: none; }
+.planet-atlas[data-planet="earth"] { --planet-atlas: url('./textures/planet-earth.png'); }
+.planet-atlas[data-planet="community"] { --planet-atlas: url('./textures/planet-community.png'); }
+.planet-atlas[data-planet="chat"] { --planet-atlas: url('./textures/planet-chat.png'); }
+.planet-atlas[data-planet="profile"] { --planet-atlas: url('./textures/planet-profile.png'); }
+
+@media (prefers-reduced-motion: reduce) {
+  .planet-atlas { animation: none; }
+}
+
+@keyframes planet-rotation {
+  0.000000% { background-position: 0% 0.000000%; animation-timing-function: steps(7, end); }
+  7.291667% { background-position: 100% 0.000000%; animation-timing-function: steps(1, end); }
+  8.333333% { background-position: 0% 9.090909%; animation-timing-function: steps(7, end); }
+  15.625000% { background-position: 100% 9.090909%; animation-timing-function: steps(1, end); }
+  16.666667% { background-position: 0% 18.181818%; animation-timing-function: steps(7, end); }
+  23.958333% { background-position: 100% 18.181818%; animation-timing-function: steps(1, end); }
+  25.000000% { background-position: 0% 27.272727%; animation-timing-function: steps(7, end); }
+  32.291667% { background-position: 100% 27.272727%; animation-timing-function: steps(1, end); }
+  33.333333% { background-position: 0% 36.363636%; animation-timing-function: steps(7, end); }
+  40.625000% { background-position: 100% 36.363636%; animation-timing-function: steps(1, end); }
+  41.666667% { background-position: 0% 45.454545%; animation-timing-function: steps(7, end); }
+  48.958333% { background-position: 100% 45.454545%; animation-timing-function: steps(1, end); }
+  50.000000% { background-position: 0% 54.545455%; animation-timing-function: steps(7, end); }
+  57.291667% { background-position: 100% 54.545455%; animation-timing-function: steps(1, end); }
+  58.333333% { background-position: 0% 63.636364%; animation-timing-function: steps(7, end); }
+  65.625000% { background-position: 100% 63.636364%; animation-timing-function: steps(1, end); }
+  66.666667% { background-position: 0% 72.727273%; animation-timing-function: steps(7, end); }
+  73.958333% { background-position: 100% 72.727273%; animation-timing-function: steps(1, end); }
+  75.000000% { background-position: 0% 81.818182%; animation-timing-function: steps(7, end); }
+  82.291667% { background-position: 100% 81.818182%; animation-timing-function: steps(1, end); }
+  83.333333% { background-position: 0% 90.909091%; animation-timing-function: steps(7, end); }
+  90.625000% { background-position: 100% 90.909091%; animation-timing-function: steps(1, end); }
+  91.666667% { background-position: 0% 100.000000%; animation-timing-function: steps(7, end); }
+  98.958333% { background-position: 100% 100.000000%; animation-timing-function: steps(1, end); }
+  100% { background-position: 0 0; }
+}

@@ -1,15 +1,56 @@
-# Ourworld web experience and administration
+# Ourworld Web
 
-User-facing screens now use the shared mature photography design; `/admin` retains its styles. See `docs/MATURE_VISUAL.md` at the repository root. After a production build, `node apps/web/test/mature-ui.mjs` verifies three phone sizes with isolated API fixtures; `node apps/web/test/mature-live.mjs` checks the deployed Docker app with a local demo account. The latter creates a demo conversation and sends no messages.
+React 19 + TypeScript + Vite。网页和管理后台共用同源 API；地球通过 `/globe/index.html` 加载 `packages/globe` 生成的离线资源。
 
-Build/typecheck: `npm run build -w @ourworld/web`, `npm run typecheck -w @ourworld/web`.
+## 开发
 
-Development: `npm run dev -w @ourworld/web` serves port 5173. Its `/api` and `/media` proxy defaults to the project Docker gateway at `http://127.0.0.1:8188`. Set `API_PROXY_TARGET=http://127.0.0.1:3000` when using a host API instead. Use explicit IPv4 on this machine. Port 8080 is unrelated to this project.
+在仓库根目录运行：
 
-The root build copies the standalone globe into `public/globe`; its scripts, geographic data, fonts and textures are local. `VITE_API_BASE` defaults to `/api/v1`; `VITE_WS_BASE` optionally specifies a WebSocket origin. `/admin` uses the same verified session and requires the admin role. Both email link formats are supported: `/?verify=...` / `/?reset=...`, and `/verify?token=...` / `/reset?token=...`.
+```sh
+uv sync --locked
+uv run ourworld setup
+uv run ourworld dev web
+```
 
-Profile edits are draft-only until publish. Agent proposals use real server jobs; missing model configuration displays an explicit error. No payment UI or simulation is enabled. Public uploaded images may be referenced in profile galleries; chat and verification documents remain private.
+Vite 默认端口为 5173。真实 API 与容器网页运行方式见 [开发指南](../../docs/development.md)。
 
-Project-local browser smoke tests: `node apps/web/test/ui.mjs`. They use the separate Playwright installation and project Chromium with `--no-proxy-server --disable-gpu`, never a personal browser profile. The local demo password is read from `.env`, not written to test output. Tests create development-only messages and save a profile draft. Screenshots and a JSON report are written under `artifacts/ui-frontend-*`. Set `OURWORLD_WEB_URL` to change the target; default is the live Vite app at `http://127.0.0.1:5173`.
+## 源码组织
 
-`node apps/web/test/profile-refs.mjs` renders the actual Profile component through Vite SSR and checks explicit references, order, empty-reference fallback and service-city boundaries. `node apps/web/test/nav-layout.mjs` checks actual App markup plus current styles at three phone sizes in an isolated browser, with all network requests blocked. Neither test calls the running backend.
+- `src/App.tsx`：导航、登录状态、语言和公共上下文。
+- `src/Explore.tsx`：地球桥接、地点搜索和当地人卡片。
+- `src/Chat.tsx`：会话与消息。
+- `src/features/profile/`：个人主页、照片轮播、简介与照片故事、爱好分类、城市和语言选择器。
+- `src/SlidePresence.tsx`、`src/useDialogFocus.ts`：弹层退出生命周期和焦点管理。
+- `src/visual-tokens.css`：从共享视觉配置生成的令牌。
+
+主页使用双列卡片，同类爱好合并展示，保留新增爱好与新增故事入口。个人简介、故事和爱好通过独立页面编辑；滑入页面关闭时向下退出，并尊重减少动态效果设置。
+
+## 构建和自动部署
+
+```sh
+uv run ourworld build
+uv run ourworld watch
+uv run ourworld logs
+```
+
+前端监听器位于 `scripts/dev/frontend-watch.mjs`，在独立工作目录构建，以版本目录和原子链接发布。构建失败时保留当前版本；旧页面需要的哈希资源会暂时保留。编辑表单和聊天输入期间，页面自动刷新会延迟执行。
+
+`public/globe/` 和 `public/openapi.json` 是生成输出。更新地球应修改 `packages/globe`；更新 API 文档应修改路由、契约或 `scripts/generate/generate-openapi.mjs`。
+
+## 测试
+
+```sh
+uv run ourworld browsers
+uv run ourworld test web profile-owner
+uv run ourworld test web profile-hobbies
+uv run ourworld test web slide-exit
+uv run ourworld test web globe-recovery
+```
+
+浏览器脚本集中在 `tests/e2e/web/`，纯逻辑检查位于 `tests/unit/`。完整分类见 [测试指南](../../docs/testing/README.md)。
+
+## 登录与退出
+
+网页在同源浏览器存储中保存有效会话，刷新和重新打开页面会恢复登录，访问令牌过期后自动续期。临时网络或服务错误保留本机登录；服务端明确撤销或过期的会话会清除。原有标签页会话会自动迁移。
+
+个人主页管理区、设置和管理后台均提供退出登录。点击退出先显示确认弹窗；取消或关闭弹窗保留登录，确认后立即清理本机状态并同步其他标签页，服务器注销不可用时也可退出当前设备。回归入口：`uv run ourworld test web auth-session`。

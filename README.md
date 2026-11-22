@@ -1,85 +1,123 @@
-# OURWORLD · 我的世界
+# Ourworld · 我的世界
 
-以地球发现城市，在城市中随机认识当地人。Android 与 iOS 为原生界面，另提供 Docker 手机网页体验端和管理后台。
+通过地球发现城市，认识当地人，并分享照片、个人故事与旅行服务。
 
-首页为深色地图地球（无云层、无昼夜分界），保留简洁搜索框和三个导航图标。点击国家查看介绍与实景照片，再进入城市；未登录时可从 Profile 查看带 AI 演示标识的当地人与游客示例主页。地球影像随资源本地打包，设置中提供来源说明。
+仓库包含 React 网页及管理后台、TypeScript API、Android Compose、iOS SwiftUI，以及三端共用的离线地球和数据契约。
 
-当前改版采用墨黑深海地球、离线矢量国界、地图前景的大幅人物卡及距离 / 速度共同判定的滑动；主页和聊天使用浅色内容面。三端代码、最新 Android 安装包、截图、测试与设备验收边界见 [深海改版记录](docs/DEEP_SEA_UI.md)。历史视觉与摄影说明保留在 `docs/MATURE_VISUAL.md`。
+## 环境与依赖
 
-## 本地启动
+- [uv](https://docs.astral.sh/uv/getting-started/installation/)：统一项目工具入口，管理 Python 版本、虚拟环境和工具依赖。
+- Node.js 24+：运行 TypeScript 工具链；JavaScript 依赖由 npm workspaces 和 `package-lock.json` 锁定。
+- Docker Engine / Docker Desktop 与 Compose v2：运行数据库、缓存、存储、邮件和应用服务。
+- Python 3.12：由 uv 按 `.python-version` 自动准备。
 
-需要 Node.js 24 与 Docker Desktop（Linux containers）。
+uv 管理的是 Python 依赖。项目通过 `uv run ourworld …` 调用各语言的工具链；Android 依赖仍由 Gradle 管理，iOS 构建仍使用 Xcode。相关边界见 [uv 官方依赖说明](https://docs.astral.sh/uv/concepts/projects/dependencies/)。
 
-```powershell
-node scripts/start.mjs
+```sh
+uv sync --locked
+uv run ourworld doctor
+uv run ourworld start
 ```
 
-- 手机网页：[http://localhost:8188](http://localhost:8188)
-- 管理后台：[http://localhost:8188/admin](http://localhost:8188/admin)
-- 本地邮件收件箱：[http://localhost:8025](http://localhost:8025)
-- 健康检查：[http://localhost:8188/api/v1/health](http://localhost:8188/api/v1/health)
+`start` 初始化缺失的 `.env`、构建容器并启动服务，保留现有配置和持久化数据。首次启动需要下载镜像。
 
-启动脚本保留已有 `.env`，分别构建前后端，再启动两个 API 实例及基础服务；首次运行需要下载镜像。开发源码检查另需 `npm ci`。
+| 服务 | 地址 |
+| --- | --- |
+| 手机网页 | http://localhost:8188 |
+| 管理后台 | http://localhost:8188/admin |
+| 开发邮件收件箱 | http://localhost:8025 |
+| 健康检查 | http://localhost:8188/api/v1/health |
+| OpenAPI | http://localhost:8188/api/v1/openapi.json |
 
-开发种子账号：`traveler@ourworld.test`、`local@ourworld.test`、`admin@ourworld.test`。本地示例密码 `Ourworld2026!`，以 `.env` 的 `DEMO_PASSWORD` 为准。此配置用于本地开发，未配置公开部署。
+开发账号为 `traveler@ourworld.test`、`local@ourworld.test`、`admin@ourworld.test`；密码取自本地 `.env` 的 `DEMO_PASSWORD`。手机访问时，将 `PUBLIC_BASE_URL` 配置为电脑的局域网地址，并给原生应用设置相同的 API 地址。
 
-手机访问时将 `.env` 的 `PUBLIC_BASE_URL` 改为电脑的局域网地址，例如 `http://192.168.1.20:8188`，并在原生调试构建中配置相同 API 地址。数据库、Redis、文件存储和邮件端口只绑定本机；Redis 使用 56379，网页使用 8188，避免影响已有服务。
+## 目录
 
-## 开发、资源及测试
-
-```powershell
-npm run build
-npm run typecheck
-npm test
-node --env-file=.env tests/integration.mjs
+```text
+apps/
+  api/                  TypeScript API、worker、数据库迁移与种子素材
+  web/src/
+    features/profile/   个人主页、照片、故事、爱好与独立编辑页面
+  android/              Kotlin / Compose 工程
+  ios/                  SwiftUI / XcodeGen 工程
+packages/
+  contracts/            三端契约、设计令牌、字体来源
+  globe/                离线地球源码、地图纹理与署名
+scripts/
+  dev/                  本地配置、容器启动、前端自动部署
+  generate/             设计令牌、OpenAPI、地球资源生成
+  assets/               显式更新照片、字体和人像的工具
+  load/                 压测监控
+tools/ourworld_tools/  uv 提供的 ourworld 命令
+tests/
+  unit/                 仓库、前端逻辑和构建工具检查
+  tools/                Python 工具测试
+  e2e/web/              浏览器回归
+  integration/          真实 API、目录、恢复与自动部署验收
+  load/                 k6 压测
+infra/                  Nginx 与原生构建容器配置
+docs/                   当前文档及历史归档
 ```
 
-本地直接运行 API/worker 前先启动基础服务：
+应用内部的 API 测试保留在 `apps/api/test`，便于随工作区独立运行。构建资源、截图和测试报告的存放规则见 [目录与产物约定](docs/architecture/repository.md)。
 
-```powershell
-docker compose up -d postgres redis storage mailpit
-node --env-file=.env apps/api/dist/migrate.js
-node --env-file=.env apps/api/dist/seed.js
-node --env-file=.env apps/api/dist/main.js
+## 日常开发
+
+```sh
+# 安装锁定的 npm 依赖；已有 .env 会保留
+uv run ourworld setup
+
+# 网页开发；自动准备离线地球等静态资源
+uv run ourworld dev web
+
+# API 与队列 worker，分别在独立终端运行
+uv run --env-file .env ourworld dev api
+uv run --env-file .env ourworld dev worker
 ```
 
-另开终端运行 `node --env-file=.env apps/api/dist/worker.js`。前端开发运行 `npm run dev:web`。`npm run build` 会构建并复制共用地球资源到网页、Android 和 iOS。
+开发 API 前需启动 PostgreSQL、Redis、存储和邮件服务。具体步骤、端口及数据库迁移见 [开发指南](docs/development.md)。
 
-## 真实主页排版 Agent
+Docker 网页开启自动构建和发布：保存前端、设计令牌或地球源码后自动更新；构建失败保留上一版。打开的页面会自动刷新，正在编辑的表单会延迟刷新。
 
-默认已按用户选择配置 DeepSeek Flash：`LLM_BASE_URL=https://api.deepseek.com`、`LLM_MODEL=deepseek-flash`。在 `.env` 填入 `LLM_API_KEY` 后启用真实调用，无需将密钥发到聊天。接口采用 Chat Completions 兼容协议，DeepSeek 使用 `LLM_OUTPUT_MODE=json`。其他支持结构化输出的模型可设置 `LLM_OUTPUT_MODE=json_schema`。更新配置后重建/重启 API 和 worker。
-
-```powershell
-docker compose up -d --scale api=2 --force-recreate api worker gateway
+```sh
+uv run ourworld watch  # 启动或更新监听服务
+uv run ourworld logs   # 查看自动发布日志
 ```
 
-Agent 只生成布局候选；用户预览、应用到草稿、发布后，公开主页才更新。没有配置模型时会明确提示，不以固定模板冒充模型生成。证件、登录信息和私聊不发送给排版模型。
+## 构建与测试
 
-## 原生工程
-
-- Android：`apps/android`。构建 JDK/SDK 容器：`docker build -f infra/Dockerfile.android -t ourworld-android-builder:local .`。具体构建与安装见该目录说明。
-- iOS：`apps/ios`，在 Mac 上用 XcodeGen 生成工程并用 Xcode 构建。工程准备不等于完成模拟器、真机或签名验收。
-
-## 并发验收
-
-```powershell
-$env:AUTH_LOGIN_LIMIT='2000'
-docker compose up -d --scale api=2 --force-recreate api worker gateway
-docker compose --profile loadtest run --rm --no-deps loadtest
-Remove-Item Env:AUTH_LOGIN_LIMIT
-docker compose up -d --scale api=2 --force-recreate api worker gateway
+```sh
+uv run ourworld prepare                 # 只生成共享资源
+uv run ourworld build                   # 构建 API、网页及三端地球资源
+uv run ourworld check                   # 类型、单元测试及 Python 检查
+uv run ourworld browsers                # 首次安装浏览器测试依赖
+uv run ourworld test web profile-hobbies
+uv run ourworld test web globe-recovery
+uv run ourworld test integration api
 ```
 
-并发脚本会登录 500 个专用种子账号，故仅在测试期间提高登录限流，结束后恢复。基线为 500 个认证 WebSocket 与 100 HTTP 请求/秒持续 15 分钟。原始结果保存在 `artifacts`。测试过程、实测结论和外部依赖见 `docs/VALIDATION.md`。
+浏览器默认访问 `http://127.0.0.1:8188`，可通过 `OURWORLD_WEB_URL` 更改。不同测试的依赖、数据影响和完整命令见 [测试指南](docs/testing/README.md)。
 
-## 文档
+Android 构建需要 JDK 17 和 Android SDK 35；iOS 构建需要 macOS、Xcode 和 XcodeGen。详见 [Android](apps/android/README.md) 与 [iOS](apps/ios/README.md)。
 
-- `docs/PRODUCT_REQUIREMENTS.md`：功能和交互基线。
-- `docs/API_CONTRACT.md`：共享 API 与桥接契约。
-- `docs/SYSTEM_DESIGN.md`：架构、权限、一致性、扩展及恢复。
-- `docs/VALIDATION.md`：实际验证记录。
-- `docs/PROFILE_AGENT.md`：排版 Agent 的实际接入状态、密钥配置及使用方式。
-- `docs/TASTE_DESIGN_REVIEW.md`：用户级 taste-skill 安装与本轮设计评审。
-- `docs/EARTH_ASSETS.md`：NASA/GEBCO 影像来源、年代、处理及署名。
+## 生成文件与清理
 
-首版允许自由交换联系方式及线下交易；不包含支付、钱包、订单或资金赔付。未来交易仅保留接口边界。
+`packages/globe` 是地球资源的源码来源。构建会将生成结果复制到网页与原生资源目录，这些副本不纳入版本控制。OpenAPI 的审阅版本位于 `docs/api/openapi.json`，网页副本在构建时生成。设计令牌由 `packages/contracts/assets/visual.json` 生成，检查会验证三端一致性。
+
+```sh
+uv run ourworld clean --dry-run
+uv run ourworld clean
+```
+
+清理范围为构建输出、生成副本和 Python 字节码缓存；数据库卷、`.env`、依赖目录、原始素材、报告和签名密钥会保留。清理后运行 `uv run ourworld build` 重新生成资源。
+
+## 文档入口
+
+- [文档索引](docs/README.md)
+- [产品需求](docs/product/requirements.md)
+- [系统架构](docs/architecture/overview.md)
+- [API 契约](docs/api/contract.md)
+- [地球影像与署名](docs/assets/earth.md)
+- [历史设计与验收记录](docs/archive/README.md)
+
+项目提供联系方式交换和线下服务沟通；当前未实现支付、钱包或资金托管。
