@@ -90,7 +90,7 @@ private fun Modifier.dashedAccentEdge():Modifier=drawBehind{
                 if(blocks.none{it.s("type")=="intro"})Text(user.s("bio"),fontSize=16.sp)
             }
             if(owner && completeness<100 && !bannerDismissed)ProfileCompletenessBanner(vm,completeness,hasPrice,galleryPhotos.size>=3,promptAnswers.isNotEmpty()){bannerDismissed=true}
-            ProfileChipRow(vm,listOf(
+            ProfileChipRow(listOf(
                 ProfileChip(vm.t("服务城市","Service cities"),cities.joinToString(" · "){it.localized("name",vm.locale)}.ifEmpty{null},false){vm.route="settings"},
                 ProfileChip(vm.t("从业年限","Experience"),if(!user.isNull("experienceYears"))vm.t("${user.d("experienceYears").toInt()} 年","${user.d("experienceYears").toInt()} yrs") else null,false){vm.route="settings"},
                 ProfileChip(vm.t("语言","Languages"),languages.joinToString(" / ").ifEmpty{null},false){vm.editProfileCard("gallery")},
@@ -146,7 +146,7 @@ private fun Modifier.dashedAccentEdge():Modifier=drawBehind{
     Surface(color=OWVisual.nope.copy(alpha=.12f),shape=RoundedCornerShape(999.dp)){Row(Modifier.padding(horizontal=10.dp,vertical=5.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(5.dp)){Box(Modifier.size(6.dp).clip(CircleShape).background(OWVisual.nope));Text(label,fontSize=11.sp,color=OWVisual.inkMuted)}}
 }
 
-@Composable fun ProfileChipRow(vm:WorldModel,chips:List<ProfileChip>,owner:Boolean){
+@Composable private fun ProfileChipRow(chips:List<ProfileChip>, owner:Boolean){
     FlowRow(horizontalArrangement=Arrangement.spacedBy(8.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
         chips.forEach{chip->
             val value=chip.value

@@ -362,7 +362,7 @@ fun profileRows(blocks:List<JSONObject>):List<List<JSONObject>> {
     blocks.forEach { block -> if(block.optInt("span")==2) {half?.let{rows.add(listOf(it))};half=null;rows.add(listOf(block))} else if(half!=null) {rows.add(listOf(half!!,block));half=null} else half=block }
     half?.let{rows.add(listOf(it))};return rows
 }
-@Composable fun RenderProfile(vm:WorldModel,resource:JSONObject,custom:JSONObject?=null,publicView:Boolean=false,hide:Set<String>=emptySet()){
+@Composable fun RenderProfile(vm:WorldModel,resource:JSONObject,custom:JSONObject?=null,publicView:Boolean=false,hide:Set<String> = emptySet()){
     val profileLayout=custom?:resource.o("layout")
     Column(verticalArrangement=Arrangement.spacedBy(12.dp)) {
         profileRows(profileLayout.a("blocks").objects().filter{it.s("type") !in hide}.filter{!publicView || profileBlockVisible(resource,it)}).forEach { row ->
