@@ -12,13 +12,15 @@ uv run ourworld setup
 uv run ourworld dev web
 ```
 
-Vite 默认端口为 5173。真实 API 与容器网页运行方式见 [开发指南](../../docs/development.md)。
+Vite 默认端口为 5173，请求默认代理到 8188。真实 API 与容器网页运行方式见 [开发指南](../../docs/development.md)。
 
 ## 源码组织
 
 - `src/App.tsx`：导航、登录状态、语言和公共上下文。
 - `src/Explore.tsx`：地球桥接、地点搜索和当地人卡片。
+- `src/Stories.tsx`：社区和城市旅行故事。
 - `src/Chat.tsx`：会话与消息。
+- `src/NavEarth.tsx`：透明底栏微缩地球，实时渲染失败时继续使用共享旋转帧。
 - `src/features/profile/`：个人主页、照片轮播、简介与照片故事、爱好分类、城市和语言选择器。
 - `src/SlidePresence.tsx`、`src/useDialogFocus.ts`：弹层退出生命周期和焦点管理。
 - `src/visual-tokens.css`：从共享视觉配置生成的令牌。

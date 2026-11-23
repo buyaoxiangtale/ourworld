@@ -1,12 +1,22 @@
 import {
   ACESFilmicToneMapping, CanvasTexture, DirectionalLight, Group, HemisphereLight,
-  Mesh, MeshPhysicalMaterial, OrthographicCamera, PMREMGenerator, RepeatWrapping, Scene, SphereGeometry,
-  SRGBColorSpace, TextureLoader, TorusGeometry, Vector3, WebGLRenderer,
+  Mesh, MeshPhysicalMaterial, OrthographicCamera, RepeatWrapping, Scene, SphereGeometry,
+  SRGBColorSpace, TextureLoader, TorusGeometry, Vector3, WebGLRenderer, type MeshPhysicalMaterialParameters,
 } from 'three';
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 export type PlanetIcon = 'earth' | 'community' | 'chat' | 'profile';
 export const planetRotationMs = 8000;
+const porcelain = 0xd8d5cf;
+
+function ceramic(parameters: MeshPhysicalMaterialParameters = {}) {
+  return new MeshPhysicalMaterial({
+    color: porcelain,
+    roughness: .88,
+    metalness: 0,
+    specularIntensity: .15,
+    ...parameters,
+  });
+}
 
 function makeTexture(width: number, height: number) {
   const canvas = document.createElement('canvas');
@@ -28,15 +38,12 @@ async function earthMaterial(textures: URL) {
     loader.loadAsync(new URL('earth-topology.png', textures).href),
   ]);
   image.colorSpace = SRGBColorSpace;
-  const material = new MeshPhysicalMaterial({
-    map: image, bumpMap: bump, bumpScale: .035,
-    roughness: .43, metalness: .24, clearcoat: .20, clearcoatRoughness: .34,
-  });
+  const material = ceramic({ map: image, bumpMap: bump, bumpScale: .06 });
   material.onBeforeCompile = shader => {
     shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>', `
       #include <map_fragment>
-      float silver = 0.072 + 1.02 * dot(diffuseColor.rgb, vec3(0.24, 0.62, 0.14));
-      diffuseColor.rgb = vec3(silver);
+      float land = smoothstep(0.018, 0.20, dot(sampledDiffuseColor.rgb, vec3(0.24, 0.62, 0.14)));
+      diffuseColor.rgb = mix(vec3(0.31, 0.30, 0.28), vec3(0.90, 0.88, 0.84), land);
     `);
   };
   return material;
@@ -52,18 +59,14 @@ function communityMaterial() {
       const band = latitude + Math.sin(3 * longitude + latitude * 2) * .022
         + Math.sin(6 * longitude - latitude) * .012;
       const storm = Math.sin(4 * longitude + 4 * latitude) * Math.sin(latitude) ** 5;
-      const grey = 143 + 12 * Math.sin(17 * band) + 5 * Math.sin(36 * band)
-        + 2 * Math.sin(56 * band) + 12 * storm;
+      const grey = 229 + 5 * Math.sin(17 * band) + 2 * Math.sin(36 * band) + 7 * storm;
       const i = (y * canvas.width + x) * 4;
       pixels.data[i] = pixels.data[i + 1] = pixels.data[i + 2] = grey;
       pixels.data[i + 3] = 255;
     }
   }
   paint.putImageData(pixels, 0, 0);
-  return new MeshPhysicalMaterial({
-    map: colourTexture(canvas), roughness: .33, metalness: .38,
-    clearcoat: .45, clearcoatRoughness: .28,
-  });
+  return ceramic({ map: colourTexture(canvas) });
 }
 
 function chatGeometry() {
@@ -85,51 +88,53 @@ function chatGeometry() {
   return geometry;
 }
 
+function engraveSmile(paint: CanvasRenderingContext2D, carve: CanvasRenderingContext2D) {
+  const stroke = (context: CanvasRenderingContext2D, width: number, color: string | CanvasGradient, offset = 0) => {
+    context.lineWidth = width;
+    context.lineCap = 'round';
+    context.strokeStyle = color;
+    context.beginPath();
+    context.moveTo(92, 127 + offset);
+    context.quadraticCurveTo(128, 155 + offset, 164, 127 + offset);
+    context.stroke();
+  };
+
+  // A porcelain-coloured lower lip and a shallow shadow suggest a cut in the clay.
+  const shade = paint.createLinearGradient(92, 0, 164, 0);
+  shade.addColorStop(0, '#a6a39d');
+  shade.addColorStop(.25, '#86827c');
+  shade.addColorStop(.75, '#86827c');
+  shade.addColorStop(1, '#a6a39d');
+  stroke(paint, 10, '#d2cec7', 1.3);
+  stroke(paint, 7, shade);
+  stroke(carve, 11, '#b3b3b3');
+  stroke(carve, 7, '#909090');
+}
+
 function faceMaterial(kind: 'chat' | 'profile') {
   const { canvas, paint } = makeTexture(512, 256);
   const { canvas: relief, paint: carve } = makeTexture(512, 256);
-  paint.fillStyle = '#a9a9a9';
+  paint.fillStyle = '#fff';
   paint.fillRect(0, 0, canvas.width, canvas.height);
   carve.fillStyle = '#c6c6c6';
   carve.fillRect(0, 0, relief.width, relief.height);
-  for (const context of [paint, carve]) {
-    context.fillStyle = context.strokeStyle = context === paint ? '#222' : '#555';
-    if (kind === 'chat') {
+  if (kind === 'profile') {
+    engraveSmile(paint, carve);
+  } else {
+    for (const context of [paint, carve]) {
+      context.fillStyle = context === paint ? '#555' : '#666';
       for (const x of [100, 128, 156]) {
         context.beginPath();
         context.arc(x, 123, 7, 0, Math.PI * 2);
         context.fill();
       }
-      continue;
     }
-    for (const x of [104, 152]) {
-      context.beginPath();
-      context.ellipse(x, 108, 7.5, 12, 0, 0, Math.PI * 2);
-      context.fill();
-    }
-    context.lineWidth = 11;
-    context.lineCap = 'round';
-    context.beginPath();
-    context.moveTo(92, 139);
-    context.quadraticCurveTo(128, 174, 164, 139);
-    context.stroke();
   }
 
-  // A subtle brushed finish turns with the sphere under the front-facing engraving.
-  const { canvas: finish, paint: brush } = makeTexture(256, 32);
-  for (let x = 0; x < finish.width; x++) {
-    const angle = Math.PI * 2 * x / finish.width;
-    const gray = Math.round(179 + 27 * Math.sin(angle * 3) + 10 * Math.sin(angle * 14));
-    brush.fillStyle = `rgb(${gray},${gray},${gray})`;
-    brush.fillRect(x, 0, 1, finish.height);
-  }
   const map = colourTexture(canvas);
   const bumpMap = new CanvasTexture(relief);
   map.wrapS = bumpMap.wrapS = RepeatWrapping;
-  const material = new MeshPhysicalMaterial({
-    map, bumpMap, bumpScale: .032, roughnessMap: new CanvasTexture(finish),
-    roughness: .49, metalness: .3, clearcoat: .30, clearcoatRoughness: .28,
-  });
+  const material = ceramic({ map, bumpMap, bumpScale: .042 });
   return { material, markings: [map, bumpMap] };
 }
 
@@ -147,17 +152,10 @@ export async function createPlanetIcon(
   camera.position.set(0, .18, 5);
   camera.lookAt(0, 0, 0);
 
-  const room = new RoomEnvironment();
-  const pmrem = new PMREMGenerator(renderer);
-  const environment = pmrem.fromScene(room);
-  scene.environment = environment.texture;
-  scene.environmentIntensity = .7;
-  room.dispose();
-  pmrem.dispose();
-  scene.add(new HemisphereLight(0xffffff, 0x272727, .47));
-  const key = new DirectionalLight(0xffffff, 2.35);
+  scene.add(new HemisphereLight(0xffffff, kind === 'profile' ? 0x9d9d9d : 0x535353, 1.35));
+  const key = new DirectionalLight(0xffffff, 1.75);
   key.position.set(-3, 4, 4);
-  const edge = new DirectionalLight(0xffffff, 1.7);
+  const edge = new DirectionalLight(0xffffff, .45);
   edge.position.set(3, 1, -3);
   scene.add(key, edge);
 
@@ -175,9 +173,7 @@ export async function createPlanetIcon(
     case 'community': {
       tilt.rotation.set(.47, 0, -.35);
       spin.add(new Mesh(new SphereGeometry(.76, 48, 32), communityMaterial()));
-      const ring = new Mesh(new TorusGeometry(.98, .072, 18, 96), new MeshPhysicalMaterial({
-        color: 0xb6b6b6, roughness: .28, metalness: .58, clearcoat: .36,
-      }));
+      const ring = new Mesh(new TorusGeometry(.98, .072, 18, 96), ceramic());
       ring.rotation.x = Math.PI / 2;
       spin.add(ring);
       break;
@@ -199,16 +195,14 @@ export async function createPlanetIcon(
     render(turn: number) {
       spin.rotation.y = turn * Math.PI * 2 + (kind === 'earth' ? -.7 : 0);
       // Compensate for the longitude shift while giving the engraving a small sway.
-      for (const texture of markings) texture.offset.x = turn + Math.sin(turn * Math.PI * 2) * .015;
+      for (const texture of markings) texture.offset.x = turn + Math.sin(turn * Math.PI * 2) * .026;
       renderer.render(scene, camera);
     },
     dispose() {
-      environment.dispose();
       scene.traverse(object => {
         if (object instanceof Mesh && object.material instanceof MeshPhysicalMaterial) {
           object.material.map?.dispose();
           object.material.bumpMap?.dispose();
-          object.material.roughnessMap?.dispose();
           object.material.dispose();
           object.geometry.dispose();
         }

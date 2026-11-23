@@ -4,7 +4,7 @@ export function startFrontendUpdates(){
  if(!current)return;
  let checking=false;let reloading=false;
  const editing=()=>{
-  if(document.querySelector('[role="dialog"],.editor-overlay'))return true;
+  if(document.querySelector('[role="dialog"]'))return true;
   if(document.querySelector('.message-composer textarea') instanceof HTMLTextAreaElement){
    const field=document.querySelector<HTMLTextAreaElement>('.message-composer textarea');if(field?.value.trim())return true;
   }

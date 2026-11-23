@@ -8,5 +8,6 @@
 - [历史主页排版 Agent](profile-agent.md)
 - [个人主页升级记录](profile-upgrade.md)
 - [设计评审记录](taste-design-review.md)
+- [2026 年 11 月早期验收与压测](local-validation-2026-11.md)
 
 旧版布局编辑器的浏览器脚本、一次性 UI 检查工具，以及写死旧 APK 指纹与设备地址的验收脚本已退役。当前回归入口见[测试指南](../testing/README.md)。

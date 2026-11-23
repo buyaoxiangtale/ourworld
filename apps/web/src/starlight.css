@@ -5,7 +5,7 @@ body:has(.app-shell) .app-shell,
 .mobile-app .paper-page,
 .mobile-app .full-overlay,
 body:has(.app-shell) :is(.modal, .bottom-sheet),
-body:has(.app-shell) :is(.editor-overlay, .public-profile-shell),
+body:has(.app-shell) .public-profile-shell,
 .admin-app, .admin-guard {
   background-color: var(--ow-space);
   background-image: url('/globe/textures/stars.png'), radial-gradient(ellipse at 50% 42%, var(--ow-nebula), var(--ow-space) 75%);

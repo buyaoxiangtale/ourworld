@@ -93,7 +93,7 @@ body:has(.app-shell) :is(.message-meta){font-size:12px;color:var(--ow-inkMuted)}
 body:has(.app-shell) :is(.chat-composer,.composer){background:var(--ow-bg);border:0;padding-bottom:max(12px,env(safe-area-inset-bottom))}
 body:has(.app-shell) :is(.chat-composer textarea,.composer textarea){background:var(--ow-raised);border-radius:24px;font-size:16px}
 body:has(.app-shell) :is(.send-button){background:linear-gradient(135deg,var(--ow-accent),var(--ow-accentEnd));color:var(--ow-accentInk);min-width:44px;min-height:44px}
-body:has(.app-shell) :is(.contact-card,.trip-card,.package-card,.notice,.agent-panel){background:var(--ow-raised);color:var(--ow-ink);border:0;box-shadow:none;border-radius:16px}
+body:has(.app-shell) :is(.contact-card,.trip-card,.package-card,.notice){background:var(--ow-raised);color:var(--ow-ink);border:0;box-shadow:none;border-radius:16px}
 body:has(.app-shell) :is(.notice,.error-box){font-size:14px;line-height:1.5}
 body:has(.app-shell) :is(.city-title-row h2){font-size:30px;font-weight:600;line-height:1.2}
 body:has(.app-shell) :is(.city-title-row .eyebrow){display:block;font-size:14px;letter-spacing:0;text-transform:none;color:var(--ow-inkMuted)}
@@ -104,8 +104,6 @@ body:has(.app-shell) :is(.place-detail-cover){border-radius:16px}
 body:has(.app-shell) :is(.empty-orbit){display:none}
 body:has(.app-shell) :is(.empty h3){font:500 22px/1.4 Manrope,"Noto Sans SC",sans-serif}
 body:has(.app-shell) :is(.empty p){font-size:14px;color:var(--ow-inkMuted)}
-body:has(.app-shell) :is(.editor-overlay){background:var(--ow-bg)}
-body:has(.app-shell) :is(.editor-toolbar,.layout-editor-block){background:var(--ow-raised);border-color:var(--ow-line);box-shadow:none}
 body:has(.app-shell) :is(.photo-credits){display:block;color:var(--ow-inkMuted);font-size:13px;margin:16px 0}
 @media(max-width:800px){.app-shell{padding:0}.mobile-app{width:100%;height:100dvh;min-height:0;border-radius:0;border:0}.mobile-app .person-card{flex-basis:360px;min-height:360px}body:has(.app-shell) .profile-portrait{height:300px}}
 @media(max-height:740px){.mobile-app .people-intro{display:none}.mobile-app .person-card{flex-basis:300px;min-height:300px}.mobile-app .person-photo{min-height:210px}.mobile-app .person-content{padding:10px 16px}.mobile-app .person-content>p{margin:6px 0;-webkit-line-clamp:1}.mobile-app .swipe-guide{display:none}}
@@ -155,7 +153,6 @@ body:has(.app-shell) .toast svg{color:var(--ow-ink)}
 
 body:has(.app-shell) small{font-size:12px;line-height:1.5}
 body:has(.app-shell) :is(.thread-intro,.thread-intro span){font-size:12px;color:var(--ow-inkMuted)}
-body:has(.app-shell) :is(.layout-editor-block,.editor-content) button{font-size:14px;min-height:36px}
 body:has(.app-shell) :is(.package-preview,.service-preview,.post-preview) small{font-size:12px}
 .mobile-app .home-search span:first-of-type{font-size:14px;color:var(--ow-inkMuted)}
 .mobile-app .home-search svg{color:var(--ow-inkMuted)}
@@ -172,19 +169,9 @@ body:has(.app-shell) .auth-form>.eyebrow{display:none}/* taste-skill-ignore: rem
 body:has(.app-shell) .auth-form h2{font-size:26px;line-height:1.35;text-align:left;margin:4px 0 12px;color:var(--ow-ink)}
 body:has(.app-shell) .auth-form>p{font-size:16px;line-height:1.6;color:var(--ow-inkMuted);text-align:left}
 body:has(.app-shell) .auth-links button{font-size:14px;color:var(--ow-inkMuted);min-height:44px}
-body:has(.app-shell) .editor-overlay .page-header{background:var(--ow-bg);padding:12px;gap:8px;border:0}
-body:has(.app-shell) .editor-overlay .page-header h1{font-size:24px;line-height:1.25}
-body:has(.app-shell) .editor-overlay .header-actions .button{font-size:12px;min-height:44px;padding:10px 12px;gap:6px}
 body:has(.app-shell) .editor-tabs button{font-size:14px;color:var(--ow-inkMuted);min-height:44px}
 body:has(.app-shell) .editor-tabs button.active{background:var(--ow-raised);color:var(--ow-ink)}
 body:has(.app-shell) .agent-mark{display:none}
-body:has(.app-shell) .agent-panel>.eyebrow{display:none}/* taste-skill-ignore: removes a decorative kicker */
-body:has(.app-shell) .agent-panel h3{font-size:24px;font-weight:600;line-height:1.3;color:var(--ow-ink)}
-body:has(.app-shell) .agent-panel>p{font-size:14px;line-height:1.6;color:var(--ow-inkMuted)}
-body:has(.app-shell) .agent-panel textarea{font-size:16px;background:var(--ow-raised)}
-body:has(.app-shell) .agent-panel-actions{flex-direction:column;align-items:stretch;gap:12px}
-body:has(.app-shell) .agent-panel-actions small{font-size:12px;color:var(--ow-inkMuted);max-width:none}
-body:has(.app-shell) .agent-panel-actions .button{width:100%;font-size:14px}
 body:has(.app-shell) .theme-swatches{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) 48px;gap:8px}
 body:has(.app-shell) .theme-swatches button{width:auto;min-width:0;min-height:88px;border:0;border-radius:12px;box-shadow:none;padding:10px 6px;font-size:12px;color:var(--ow-ink)}
 /* Theme previews: night surfaces with an accent underline per theme. */
@@ -197,15 +184,10 @@ body:has(.app-shell) .theme-swatches button.nocturne.selected{outline-color:var(
 body:has(.app-shell) .theme-swatches button.selected{outline:2px solid var(--ow-ink);outline-offset:-2px}
 body:has(.app-shell) .theme-swatches button :is(span,small){font-size:12px;color:var(--ow-ink);letter-spacing:0}
 body:has(.app-shell) .accent-picker{font-size:12px;color:var(--ow-inkMuted);width:48px}
-body:has(.app-shell) .editor-theme .section-heading,.editor-content>.section-heading{font-size:14px;color:var(--ow-ink)}
 /* The shared satellite globe retains the native dark navigation and search. */
 .mobile-app.earth-mode:not(:has(.people-overlay,.stories-page)) .bottom-nav{background:var(--ow-space);color:var(--ow-inkMuted)}
 .mobile-app.earth-mode:not(:has(.people-overlay,.stories-page)) .bottom-nav .active{color:var(--ow-ink)}
 .mobile-app.earth-mode:not(:has(.people-overlay,.stories-page)) .bottom-nav .active>span:before{background:transparent}
-body:has(.app-shell) .editor-overlay :is(p,small,span,label,button){font-size:max(12px,1em)}
-body:has(.app-shell) .agent-panel .eyebrow{display:none}/* taste-skill-ignore: removes a decorative kicker */
-body:has(.app-shell) .agent-panel p{font-size:14px;line-height:1.6;color:var(--ow-inkMuted)}
-body:has(.app-shell) .agent-panel-actions :is(span,p,small){font-size:12px;color:var(--ow-inkMuted)}
 body:has(.app-shell) .editor-tabs>span{font-size:12px;color:var(--ow-inkMuted)}
 
 /* Photo-first local discovery: the photo is the entire card, details live in Profile. */

@@ -2,7 +2,7 @@
 
 通过地球发现城市，认识当地人，并分享照片、个人故事与旅行服务。
 
-仓库包含 React 网页及管理后台、TypeScript API、Android Compose、iOS SwiftUI，以及三端共用的离线地球和数据契约。
+仓库包含 React 网页及管理后台、TypeScript API、Android Compose、iOS SwiftUI，以及三端共用的离线地球和数据契约。底栏提供地球、社区、聊天和我的四个入口，使用可自转的哑光陶瓷图标。
 
 ## 环境与依赖
 
@@ -77,7 +77,7 @@ uv run --env-file .env ourworld dev worker
 
 开发 API 前需启动 PostgreSQL、Redis、存储和邮件服务。具体步骤、端口及数据库迁移见 [开发指南](docs/development.md)。
 
-Docker 网页开启自动构建和发布：保存前端、设计令牌或地球源码后自动更新；构建失败保留上一版。打开的页面会自动刷新，正在编辑的表单会延迟刷新。
+Docker 网页由前端监听器构建和发布。保存前端、设计令牌或地球源码后会触发构建，失败时保留上一版。打开的页面会自动刷新，正在编辑的表单会延迟刷新。API 和 worker 更新走容器构建流程。
 
 ```sh
 uv run ourworld watch  # 启动或更新监听服务
@@ -96,7 +96,7 @@ uv run ourworld test web globe-recovery
 uv run ourworld test integration api
 ```
 
-浏览器默认访问 `http://127.0.0.1:8188`，可通过 `OURWORLD_WEB_URL` 更改。不同测试的依赖、数据影响和完整命令见 [测试指南](docs/testing/README.md)。
+浏览器默认访问 `http://127.0.0.1:8188`，可通过 `OURWORLD_WEB_URL` 更改。不同测试的依赖、数据影响和完整命令见 [测试指南](docs/testing/README.md)。测试环境运行的集成用例会创建测试数据。
 
 Android 构建需要 JDK 17 和 Android SDK 35；iOS 构建需要 macOS、Xcode 和 XcodeGen。详见 [Android](apps/android/README.md) 与 [iOS](apps/ios/README.md)。
 
@@ -109,7 +109,7 @@ uv run ourworld clean --dry-run
 uv run ourworld clean
 ```
 
-清理范围为构建输出、生成副本和 Python 字节码缓存；数据库卷、`.env`、依赖目录、原始素材、报告和签名密钥会保留。清理后运行 `uv run ourworld build` 重新生成资源。
+清理范围为构建输出、生成副本和 Python 字节码缓存；数据库卷、`.env`、依赖目录、原始素材、报告和签名密钥会保留。清理后运行 `uv run ourworld build` 重新生成资源。Docker 应用镜像和数据库属于部署环境，由部署主机单独盘点，详见 [开发指南](docs/development.md)。
 
 ## 文档入口
 

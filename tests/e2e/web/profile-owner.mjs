@@ -256,6 +256,7 @@ try{
     check(JSON.stringify(user.languages.slice().sort())===JSON.stringify(['中文 Chinese','English','粤语 Cantonese','日本語','地方话'].sort()),'selected service languages persist without typed comma-separated text');
     await page.getByRole('button',{name:'编辑 语言',exact:true}).click();const savedLanguages=page.getByRole('dialog',{name:'服务语言',exact:true});
     check(await savedLanguages.locator('[role=checkbox][aria-checked=true]').count()===5,'saved language selections are restored through the direct profile language entry');await savedLanguages.getByRole('button',{name:'返回',exact:true}).click();
+    await savedLanguages.waitFor({state:'hidden'});
    }
    await panel.evaluate(el=>el.scrollTop=0);
    const galleryPhotos=layout.blocks.filter(b=>b.type==='gallery'&&!isStory(b)).flatMap(b=>b.refs||[]);
@@ -263,7 +264,7 @@ try{
     await page.locator('.owner-preview').click();const preview=page.locator('.profile-photo-viewer');await preview.waitFor();
     check(await page.locator('.public-profile-shell').count()===0,`${width}/${state}: Preview opens photos directly`);
     check(await preview.locator('.profile-photo-viewer-slide').count()===galleryPhotos.length&&await preview.locator('.profile-photo-viewer-slide img').first().getAttribute('src')===galleryPhotos[0],`${width}/${state}: Preview uses the same photo order and first image`);
-    await page.keyboard.press('Escape');
+    await page.keyboard.press('Escape');await preview.waitFor({state:'hidden'});
    }else check(await page.locator('.owner-preview').isDisabled(),`${width}: empty photo previews are disabled`);
    if(width===390&&state==='empty'){
     await page.getByRole('button',{name:'编辑照片故事 1',exact:true}).click();await page.getByRole('button',{name:'移除照片配文',exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});

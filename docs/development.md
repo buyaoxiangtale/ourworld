@@ -42,7 +42,7 @@ uv run --env-file .env ourworld dev worker
 uv run ourworld dev web
 ```
 
-API 默认 3000，Vite 默认 5173，Vite 将 `/api` 转发至本机 3000。只有容器入口 Nginx 会提供完整的同源部署和生产构建。
+API 默认 3000，Vite 默认 5173，Vite 默认将 `/api` 和 `/media` 转发到 `http://127.0.0.1:8188`。直接连接本地 API 进程时，用 `API_PROXY_TARGET=http://127.0.0.1:3000` 启动 Vite。只有容器入口 Nginx 会提供完整的同源部署和生产构建。
 
 ## 共享资源
 
@@ -51,7 +51,7 @@ uv run ourworld prepare
 uv run ourworld build
 ```
 
-资源准备依次生成视觉令牌和 OpenAPI，构建共享契约与地球，再复制离线地球到三个客户端。正常构建使用已入库的原始素材，不额外下载图片或字体。
+资源准备依次生成视觉令牌和 OpenAPI，构建共享契约与地球，再复制离线地球到三个客户端。交互小球的材质从 `packages/globe/src/planet-icons.ts` 维护。造型变化时，先按 [地球包说明](../packages/globe/README.md) 更新四套入库的旋转帧，再准备共享资源。正常构建使用已入库的原始素材，不额外下载图片或字体。
 
 素材更新是显式操作：
 
@@ -73,3 +73,9 @@ uv run docker compose exec frontend-watch cat /srv/frontend/watch-status.json
 ```
 
 调整 Dockerfile、入口路径或依赖安装逻辑后，重新运行 `watch` 更新监听容器。普通网页源代码修改由常驻监听器处理。
+
+## 部署后验证与清理
+
+- 发布 API 或 worker 后，检查 `/api/v1/ready`。前端发布通过 `/frontend-version.json` 确认生效版本，并核对首页与静态资源能否加载。
+- 容器、镜像和数据卷需在同一部署主机和 Compose 项目下清点。清理旧镜像时，按镜像 ID 核对运行中及已停止的容器引用，并保留需要用于回滚的版本。不要通过全局 prune 清理同机项目。
+- 当前 PostgreSQL 服务使用 `postgres-data` 卷，文件存储和 Redis 也各有持久卷。只有确认用途、消费者和备份的旧库或旧卷才适合删除。停服务命令保留这些卷。仓库的 `apps/api/migrations/` 是新库初始化和旧库升级所需的迁移链。

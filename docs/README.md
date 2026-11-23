@@ -11,6 +11,6 @@
 | HTTP、WebSocket 与地球桥接 | [API 契约](api/contract.md) |
 | 机器可读接口定义 | [OpenAPI](api/openapi.json) |
 | 测试、集成及压测 | [测试指南](testing/README.md) |
-| 原有验证记录 | [验收记录](testing/validation.md) |
+| 各端验收范围 | [验收清单](testing/validation.md) |
 | 图像来源与署名 | [地球素材](assets/earth.md) |
 | 历史视觉及改版记录 | [归档](archive/README.md) |

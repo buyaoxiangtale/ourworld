@@ -50,7 +50,6 @@ import SwiftUI
     @Published var profile: JSON = [:]
     @Published var draft: JSON = [:]
     @Published var layout: JSON = [:]
-    @Published var job: JSON?
     @Published var posts: [JSON] = []
     @Published var online = false
     @Published var newConversation = false
@@ -59,7 +58,6 @@ import SwiftUI
     var profileReturnRoute = ""
     var authReturnRoute = ""
     private var connecting: Set<String> = []
-    private var layoutUndo: [JSON] = []
     func t(_ zh: String, _ en: String) -> String { locale == "zh" ? zh : en }
     func language() { locale = locale == "zh" ? "en" : "zh"; UserDefaults.standard.set(locale, forKey: "locale") }
     func run(_ action: @escaping @MainActor () async throws -> Void) { Task { busy = true; error = ""; do { try await action() } catch { self.error = error.localizedDescription }; busy = false } }
@@ -70,7 +68,6 @@ import SwiftUI
             case "conversation.read": let data = event.obj("data"); if data.str("conversationId") == self.conversation?.str("id"), data.str("userId") != self.user?.str("id") { self.peerReadSequence = max(self.peerReadSequence, data.int("sequence")) }; try? await self.refreshConversations()
             case "message.created", "conversation.created": try? await self.refreshConversations(); if self.conversation != nil { try? await self.loadMessages() }
             case "trip.updated": try? await self.loadTrips()
-            case "profile.job.updated": if let job = self.job { self.job = try? await self.api.call("/profile/jobs/\(job.str("id"))") }
             default: break
         } } }
         run { self.places = self.cache.get("places")?.rows() ?? []; let value = try await self.api.call("/places"); self.places = value.rows(); self.cache.put("places", value)
@@ -150,17 +147,9 @@ import SwiftUI
     func editTrip(_ trip: JSON, end: Date) { run { _ = try await self.api.call("/trips/\(trip.str("id"))", method: "PATCH", body: ["endAt": ISO8601DateFormatter().string(from: end)]); try await self.loadTrips(); self.notice = self.t("结束时间已修改，等待对方重新确认", "End time updated; waiting for the other person to accept again.") } }
     func editProfileCard(_ section: String) { guard ["gallery", "prompts"].contains(section), requireLogin() else { return }; run { self.draft = try await self.api.call("/profile/draft"); self.layout = self.draft.obj("layout"); self.route = "profile-" + section } }
     func saveDraft() async throws { draft = try await api.call("/profile/draft", method: "PUT", body: ["revision": draft.int("revision"), "layout": layout]); layout = draft.obj("layout") }
-    func updateLayout(_ key: String, _ value: Any) { layoutUndo.append(layout); layout[key] = value }
-    func undoLayout() { if let previous = layoutUndo.popLast() { layout = previous } }
-    func restoreRevision(_ revision: Int) async throws { draft = try await api.call("/profile/restore", method: "POST", body: ["revision": revision]); layout = draft.obj("layout"); layoutUndo = [] }
-    func save(_ publish: Bool = false) { run { try await self.saveDraft(); if publish { _ = try await self.api.call("/profile/publish", method: "POST", body: ["revision": self.draft.int("revision")]); if let user = self.user { self.profile = try await self.api.call("/users/\(user.str("id"))") }; self.notice = self.t("主页已发布", "Profile published") } } }
-    func generate(_ prompt: String) { run { try await self.saveDraft(); self.job = try await self.api.call("/profile/jobs", method: "POST", body: ["prompt": prompt, "baseRevision": self.draft.int("revision")]); while let job = self.job, ["queued", "running", "validating"].contains(job.str("status")) { try await Task.sleep(nanoseconds: 1_500_000_000); self.job = try await self.api.call("/profile/jobs/\(job.str("id"))") } } }
-    func applyJob() { guard let job else { return }; run { guard NSDictionary(dictionary: self.layout).isEqual(to: self.draft.obj("layout")) else { throw APIError(message: self.t("草稿有未保存修改，请先保存后再处理生成结果", "You have unsaved edits. Save before applying this result.")) }; self.draft = try await self.api.call("/profile/jobs/\(job.str("id"))/apply", method: "POST", body: ["revision": self.draft.int("revision")]); self.layout = self.draft.obj("layout"); self.job = nil } }
-    func cancelJob() { guard let job else { return }; run { _ = try await self.api.call("/profile/jobs/\(job.str("id"))", method: "DELETE"); self.job = nil } }
-    func restore() { run { let history = try await self.api.call("/profile/history").rows(); guard let last = history.last else { throw APIError(message: self.t("暂无历史版本", "No history yet")) }; self.draft = try await self.api.call("/profile/restore", method: "POST", body: ["revision": last.int("revision")]); self.layout = self.draft.obj("layout") } }
     func loadPosts() { run { self.posts = try await self.api.call("/posts?cityId=\(self.city?.str("id") ?? "")").rows(); self.route = "posts" } }
     func report(_ type: String, id: String) { guard requireLogin() else { return }; run { _ = try await self.api.call("/reports", method: "POST", body: ["targetType": type, "targetId": id, "reason": "Reported by user"]); self.notice = self.t("举报已提交", "Report submitted") } }
     func block(_ id: String) { run { _ = try await self.api.call("/blocks/\(id)", method: "PUT"); self.notice = self.t("已拉黑", "Blocked"); self.route = "" } }
-    func logout() { run { _ = try? await self.api.call("/auth/logout", method: "POST", body: ["refreshToken": self.api.session.get("refresh")]); self.api.disconnect(); self.api.session.set("access", ""); self.api.session.set("refresh", ""); self.cache.clear(); self.user = nil; self.conversations = []; self.messages = []; self.favorites = []; self.profile = [:]; self.job = nil; self.route = "" } }
+    func logout() { run { _ = try? await self.api.call("/auth/logout", method: "POST", body: ["refreshToken": self.api.session.get("refresh")]); self.api.disconnect(); self.api.session.set("access", ""); self.api.session.set("refresh", ""); self.cache.clear(); self.user = nil; self.conversations = []; self.messages = []; self.favorites = []; self.profile = [:]; self.route = "" } }
     func signedIn(_ value: JSON) async throws { api.saveSession(value); user = try await api.call("/me"); route = pendingConnect != nil && user?.flag("verified") != true ? "auth" : authReturnRoute; if tab == 2, route.isEmpty, let user { profile = try await api.call("/users/\(user.str("id"))") }; try await refreshFavorites(); try await refreshConversations(); api.connect(); resumePendingConnect() }
 }

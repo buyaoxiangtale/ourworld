@@ -66,7 +66,6 @@ class WorldModel(app:Application):AndroidViewModel(app) {
     var profile by mutableStateOf(JSONObject())
     var draft by mutableStateOf(JSONObject())
     var layout by mutableStateOf(JSONObject())
-    var job by mutableStateOf<JSONObject?>(null)
     var posts by mutableStateOf(listOf<JSONObject>())
     var newConversation by mutableStateOf(false)
     var online by mutableStateOf(false)
@@ -75,7 +74,6 @@ class WorldModel(app:Application):AndroidViewModel(app) {
     var profileReturnRoute=""
     var authReturnRoute=""
     private val connecting=mutableSetOf<String>()
-    private val layoutUndo=mutableListOf<String>()
     fun t(zh:String,en:String)=if(locale=="zh")zh else en
     fun language(){locale=if(locale=="zh")"en" else "zh";prefs.edit().putString("locale",locale).apply()}
     fun run(block:suspend()->Unit){viewModelScope.launch{busy=true;error="";try{block()}catch(e:Exception){error=e.message?:"Request failed"}finally{busy=false}}}
@@ -87,7 +85,6 @@ class WorldModel(app:Application):AndroidViewModel(app) {
                 "conversation.read" -> {val data=event.o("data");if(data.s("conversationId")==conversation?.s("id") && data.s("userId")!=user?.s("id"))peerReadSequence=maxOf(peerReadSequence,data.optInt("sequence"));runCatching{refreshConversations()}}
                 "message.created","conversation.created" -> runCatching{refreshConversations();if(conversation!=null)loadMessages()}
                 "trip.updated" -> runCatching{loadTrips()}
-                "profile.job.updated" -> if(job!=null)runCatching{job=api.call("/profile/jobs/${job!!.s("id")}")}
             }
         }}
         run {
@@ -189,21 +186,12 @@ class WorldModel(app:Application):AndroidViewModel(app) {
     fun editTrip(trip:JSONObject,date:String){run{api.call("/trips/${trip.s("id")}","PATCH",json("endAt" to date));loadTrips();notice=t("结束时间已修改，等待对方重新确认","End time updated; waiting for the other person to accept again.")}}
     fun review(trip:JSONObject,rating:Int,body:String){run{api.call("/trips/${trip.s("id")}/reviews","POST",json("rating" to rating,"body" to body));notice=t("评价已提交","Review submitted")}}
     fun editProfileCard(section:String){if(!requireLogin() || section !in listOf("gallery","prompts"))return;run{draft=api.call("/profile/draft");layout=JSONObject(draft.o("layout").toString());route="profile-$section"}}
-    fun changeLayout(value:JSONObject){layoutUndo.add(layout.toString());layout=JSONObject(value.toString())}
-    fun undoLayout(){if(layoutUndo.isNotEmpty())layout=JSONObject(layoutUndo.removeAt(layoutUndo.lastIndex))}
-    fun restoreRevision(revision:Int){run{draft=api.call("/profile/restore","POST",json("revision" to revision));layout=JSONObject(draft.o("layout").toString());layoutUndo.clear()}}
     suspend fun saveDraft(){draft=api.call("/profile/draft","PUT",json("revision" to draft.optInt("revision"),"layout" to layout));layout=JSONObject(draft.o("layout").toString())}
-    fun save(publish:Boolean=false){run{saveDraft();if(publish){api.call("/profile/publish","POST",json("revision" to draft.optInt("revision")));profile=api.call("/users/${user!!.s("id")}");notice=t("主页已发布","Profile published")}}}
-    fun generate(prompt:String){run{saveDraft();job=api.call("/profile/jobs","POST",json("prompt" to prompt,"baseRevision" to draft.optInt("revision")));while(job?.s("status") in listOf("queued","running","validating")){val id=job?.s("id")?:break;delay(1500);if(job==null)break;job=api.call("/profile/jobs/$id")}}}
-    fun applyJob(){run{if(layout.toString()!=draft.o("layout").toString())error(t("草稿有未保存修改，请先保存后再处理生成结果","You have unsaved edits. Save your draft before applying this result."));draft=api.call("/profile/jobs/${job!!.s("id")}/apply","POST",json("revision" to draft.optInt("revision")));layout=JSONObject(draft.o("layout").toString());job=null}}
-    fun cancelJob(){run{job?.let{api.call("/profile/jobs/${it.s("id")}","DELETE")};job=null}}
-    fun restore(){run{val history=api.call("/profile/history").a("items").objects();val last=history.lastOrNull()?:error(t("暂无历史版本","No history yet"));draft=api.call("/profile/restore","POST",json("revision" to last.optInt("revision")));layout=JSONObject(draft.o("layout").toString())}}
     fun loadPosts(){run{posts=api.call("/posts?cityId=${city?.s("id").orEmpty()}").a("items").objects();route="posts"}}
-    fun post(title:String,body:String){if(!requireLogin())return;run{api.call("/posts","POST",json("cityId" to city?.s("id"),"title" to title,"body" to body,"images" to JSONArray()));posts=api.call("/posts?cityId=${city?.s("id").orEmpty()}").a("items").objects()}}
     fun like(p:JSONObject){if(!requireLogin())return;run{api.call("/posts/${p.s("id")}/like",if(p.optBoolean("liked"))"DELETE" else "PUT");posts=api.call("/posts?cityId=${city?.s("id").orEmpty()}").a("items").objects()}}
     fun report(type:String,id:String,reason:String){if(!requireLogin())return;run{api.call("/reports","POST",json("targetType" to type,"targetId" to id,"reason" to reason));notice=t("举报已提交","Report submitted")}}
     fun block(id:String){run{api.call("/blocks/$id","PUT");notice=t("已拉黑","Blocked");route=""}}
     fun upload(uri:Uri,purpose:String,onUploaded:(JSONObject)->Unit){run{onUploaded(api.upload(uri,purpose))}}
-    fun logout(){run{runCatching{api.call("/auth/logout","POST",json("refreshToken" to api.session.get("refresh")))};api.disconnect();api.session.clear();cache.clear();user=null;pendingConnect=null;resumeConnectId="";outgoing.clear();conversations=emptyList();messages=emptyList();favorites=emptySet();profile=JSONObject();draft=JSONObject();job=null;route=""}}
+    fun logout(){run{runCatching{api.call("/auth/logout","POST",json("refreshToken" to api.session.get("refresh")))};api.disconnect();api.session.clear();cache.clear();user=null;pendingConnect=null;resumeConnectId="";outgoing.clear();conversations=emptyList();messages=emptyList();favorites=emptySet();profile=JSONObject();draft=JSONObject();route=""}}
     fun signedIn(value:JSONObject){api.saveSession(value);run{user=api.call("/me");route=if(pendingConnect!=null && user?.optBoolean("verified")!=true)"auth" else authReturnRoute;if(tab==2 && route.isEmpty())profile=api.call("/users/${user!!.s("id")}");refreshFavorites();refreshConversations();api.connect();resumePendingConnect()}}
 }

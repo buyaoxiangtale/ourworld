@@ -1,6 +1,6 @@
 # Ourworld iOS
 
-SwiftUI 应用，目标 iOS 16+；仅离线地球使用 WKWebView。Keychain 保存会话，Core Data 保存缓存。
+SwiftUI 应用，目标 iOS 16+；主地球和底栏微缩地球使用 WKWebView，其他页面使用原生 SwiftUI。Keychain 保存会话，Core Data 保存缓存。
 
 ## 构建
 
@@ -33,4 +33,4 @@ uv run --directory apps/ios xcodebuild -project Ourworld.xcodeproj -scheme Ourwo
 
 ## 验收范围
 
-Linux 上的 TypeScript、资源和网页检查不代表完成 Xcode、模拟器或真机验收。原生验收应覆盖登录、地球、人物卡、聊天、照片和主页编辑、服务城市、发布与冲突重试。历史语法与设计记录见[归档](../../docs/archive/README.md)。
+Linux 上的 TypeScript、资源和网页检查不代表完成 Xcode、模拟器或真机验收。原生验收应覆盖登录、地球、人物卡、聊天、照片和主页编辑、服务城市、发布与冲突重试。当前检查范围见 [验收清单](../../docs/testing/validation.md)。

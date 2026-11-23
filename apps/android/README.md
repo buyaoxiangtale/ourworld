@@ -1,6 +1,6 @@
 # Ourworld Android
 
-Kotlin / Jetpack Compose 原生应用，仅共享离线地球使用 WebView。会话使用 Android Keystore，缓存使用 Room。
+Kotlin / Jetpack Compose 原生应用，主地球和底栏微缩地球使用 WebView，其他页面使用原生 Compose。会话使用 Android Keystore，缓存使用 Room。
 
 ## 环境
 
@@ -19,7 +19,7 @@ uv run --directory apps/android sh gradlew --no-daemon assembleDebug -PapiBase=h
 
 Windows 使用 `uv run --directory apps/android .\gradlew.bat assembleDebug`。真机的 API 地址应改为电脑的局域网地址；Release 使用 HTTPS。
 
-APK 输出：`app/build/outputs/apk/debug/app-debug.apk`。当前源码构建结果应以本次 Gradle 和设备测试为准；历史安装包说明位于[归档](../../docs/archive/deep-sea-ui.md)。
+APK 输出：`app/build/outputs/apk/debug/app-debug.apk`。调试包应该使用当前源码重新构建，并在目标设备验证。
 
 ## 资源和签名
 

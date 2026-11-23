@@ -30,7 +30,7 @@ Set `LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY` and `LLM_OUTPUT_MODE=json` for a 
 
 SMTP and model tasks use independent queues and workers: `ourworld-mail` has its own SMTP concurrency, while only `ourworld-layout` has a global concurrency limit of two. Model recovery targets the layout queue. The protocol/queue test blocks two local HTTP fixture requests and verifies real SMTP delivery still completes; it is explicitly not a real DeepSeek connectivity test.
 
-Seed creates 50 cities, 200 illustrative attractions and verified development accounts `traveler@ourworld.test`, `local@ourworld.test`, `admin@ourworld.test` plus `load0000@ourworld.test` through `load0999@ourworld.test`. Default demo password is `Ourworld2026!`, overridden with `DEMO_PASSWORD`. Seed listings are fictional development examples. `LOAD_SEED=true` additionally inserts 100,000 historical messages in 250 deterministic load conversations. `AUTH_LOGIN_LIMIT` can be temporarily raised for a local load-test profile; its normal default is 60 logins/minute/IP.
+Seed creates the base catalogue of 50 cities and 200 illustrative attractions, then enriches it with additional countries, cities and demo profiles. It also creates verified development accounts `traveler@ourworld.test`, `local@ourworld.test`, `admin@ourworld.test` plus `load0000@ourworld.test` through `load0999@ourworld.test`. The demo password comes from the local `DEMO_PASSWORD` setting. Seed listings are fictional development examples. `LOAD_SEED=true` additionally inserts 100,000 historical messages in 250 deterministic load conversations. `AUTH_LOGIN_LIMIT` can be temporarily raised for a local load-test profile; its normal default is 60 logins/minute/IP.
 
 Uploads accept verified JPEG, PNG, WebP and verification-only PDF up to 10 MB. Private files have short-lived signed media URLs so native/browser images do not need bearer headers. Profile galleries accept only the owner's public uploads. Verification and private chat files cannot be published as gallery assets.
 
@@ -41,7 +41,7 @@ npm run typecheck -w @ourworld/api
 npm run test -w @ourworld/api
 ```
 
-Tests use the actual project PostgreSQL, Redis and S3 services. They create unique test accounts and disable them afterwards. Coverage includes password hashing/signatures, email and reset flows, refresh rotation, access control, concurrent unique conversations, idempotent messages, monotonic reads, blocks, public/draft isolation, stale layout conflicts, private media, random snapshots, and all review-opening paths with freeze precedence.
+The API suite includes pure tests and integration tests. Run integration tests against a dedicated PostgreSQL database, Redis, S3-compatible storage and SMTP fixture. They create unique test accounts and disable them afterwards. Coverage includes password hashing/signatures, email and reset flows, refresh rotation, access control, concurrent unique conversations, idempotent messages, monotonic reads, blocks, public/draft isolation, stale layout conflicts, private media, random snapshots, and all review-opening paths with freeze precedence.
 
 No payment, order, wallet or settlement persistence is created. The shared contracts only reserve a future payment provider interface.
 

@@ -1,8 +1,8 @@
 # Ourworld API v1 — integration contract
 
-## 学校学历与服务城市（2026-11-06）
+## 学校学历与服务城市
 
-`User` 新增可选 `school`（最长 120 字符）与 `educationLevel`（`high-school`、`vocational`、`associate`、`bachelor`、`master`、`doctorate`、`other`）。`PATCH /me` 支持独立更新这两个字段，传 `null` 清除；公开个人资料和本人资料均返回已填写值。数据库迁移为 `003_profile_education.sql`，可重复执行。
+`User` 包含可选 `school`（最长 120 字符）与 `educationLevel`（`high-school`、`vocational`、`associate`、`bachelor`、`master`、`doctorate`、`other`）。`PATCH /me` 支持独立更新这两个字段，传 `null` 清除；公开个人资料和本人资料均返回已填写值。数据库迁移为 `003_profile_education.sql`，可重复执行。
 
 服务城市从独立搜索列表选择，通过 `PATCH /me {cityIds: [...]}` 保存，最多 50 个有效城市 ID，可传空数组清除。常规个人资料表单不再提交 `cityIds`，避免覆盖独立城市页的更新。学校学历保存同样只提交自身字段。
 
@@ -15,7 +15,7 @@ Prefix `/api/v1`. Success returns the resource directly (not an extra data envel
 - `GET /health` and `/ready` (under prefix).
 - `POST /auth/register {email,password,name}`, `/auth/login {email,password}` -> `{accessToken,refreshToken,user}`. `/auth/verify {token}`, `/auth/forgot {email}`, `/auth/reset {token,password}`, `/auth/refresh {refreshToken}`, `/auth/logout {refreshToken}`. Mailpit receives actual verification links.
 - `GET /me` -> User; `PATCH /me {name,bio,tags,cityIds,quote,avatar,socialLinks,accountType:"individual"|"agency",priceRange:{min,max(0..1000000,min<=max),currency:USD|CNY|EUR|GBP|JPY,unit:hour|half-day|day|experience}|null,experienceYears:0..90|null,languages:string[]<=12 of <=30 chars}` -> User. Switching account type in either direction resets provider status to `none` and rejects any pending verification. Agency accounts can only submit `kind:"agency"` certification; approving it certifies the agency (only agency accounts can hold that kind).
-- `GET /places?q=&kind=&parentId=` -> `{items}`; `GET /places/:id` -> Place; `GET /favorites` -> `{items:Place[]}`; `PUT /favorites/:cityId`; `DELETE /favorites/:cityId`.
+- `GET /places?q=&kind=&parentId=&limit=&offset=` -> `{items,nextOffset}`; `GET /places/:id` -> Place; `GET /favorites` -> `{items:Place[]}`; `PUT /favorites/:cityId`; `DELETE /favorites/:cityId`.
 - `GET /cities/:cityId/people-feed?feedId=&cursor=&cityIds=&coverage=any|all` -> PeopleFeed. `cityIds` is a comma-separated optional multi-city scope. First call starts random snapshot; same feed uses cursor, no repeated people. Scope is fixed for a feed and changing it requires a new feed. No quote/tag ranking. Candidate city coverage, approved, active, not self, not blocked.
 - `GET /users/:id` -> `{user,layout,packages,posts,reviews,places}`; user carries `accountType`, `priceRange`, `experienceYears`, `languages` and the review `rating` average; public only published layout (themes: ocean/forest/nocturne); `GET /profile/draft` -> ProfileDraft; `PUT /profile/draft {revision,layout}` -> ProfileDraft; `POST /profile/publish {revision}`; `GET /profile/history` -> `{items}`; `POST /profile/restore {revision}` creates a new draft from history.
 - `POST /profile/jobs {prompt,baseRevision}` -> LayoutJob; `GET /profile/jobs/:id`; `DELETE /profile/jobs/:id`; `POST /profile/jobs/:id/apply {revision}` -> ProfileDraft, conflict 409. Agent never publishes.
@@ -35,7 +35,7 @@ Admin place writes: `POST /admin/places` and `PATCH /admin/places/:id` validate 
 Demo seed users: `traveler@ourworld.test`, `local@ourworld.test`, `admin@ourworld.test`; password supplied by `DEMO_PASSWORD` env (local example only). All seed users email verified. App must expose login, never assume demo API responses offline.
 
 ## Frontend environment
-`VITE_API_BASE` default `/api/v1`; web dev proxy target is configurable with `API_PROXY_TARGET` (default `http://127.0.0.1:8188`). `VITE_WS_BASE` optional, otherwise same origin. Web uses `/globe/index.html` for the shared standalone globe, iframe commands/events use the bridge schema. Root integrates build copying to web public output and native resources.
+`VITE_API_BASE` default `/api/v1`; web dev proxy target is configurable with `API_PROXY_TARGET` (default `http://127.0.0.1:8188`). `VITE_WS_BASE` optional, otherwise same origin. Layout generation endpoints are available to API clients. Web uses `/globe/index.html` for the shared standalone globe, iframe commands/events use the bridge schema. Root integrates build copying to web public output and native resources.
 
 ## Profile
 Shared definitions in `@ourworld/contracts`. Identity/trust fields come from server resources, not model text. Draft `revision` distinct from layout `schemaVersion`. Candidate holds `baseRevision`; application checks current revision. Missing LLM config returns explicit error, not a mock generation.

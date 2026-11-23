@@ -9,7 +9,7 @@ uv run ourworld setup
 uv run ourworld check
 ```
 
-检查包含四个 TypeScript 工作区的类型、API 单元测试、视觉令牌、主页资源引用、前端发布工具，以及 Python 命令入口和清理边界。Python 格式和静态检查由锁定的 Ruff 执行。
+检查包含四个 TypeScript 工作区的类型、API 单元与集成用例、视觉令牌、主页资源引用、前端发布工具，以及 Python 命令入口和清理边界。API 集成用例需要测试环境中的 PostgreSQL、Redis、文件存储和邮件服务。Python 格式和静态检查由锁定的 Ruff 执行。
 
 ## 浏览器回归
 
@@ -50,4 +50,4 @@ API 验收会使用种子账户创建测试数据；恢复验收默认只生成�
 
 Android / iOS 编译和设备验收见各应用 README。浏览器检查不代表原生模拟器或真机验收。
 
-k6 脚本位于 `tests/load/mixed.js`，监控工具为 `scripts/load/monitor.mjs`。原有并发配置和历史结果保留在 [验证记录](validation.md)。
+k6 脚本位于 `tests/load/mixed.js`，监控工具为 `scripts/load/monitor.mjs`。各端当前验收范围见 [验收清单](validation.md)。历史并发结果见 [早期验收与压测](../archive/local-validation-2026-11.md)。
