@@ -20,12 +20,14 @@ Vite 默认端口为 5173，请求默认代理到 8188。真实 API 与容器网
 - `src/Explore.tsx`：地球桥接、地点搜索和当地人卡片。
 - `src/Stories.tsx`：社区和城市旅行故事。
 - `src/Chat.tsx`：会话与消息。
-- `src/NavEarth.tsx`：透明底栏微缩地球，实时渲染失败时继续使用共享旋转帧。
-- `src/features/profile/`：个人主页、照片轮播、简介与照片故事、爱好分类、城市和语言选择器。
+- `src/NavEarth.tsx`、`src/NavPlanet.tsx` 提供底栏图标。首屏显示随网页打包的静态图，主地球开屏完成后再初始化微缩地球并加载旋转帧。
+- `src/features/profile/` 包含个人主页、「我的足迹」、照片查看器、简介、爱好、城市和语言选择器。
 - `src/SlidePresence.tsx`、`src/useDialogFocus.ts`：弹层退出生命周期和焦点管理。
 - `src/visual-tokens.css`：从共享视觉配置生成的令牌。
 
-主页使用双列卡片，同类爱好合并展示，保留新增爱好与新增故事入口。个人简介、故事和爱好通过独立页面编辑；滑入页面关闭时向下退出，并尊重减少动态效果设置。
+「我的足迹」可编辑标语和每张照片的说明，也可选择居中的主照片。两侧小图可滚动浏览。爱好卡片横向滚动，同类爱好合并展示。上传爱好图片后，卡片在固定比例容器内等比裁切图片，未上传时显示原有表情符号。个人简介、故事和爱好通过独立页面编辑，弹层尊重减少动态效果设置。
+
+地球加载约两秒后显示等待说明。超过 15 秒可手动重试，当前下载会继续进行。渲染器报告错误时自动重试一次。
 
 ## 构建和自动部署
 
@@ -46,6 +48,7 @@ uv run ourworld browsers
 uv run ourworld test web profile-owner
 uv run ourworld test web profile-hobbies
 uv run ourworld test web slide-exit
+uv run ourworld test web globe-first-open
 uv run ourworld test web globe-recovery
 ```
 

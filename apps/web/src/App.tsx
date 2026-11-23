@@ -1,5 +1,5 @@
 import {SlidePresence} from './SlidePresence';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Check } from 'lucide-react';
 import type { Locale, User } from '@ourworld/contracts';
 import { api, connectRealtime, getSession, send, setSession } from './api';
@@ -9,6 +9,7 @@ import { Auth } from './Auth';
 import { Explore } from './Explore';
 import { Chat } from './Chat';
 import { NavEarth } from './NavEarth';
+import { NavPlanet } from './NavPlanet';
 import { Stories } from './Stories';
 import { Profile, PublicProfile } from './features/profile/Profile';
 import { Admin } from './Admin';
@@ -16,6 +17,8 @@ import { Button, ErrorBox, Loading, Modal } from './ui';
 import { errorMessage } from './hooks';
 
 export function App(){
+ const [navAnimated,setNavAnimated]=useState(false);
+ const animateNav=useCallback(()=>setNavAnimated(true),[]);
  const [locale,setLanguage]=useState<Locale>(()=>localStorage.getItem('ourworld.locale')==='en'?'en':'zh');const [user,setUser]=useState<User|null>(()=>getSession()?.user||null);const [tab,setTab]=useState<'earth'|'community'|'chat'|'profile'>(()=>{const restored=sessionStorage.getItem('ourworld.frontend.tab');return restored==='community'||restored==='chat'||restored==='profile'?restored:'earth';});const [auth,setAuth]=useState(false);const [profileId,setProfileId]=useState<string|null>(null);const [notification,setNotification]=useState('');const [newConversation,setNewConversation]=useState(false);const [emailAction,setEmailAction]=useState(()=>{const params=new URLSearchParams(location.search);const verify=params.get('verify');const reset=params.get('reset');const token=params.get('token');if(verify)return {token:verify,reset:false};if(reset)return {token:reset,reset:true};return token&&/verify|reset/.test(location.pathname)?{token,reset:location.pathname.includes('reset')}:null;});const pendingAction=useRef<(()=>void)|undefined>(undefined);const toastTimer=useRef<number|undefined>(undefined);const t=translator(locale);
  useEffect(()=>{sessionStorage.removeItem('ourworld.frontend.tab');},[]);
  const setLocale=(next:Locale)=>{setLanguage(next);localStorage.setItem('ourworld.locale',next);document.documentElement.lang=next;};
@@ -29,22 +32,22 @@ export function App(){
  useEffect(()=>{const update=()=>document.documentElement.style.setProperty('--app-height',`${window.visualViewport?.height||window.innerHeight}px`);update();window.visualViewport?.addEventListener('resize',update);return()=>window.visualViewport?.removeEventListener('resize',update);},[]);
  const admin=location.pathname.startsWith('/admin');
  return <AppContext.Provider value={{user,locale,t,setLocale,toast,openAuth:()=>setAuth(true),requireAuth,openProfile:(id)=>{setNotification('');setProfileId(id);},refreshUser,conversationAdded:()=>{setNewConversation(true);window.dispatchEvent(new CustomEvent('ourworld:realtime',{detail:{event:'conversation.created',data:{}}}));}}}>{admin?<Admin key={getSession()?.clientId||'guest'}/>:<div className="app-shell starlight" inert={!!(profileId||auth||emailAction)}><main className={`mobile-app ${tab==='earth'?'earth-mode':'paper-mode'}`}>
-  <div className="tab-panel earth-panel" style={{display:tab==='earth'?'block':'none'}}><Explore active={tab==='earth'}/></div>
+  <div className="tab-panel earth-panel" style={{display:tab==='earth'?'block':'none'}}><Explore active={tab==='earth'} onEntranceFinished={animateNav}/></div>
   {tab==='community'&&<div className="tab-panel"><Stories/></div>}
   <div className="tab-panel" style={{display:tab==='chat'?'block':'none'}}><Chat key={getSession()?.clientId||'guest'} active={tab==='chat'} onListSeen={()=>setNewConversation(false)}/></div>
   <div className="tab-panel" style={{display:tab==='profile'?'block':'none'}}><Profile key={getSession()?.clientId||'guest'}/></div>
   <nav className="bottom-nav" aria-label={t('主导航','Main navigation')}>
     <button aria-label={t('地球','Explore')} aria-current={tab==='earth'?'page':undefined} data-tab="earth" className={tab==='earth'?'active':''} onClick={()=>{setNotification('');setTab('earth');}}>
-      <span className="nav-planet" aria-hidden="true"><NavEarth/></span>
+      <span className="nav-planet" aria-hidden="true"><NavEarth animated={navAnimated}/></span>
     </button>
     <button aria-label={t('社区','Community')} aria-current={tab==='community'?'page':undefined} data-tab="community" className={tab==='community'?'active':''} onClick={()=>{setNotification('');setTab('community');}}>
-      <span className="nav-planet"><span className="planet-atlas" data-planet="community" aria-hidden="true"/></span>
+      <span className="nav-planet"><NavPlanet kind="community" animated={navAnimated}/></span>
     </button>
     <button aria-label={t('聊天','Chats')} aria-current={tab==='chat'?'page':undefined} data-tab="chat" className={tab==='chat'?'active':''} onClick={()=>{setNotification('');setTab('chat');setNewConversation(false);}}>
-      <span className="nav-planet"><span className="planet-atlas" data-planet="chat" aria-hidden="true"/>{newConversation&&<i/>}</span>
+      <span className="nav-planet"><NavPlanet kind="chat" animated={navAnimated}/>{newConversation&&<i/>}</span>
     </button>
     <button aria-label={t('我的','Profile')} aria-current={tab==='profile'?'page':undefined} data-tab="profile" className={tab==='profile'?'active':''} onClick={()=>{setNotification('');setTab('profile');}}>
-      <span className="nav-planet"><span className="planet-atlas" data-planet="profile" aria-hidden="true"/></span>
+      <span className="nav-planet"><NavPlanet kind="profile" animated={navAnimated}/></span>
     </button>
   </nav>
  </main></div>}{auth&&<Modal title={t('欢迎来到 Ourworld','Welcome to Ourworld')} onClose={()=>{setAuth(false);pendingAction.current=undefined;}}><Auth onClose={()=>setAuth(false)}/></Modal>}<SlidePresence>{profileId&&<PublicProfile userId={profileId} onClose={()=>setProfileId(null)}/>}</SlidePresence> {emailAction&&<EmailAction token={emailAction.token} reset={emailAction.reset} onClose={()=>{setEmailAction(null);history.replaceState({},'',location.pathname.startsWith('/admin')?'/admin':'/');}}/>}{notification&&<div className="toast" role="status"><Check size={16}/>{notification}</div>}</AppContext.Provider>;

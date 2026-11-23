@@ -1,6 +1,6 @@
 import Globe from 'globe.gl';
 import { geoCentroid, geoContains, geoDistance } from 'd3-geo';
-import { NoToneMapping, SRGBColorSpace, type PerspectiveCamera } from 'three';
+import { DoubleSide, MeshBasicMaterial, NoToneMapping, SRGBColorSpace, type PerspectiveCamera } from 'three';
 import { createEarthAppearance } from './earth-material';
 import { theme } from './theme';
 import { countries } from './atlas';
@@ -30,7 +30,11 @@ const clean=(s:string)=>s.toLowerCase().replace(/[^a-z]/g,'').replace('unitedsta
 // white so it stays readable against the brightened selected cap.
 const rgba=(hex:string,alpha:number)=>{const n=parseInt(hex.slice(1),16);return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${alpha})`;};
 const towardWhite=(hex:string,amount:number)=>{const n=parseInt(hex.slice(1),16);const c=[0,1,2].map(i=>{const v=(n>>((2-i)*8))&255;return Math.round(v*(1-amount)+255*amount);});return `${c[0]},${c[1]},${c[2]}`;};
-const plateCap={selected:rgba(theme.focus,.45),base:rgba(theme.focusDeep,.12)};
+const plateCap={
+  // The opaque Earth already hides the far side. Avoid a second draw for each translucent cap.
+  selected:new MeshBasicMaterial({color:theme.focus,opacity:.45,transparent:true,side:DoubleSide,forceSinglePass:true}),
+  base:new MeshBasicMaterial({color:theme.focusDeep,opacity:.12,transparent:true,side:DoubleSide,forceSinglePass:true}),
+};
 const plateSide={selected:rgba(theme.focus,.25),base:rgba(theme.focusDeep,.10)};
 const plateStroke={selected:`rgba(${towardWhite(theme.focus,.55)},.70)`,base:rgba(theme.focus,.32)};
 
@@ -72,6 +76,7 @@ async function mount(){
   const appearance=createEarthAppearance();
   const globe=new Globe(host,{animateIn:false})
     .backgroundColor('rgba(0,0,0,0)')
+    .enablePointerInteraction(false)
     .globeImageUrl(new URL('textures/earth-day.jpg',document.baseURI).href)
     .bumpImageUrl(new URL('textures/earth-topology.png',document.baseURI).href)
     .showAtmosphere(true).atmosphereColor(theme.atmosphere).atmosphereAltitude(.22)
@@ -89,7 +94,7 @@ async function mount(){
   const isSelected=(d:object)=>selectedCountryId!==undefined&&String((d as Feature).id??'')===selectedCountryId;
   const paintCountries=()=>globe.polygonsData(countries.features)
     .polygonAltitude((d:object)=>isSelected(d)?SELECTED_ALTITUDE:BASE_ALTITUDE)
-    .polygonCapColor((d:object)=>isSelected(d)?plateCap.selected:plateCap.base)
+    .polygonCapMaterial((d:object)=>isSelected(d)?plateCap.selected:plateCap.base)
     .polygonSideColor((d:object)=>isSelected(d)?plateSide.selected:plateSide.base)
     .polygonStrokeColor((d:object)=>isSelected(d)?plateStroke.selected:plateStroke.base)
     .polygonsTransitionDuration(0);
@@ -99,8 +104,17 @@ async function mount(){
   controls.enablePan=false;controls.minDistance=120;controls.maxDistance=800;controls.rotateSpeed=.7;controls.zoomSpeed=.7;controls.enableDamping=true;controls.dampingFactor=.08;controls.autoRotateSpeed=.9;
   let contextLost=false,texturesReady=false;
   let recoveryTimer:number|undefined;
+  let hoverPointer=false;
+  const syncHover=()=>{
+    const enabled=hoverPointer&&active&&!document.hidden&&!contextLost;
+    if(globe.enablePointerInteraction()!==enabled)globe.enablePointerInteraction(enabled);
+  };
+  // City and country taps are resolved on pointerup below. Only hover needs raycasts between taps.
+  host.addEventListener('pointerenter',event=>{hoverPointer=event.pointerType!=='touch';syncHover();});
+  host.addEventListener('pointerleave',()=>{hoverPointer=false;syncHover();});
   const syncAnimation=()=>{
     controls.autoRotate=!reducedMotion.matches;
+    syncHover();
     if(active&&!document.hidden&&!contextLost)globe.resumeAnimation();
     else globe.pauseAnimation();
   };
@@ -115,7 +129,6 @@ async function mount(){
     paintCountries();
   };
   const configureRenderer=()=>{
-    globe.renderer().setPixelRatio(Math.min(window.devicePixelRatio||1,1.7));
     globe.renderer().toneMapping=NoToneMapping;
     globe.renderer().toneMappingExposure=1.0;
     globe.renderer().outputColorSpace=SRGBColorSpace;
@@ -142,7 +155,24 @@ async function mount(){
   // The initial view frames the whole planet with breathing room for the starfield,
   // matching the reference presentation instead of an edge-to-edge zoom.
   let lastWidth=0,lastHeight=0;
-  const resize=()=>{const width=host.clientWidth,height=host.clientHeight;if(width<=0||height<=0)return;if(width!==lastWidth||height!==lastHeight){lastWidth=width;lastHeight=height;globe.width(width).height(height);paintStars();if(untouched){const fov=Number((globe.camera() as unknown as {fov:number}).fov)||50;const angle=Math.atan((Math.min(width,height)*.75/height)*Math.tan(fov*Math.PI/360));setCameraPose({lat:22,lng:85,altitude:1/Math.sin(angle)-1});}}repaint();};
+  const resize=()=>{
+    const width=host.clientWidth,height=host.clientHeight;
+    if(width<=0||height<=0)return;
+    // Keep high-density screens sharp while limiting the number of pixels shaded on every frame.
+    const pixelRatio=Math.min(window.devicePixelRatio||1,1.5,Math.max(1,Math.sqrt(750_000/(width*height))));
+    const renderer=globe.renderer();
+    if(renderer.getPixelRatio()!==pixelRatio)renderer.setPixelRatio(pixelRatio);
+    if(width!==lastWidth||height!==lastHeight){
+      lastWidth=width;lastHeight=height;
+      globe.width(width).height(height);paintStars();
+      if(untouched){
+        const fov=(globe.camera() as PerspectiveCamera).fov||50;
+        const angle=Math.atan((Math.min(width,height)*.75/height)*Math.tan(fov*Math.PI/360));
+        setCameraPose({lat:22,lng:85,altitude:1/Math.sin(angle)-1});
+      }
+    }
+    repaint();
+  };
   window.addEventListener('resize',()=>{resize();syncAnimation();});resize();
   new ResizeObserver(()=>{resize();syncAnimation();}).observe(host);
   let focusTimer:number|undefined;
@@ -189,7 +219,10 @@ async function mount(){
   let tap:{id:number;x:number;y:number}|null=null;
   const pointers=new Set<number>();
   host.addEventListener('pointerdown',event=>{if(!active)return;pointers.add(event.pointerId);tap=pointers.size===1?{id:event.pointerId,x:event.clientX,y:event.clientY}:null;if(pointers.size>1)focusedCountryId=undefined;},{capture:true});
-  host.addEventListener('pointermove',event=>{if(tap&&Math.hypot(event.clientX-tap.x,event.clientY-tap.y)>7){tap=null;focusedCountryId=undefined;}},{capture:true});
+  host.addEventListener('pointermove',event=>{
+    if(!hoverPointer&&event.pointerType!=='touch'){hoverPointer=true;syncHover();}
+    if(tap&&Math.hypot(event.clientX-tap.x,event.clientY-tap.y)>7){tap=null;focusedCountryId=undefined;}
+  },{capture:true});
   host.addEventListener('wheel',()=>{focusedCountryId=undefined;},{capture:true,passive:true});
   host.addEventListener('pointercancel',event=>{pointers.delete(event.pointerId);tap=null;},{capture:true});
   host.addEventListener('pointerup',event=>{
@@ -236,7 +269,7 @@ async function mount(){
   window.OurworldGlobe={receive,get ready(){return texturesReady&&!contextLost;}};
   window.addEventListener('message',e=>{if(e.source===window.parent&&(e.origin===window.location.origin||e.origin==='null'))receive(e.data);});
   const resumeView=()=>{if(document.hidden)return;resize();syncAnimation();};
-  document.addEventListener('visibilitychange',()=>{document.hidden?globe.pauseAnimation():resumeView();});
+  document.addEventListener('visibilitychange',()=>{document.hidden?syncAnimation():resumeView();});
   window.addEventListener('pageshow',resumeView);
   window.addEventListener('focus',resumeView);
   const announceReady=(recovered=false)=>{

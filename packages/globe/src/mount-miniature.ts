@@ -1,5 +1,7 @@
 import { createPlanetIcon, planetRotationMs } from './planet-icons';
 
+const miniatureFrameInterval = 1000 / 30 - 1; // Tolerate display-frame timestamp rounding.
+
 export async function mountMiniature(
   host: HTMLElement,
   fallback: HTMLElement,
@@ -31,10 +33,13 @@ export async function mountMiniature(
   }
 
   function render(time: number) {
-    if (previousTime !== undefined) turn = (turn + (time - previousTime) / planetRotationMs) % 1;
+    frame = requestAnimationFrame(render);
+    // The small nav icon needs fewer GPU updates than the interactive globe.
+    const elapsed = previousTime === undefined ? 0 : time - previousTime;
+    if (previousTime !== undefined && elapsed < miniatureFrameInterval) return;
+    turn = (turn + elapsed / planetRotationMs) % 1;
     previousTime = time;
     model.render(turn);
-    frame = requestAnimationFrame(render);
   }
 
   function sync() {

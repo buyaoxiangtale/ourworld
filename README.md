@@ -2,7 +2,7 @@
 
 通过地球发现城市，认识当地人，并分享照片、个人故事与旅行服务。
 
-仓库包含 React 网页及管理后台、TypeScript API、Android Compose、iOS SwiftUI，以及三端共用的离线地球和数据契约。底栏提供地球、社区、聊天和我的四个入口，使用可自转的哑光陶瓷图标。
+仓库包含 React 网页及管理后台、TypeScript API、Android Compose、iOS SwiftUI，以及三端共用的离线地球和数据契约。Web 首屏在搜索和底栏可用后衔接到可交互地球。个人主页支持编辑「我的足迹」和可横滑的爱好卡片。
 
 ## 环境与依赖
 
@@ -92,6 +92,7 @@ uv run ourworld build                   # 构建 API、网页及三端地球资�
 uv run ourworld check                   # 类型、单元测试及 Python 检查
 uv run ourworld browsers                # 首次安装浏览器测试依赖
 uv run ourworld test web profile-hobbies
+uv run ourworld test web globe-first-open
 uv run ourworld test web globe-recovery
 uv run ourworld test integration api
 ```

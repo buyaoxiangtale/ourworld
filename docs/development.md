@@ -51,7 +51,7 @@ uv run ourworld prepare
 uv run ourworld build
 ```
 
-资源准备依次生成视觉令牌和 OpenAPI，构建共享契约与地球，再复制离线地球到三个客户端。交互小球的材质从 `packages/globe/src/planet-icons.ts` 维护。造型变化时，先按 [地球包说明](../packages/globe/README.md) 更新四套入库的旋转帧，再准备共享资源。正常构建使用已入库的原始素材，不额外下载图片或字体。
+资源准备依次生成视觉令牌和 OpenAPI，构建共享契约与地球，再复制离线地球到三个客户端。交互小球的材质从 `packages/globe/src/planet-icons.ts` 维护。造型变化时，先按 [地球包说明](../packages/globe/README.md) 更新四套旋转图集和 Web 首帧，再准备共享资源。正常构建使用已入库的原始素材。
 
 素材更新是显式操作：
 
@@ -73,6 +73,8 @@ uv run docker compose exec frontend-watch cat /srv/frontend/watch-status.json
 ```
 
 调整 Dockerfile、入口路径或依赖安装逻辑后，重新运行 `watch` 更新监听容器。普通网页源代码修改由常驻监听器处理。
+
+开发服务器的 `yubs` 预览使用 8189。它从该分支的提交构建 Web 和离线地球，`/api`、`/media` 转发到同机 8188，复用现有 API、worker 和持久化数据。8188 的自动发布由 `frontend-watch` 处理，来源以容器挂载的源码目录为准。发布预览后通过 `/frontend-version.json` 核对提交，通过 `/api/v1/ready` 核对 API，并确认地球 JavaScript 使用 HTTP 压缩。
 
 ## 部署后验证与清理
 

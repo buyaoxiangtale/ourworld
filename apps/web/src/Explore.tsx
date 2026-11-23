@@ -1,23 +1,24 @@
 import {SlidePresence} from './SlidePresence';
 import { useEffect, useRef, useState } from 'react';
-import { ArrowDown, ArrowLeft, ArrowRight, Bookmark, Check, Compass, Globe2, HeartHandshake, Info, MapPin, Search, SlidersHorizontal, Sparkles, Star, Trophy, Users, X } from 'lucide-react';
-import type { GlobeCommand, GlobeEvent, PeopleFeed, Person, Place, Conversation } from '@ourworld/contracts';
+import { ArrowLeft, ArrowRight, Bookmark, Check, Globe2, Info, MapPin, Search, SlidersHorizontal, Trophy, Users, X } from 'lucide-react';
+import type { GlobeCommand, GlobeEvent, PeopleFeed, Place, Conversation } from '@ourworld/contracts';
 import { api, send } from './api';
 import { useApp } from './context';
 import { errorMessage, useLoad } from './hooks';
-import { Avatar, Button, Cover, Empty, ErrorBox, IconButton, Loading, Modal, PageHeader, Sheet } from './ui';
+import { Button, Cover, Empty, ErrorBox, IconButton, Loading, Modal, PageHeader, Sheet } from './ui';
 import { Stories } from './Stories';
 import { useSwipeDeck } from './useSwipeDeck';
 import { unitLabels } from './features/profile/Profile';
 import {CountryDialog} from './features/explore/CountryDialog';
 import {CountryCities,type CountryTarget} from './features/explore/CountryCities';
 
-export function Explore({active}:{active:boolean}){
+export function Explore({active,onEntranceFinished}:{active:boolean;onEntranceFinished:()=>void}){
  const {t,locale,user,requireAuth,toast}=useApp();
  const iframe=useRef<HTMLIFrameElement>(null);
  const [ready,setReady]=useState(false);const [globeError,setGlobeError]=useState(false);
  const [entranceFinished,setEntranceFinished]=useState(false);
  const [slowBoot,setSlowBoot]=useState(false);
+ const [offerRetry,setOfferRetry]=useState(false);
  const [globeVersion,setGlobeVersion]=useState(0);const [frameLoad,setFrameLoad]=useState(0);const recoveryAttempts=useRef(0);
  const [query,setQuery]=useState('');const [results,setResults]=useState<Place[]>([]);const [searching,setSearching]=useState(false);const [searchError,setSearchError]=useState('');
  const [showSearch,setShowSearch]=useState(false);const [searchCountry,setSearchCountry]=useState<Place|null>(null);const [searchScope,setSearchScope]=useState<'all'|'country'>('all');
@@ -28,7 +29,8 @@ export function Explore({active}:{active:boolean}){
  const camera=useRef<Record<string,unknown>|null>(null);
  const catalog=useLoad(async()=>{const [countries,cities]=await Promise.all([api<{items:Place[]}>('/places?kind=country'),api<{items:Place[]}>('/places?kind=city')]);return [...countries.items,...cities.items];},[]);
  const command=(event:GlobeCommand['event'],data:Record<string,unknown>)=>iframe.current?.contentWindow?.postMessage({bridgeVersion:1,event,data} satisfies GlobeCommand,location.origin);
- const reloadGlobe=()=>{setReady(false);setGlobeError(false);setSlowBoot(false);setGlobeVersion(version=>version+1);};
+ const reloadGlobe=()=>{setReady(false);setGlobeError(false);setSlowBoot(false);setOfferRetry(false);setGlobeVersion(version=>version+1);};
+ const retryGlobe=()=>{recoveryAttempts.current=0;reloadGlobe();};
  const frameReady=()=>{
   try {
    const frame=iframe.current?.contentWindow as (Window&{OurworldGlobe?:{ready?:boolean}})|null;
@@ -37,7 +39,7 @@ export function Explore({active}:{active:boolean}){
    return false;
   }
  };
- const markReady=()=>{recoveryAttempts.current=0;setReady(true);setGlobeError(false);};
+ const markReady=()=>{recoveryAttempts.current=0;setReady(true);setGlobeError(false);setOfferRetry(false);};
  useEffect(()=>{
   if(entranceFinished||ready||globeError)return;
   const timer=window.setTimeout(()=>setSlowBoot(true),2000);
@@ -45,15 +47,20 @@ export function Explore({active}:{active:boolean}){
  },[entranceFinished,ready,globeError,globeVersion]);
  useEffect(()=>{
   if(entranceFinished||!ready)return;
-  const timer=window.setTimeout(()=>setEntranceFinished(true),460);
+  const timer=window.setTimeout(()=>{setEntranceFinished(true);onEntranceFinished();},460);
   return()=>clearTimeout(timer);
- },[entranceFinished,ready]);
+ },[entranceFinished,ready,onEntranceFinished]);
  useEffect(()=>{if(!user){setFavoriteIds([]);return;}api<{items:Place[]}>('/favorites').then(r=>setFavoriteIds(r.items.map(p=>p.id))).catch(()=>{});},[user?.id]);
  useEffect(()=>{const refresh=()=>{if(user)api<{items:Place[]}>('/favorites').then(r=>setFavoriteIds(r.items.map(p=>p.id))).catch(()=>{});};window.addEventListener('ourworld:favorites',refresh);return()=>window.removeEventListener('ourworld:favorites',refresh);},[user?.id]);
  useEffect(()=>{if(ready)command('setMarkers',{places:catalog.data||[],favoriteIds});},[ready,frameLoad,catalog.data,favoriteIds]);
  const globeActive=active&&!peopleCity&&!storyCity&&!browsingCountry;
  useEffect(()=>{if(ready){command('setActive',{active:globeActive});if(globeActive&&camera.current)command('restoreCamera',camera.current);}},[globeActive,ready,frameLoad]);
- useEffect(()=>{if(ready)return;const timeout=window.setTimeout(()=>{if(frameReady())markReady();else setGlobeError(true);},15000);return()=>clearTimeout(timeout);},[ready,globeVersion,frameLoad]);
+ useEffect(()=>{
+  if(ready||globeError)return;
+  // Keep the in-flight downloads alive on slow connections. The user can choose to retry.
+  const timeout=window.setTimeout(()=>{if(frameReady())markReady();else setOfferRetry(true);},15000);
+  return()=>clearTimeout(timeout);
+ },[ready,globeError,globeVersion]);
  useEffect(()=>{if(!globeError||recoveryAttempts.current>=1)return;const timer=window.setTimeout(()=>{recoveryAttempts.current++;reloadGlobe();},1000);return()=>clearTimeout(timer);},[globeError]);
  useEffect(()=>{
   const receive=(e:MessageEvent<GlobeEvent>)=>{
@@ -103,12 +110,13 @@ export function Explore({active}:{active:boolean}){
       <div className="globe-entrance-scan"/>
      </div>
     </div>}
-    {!entranceFinished&&!ready&&!globeError&&slowBoot&&<div className="globe-entrance-status" role="status">
-     {t('正在加载地球','Loading the globe')}
+    {!ready&&!globeError&&((!entranceFinished&&slowBoot)||offerRetry)&&<div className="globe-entrance-status">
+     <span role="status">{t('正在加载地球','Loading the globe')}</span>
+     {offerRetry&&<Button kind="secondary" className="globe-entrance-retry" onClick={retryGlobe}>{t('重新加载地球','Reload globe')}</Button>}
     </div>}
    </div>
    {globeError&&<button className="globe-fallback" aria-label={t('重新加载地球','Reload globe')}
-    onClick={()=>{recoveryAttempts.current=0;reloadGlobe();}}><Globe2 size={120}/><span>{t('点击重新加载地球','Tap to reload the globe')}</span></button>}
+    onClick={retryGlobe}><Globe2 size={120}/><span>{t('点击重新加载地球','Tap to reload the globe')}</span></button>}
   </div>
   <SlidePresence>{showSearch&&<Sheet label={t('探索地点','Explore places')} onClose={()=>setShowSearch(false)}><div className="search-sheet-input"><Search size={20}/><input autoFocus placeholder={t('搜索国家、城市、景点','Search a country, city or landmark')} value={query} onChange={e=>setQuery(e.target.value)}/><IconButton label={t('关闭','Close')} onClick={()=>setShowSearch(false)}><X size={18}/></IconButton></div>{searchCountry&&<div className="place-search-scopes"><button className={searchScope==='country'?'active':''} onClick={()=>setSearchScope('country')}>{searchCountry.name[locale]}</button><button className={searchScope==='all'?'active':''} onClick={()=>setSearchScope('all')}>{t('全部目的地','All destinations')}</button></div>}<div className="section-heading"><span className="eyebrow">{query?t('搜索结果','SEARCH RESULTS'):t('探索地点','EXPLORE PLACES')}</span><span>{results.length}</span></div><ErrorBox message={searchError}/>{searching?<Loading/>:results.length?<div className="place-results">{results.map(place=><button className="place-result" key={place.id} onClick={()=>choose(place)}><Cover src={place.image} alt={place.name[locale]}/><span><strong>{place.name[locale]}</strong><small>{place.country} · {place.kind==='country'?t('国家','Country'):place.kind==='city'?t('城市','City'):t('景点','Landmark')}</small></span><ArrowRight size={17}/></button>)}</div>:<Empty title={t('还没有找到这个地方','No places found')} description={t('换一个名称，或试试中英文别名。','Try another name or an alias in Chinese or English.')}/>}</Sheet>}</SlidePresence>
   {selected?.kind==='country'&&!browsingCountry&&!showSearch&&!peopleCity&&!storyCity&&<CountryDialog key={selected.id} country={selected} onClose={()=>setSelected(null)} onBrowse={country=>setBrowsingCountry({country,index:0})}/>}

@@ -27,6 +27,7 @@ uv run ourworld test web slide-exit
 uv run ourworld test web globe
 uv run ourworld test web globe-country-dialog
 uv run ourworld test web country-cities
+uv run ourworld test web globe-first-open
 uv run ourworld test web globe-recovery
 uv run ourworld test web globe-boundaries
 ```
@@ -34,6 +35,8 @@ uv run ourworld test web globe-boundaries
 `profile-*` 和 `slide-exit` 使用接口夹具；`globe-country-dialog` 使用两次触摸的桥接夹具，验证国家信息不会被后续兼容点击误关，并检查正常点击与键盘关闭。`country-cities` 验证国家弹窗到城市卡片的导航、触摸横滑、鼠标拖动、方向键切换、返回位置保留，以及空数据、单城市和失败重试。`globe-recovery` 使用真实 WebGL 与接口夹具，模拟上下文丢失、返回页面、静止画面缩放和恢复超时。`globe` 使用真实地点 API；`globe-boundaries` 使用本地网页构建预览和真实地点 API。`frontend-updates`、`globe-boundaries` 和 `all` 会先自动构建当前源码，保证清理过产物后仍可执行。`people-cards`、`experience-ui`、`swipe-physics`、`nav-layout`、`email-links`、`frontend-updates` 保留独立回归入口。
 
 `uv run ourworld test web all` 顺序运行全部网页脚本，其中含真实服务脚本，应使用开发或测试环境。
+
+`globe-first-open` 延迟地球和图集响应，检查底栏静态图、搜索、图集延后加载、超时后继续下载，以及手动重试。
 
 ## 集成与恢复
 

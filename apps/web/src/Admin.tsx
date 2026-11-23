@@ -1,11 +1,11 @@
 import {SignOutButton} from './SignOutButton';
 import { useState } from 'react';
-import { ArrowLeft, Check, ChevronRight, ClipboardList, ExternalLink, FileCheck2, Globe2, LayoutDashboard, LockKeyhole, MessageSquareWarning, Search, Shield, Users, X } from 'lucide-react';
+import { ArrowLeft, ChevronRight, ClipboardList, ExternalLink, FileCheck2, Globe2, LayoutDashboard, LockKeyhole, MessageSquareWarning, Search, Shield, Users } from 'lucide-react';
 import { api, getSession, send, upload } from './api';
 import type { Place } from '@ourworld/contracts';
 import { useApp } from './context';
 import { errorMessage, useLoad } from './hooks';
-import { Button, Empty, ErrorBox, IconButton, Loading, Modal } from './ui';
+import { Button, Empty, ErrorBox, Loading, Modal } from './ui';
 
 type Row=Record<string,unknown>;
 type Section='overview'|'users'|'verifications'|'reports'|'trips'|'posts'|'places'|'audit';
