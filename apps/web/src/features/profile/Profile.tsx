@@ -49,7 +49,7 @@ function OwnerProfile({resource,onSettings,openDetails,openCities,openEducation,
  const bio=user.bio;
  const missing=missingProfileDetails(user).map(field=>field==='name'?t('名字','name'):t('报价区间','price range'));
  return <div className="owner-overview">
-  <div className="owner-toolbar"><IconButton label={t('编辑个人资料','Edit personal details')} onClick={openDetails}><Pencil size={21}/></IconButton><IconButton label={t('设置','Settings')} onClick={onSettings}><Settings size={22}/></IconButton></div>
+  <div className="owner-toolbar"><IconButton className="owner-toolbar-edit" label={t('编辑个人资料','Edit personal details')} onClick={openDetails}><Pencil size={21}/></IconButton><IconButton label={t('设置','Settings')} onClick={onSettings}><Settings size={22}/></IconButton></div>
   <header className="owner-identity">
    <button type="button" className="owner-avatar-stack" onClick={()=>photos.length?setPhotoViewer(0):openEditor('gallery')} aria-label={photos.length?t('查看我的照片','View my photos'):t('添加我的照片','Add my photos')}>{photos[0]?<Cover src={photos[0]} alt={user.name}/>:<span className="owner-avatar-empty"><ImagePlus size={26}/></span>}{photos.length>1&&<span className="owner-avatar-count">{photos.length}</span>}</button>
    <div className="owner-identity-copy"><span className="owner-kicker">{t('我的主页','My profile')}</span><div className="owner-name"><h1>{user.name}</h1></div><button type="button" className="owner-preview" disabled={!photos.length} aria-label={t('预览照片','Preview photos')} onClick={()=>setPhotoViewer(0)}>{t('预览','Preview')}<ArrowRight size={16}/></button></div>
@@ -121,7 +121,7 @@ function ProfileInfoChips({resource,owner}:{resource:ProfileResource;owner?:Prof
   {key:'price',icon:<Wallet size={13}/>,label:t('报价区间','Rates'),value:user.priceRange?formatPrice(user.priceRange,zh):'',alert:true}];
  const visible=chips.filter(chip=>chip.value||owner);
  if(!visible.length)return null;
- return <div className="profile-chips">{visible.map(chip=>owner?<button type="button" className={`profile-chip ${chip.value?'':'is-empty'}`} key={chip.key} onClick={chip.key==='cities'?owner.openCities||owner.openDetails:chip.key==='education'?owner.openEducation||owner.openDetails:chip.key==='languages'?owner.openLanguages||owner.openDetails:owner.openDetails} aria-label={`${t('编辑','Edit')} ${chip.label}`}>{chip.icon}<span>{chip.value||chip.label}</span>{!chip.value&&<Plus size={15}/>}{chip.alert&&!chip.value&&<i className="red-dot"/>}</button>:<span className="profile-chip" key={chip.key}>{chip.icon}<span>{chip.value}</span></span>)}</div>;
+ return <div className="profile-chips">{visible.map(chip=>owner?<button type="button" className={`profile-chip ${chip.value?'':'is-empty'}`} key={chip.key} data-profile-chip={chip.key} onClick={chip.key==='cities'?owner.openCities||owner.openDetails:chip.key==='education'?owner.openEducation||owner.openDetails:chip.key==='languages'?owner.openLanguages||owner.openDetails:owner.openDetails} aria-label={`${t('编辑','Edit')} ${chip.label}`}>{chip.icon}<span>{chip.value||chip.label}</span>{!chip.value&&<Plus size={15}/>}{chip.alert&&!chip.value&&<i className="red-dot"/>}</button>:<span className="profile-chip" key={chip.key} data-profile-chip={chip.key}>{chip.icon}<span>{chip.value}</span></span>)}</div>;
 }
 
 function DetailsDialog({onClose,onDone,onCities,onEducation,onLanguages,initialUser}:{onLanguages:()=>void;onClose:()=>void;onDone:()=>void;onCities:()=>void;onEducation:()=>void;initialUser?:User}){

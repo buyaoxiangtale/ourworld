@@ -19,14 +19,14 @@ body:has(.app-shell) .country-cities-header h1{font:500 24px/1.4 Manrope,"Noto S
 .country-city-card.is-active{opacity:1;transform:scale(1)}
 body:has(.app-shell) .country-city-card>.cover{flex:1;width:100%;height:0;min-height:0;object-fit:cover;border-radius:0;user-select:none;-webkit-user-drag:none}
 .country-city-card-content{flex:none;padding:18px 20px}
-.country-city-location{display:flex;align-items:center;gap:5px;color:var(--ow-inkMuted);font-size:12px}
+.country-city-location{display:flex;align-items:center;gap:5px;color:var(--ow-accentEnd);font-size:12px}
 body:has(.app-shell) .country-city-card h2{font:500 30px/1.25 Manrope,"Noto Sans SC",sans-serif;margin:8px 0 3px;color:var(--ow-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:0}
-.country-city-english{display:block;color:var(--ow-inkMuted);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.country-city-english{display:block;color:var(--ow-inkFaint);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 body:has(.app-shell) .country-city-card-content>p{font-size:14px;line-height:1.65;margin:12px 0 16px;color:var(--ow-inkMuted);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .country-city-card-content>.button{width:100%;min-height:44px;gap:10px;justify-content:center}
 .country-city-controls{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:12px;flex:none;padding:0 24px 16px;text-align:center}
-.country-city-controls>.icon-button{width:44px;height:44px;border-radius:50%;background:var(--ow-surface)}
-.country-city-controls>.icon-button:disabled{opacity:.3}
+.country-city-controls>.icon-button{width:44px;height:44px;border-radius:50%;background:var(--ow-raised);color:var(--ow-accent)}
+.country-city-controls>.icon-button:disabled{background:var(--ow-surface);color:var(--ow-inkFaint);opacity:1}
 .country-city-controls span{font-size:14px;font-variant-numeric:tabular-nums}
 body:has(.app-shell) .country-city-controls p{font-size:12px;line-height:1.5;margin:4px 0 0;color:var(--ow-inkMuted)}
 .city-detail-layer{position:absolute;inset:0;z-index:60}

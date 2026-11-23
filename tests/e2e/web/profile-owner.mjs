@@ -54,6 +54,28 @@ try{
    check(await page.locator('.owner-completion').count()===(state==='empty'?1:0),`${width}/${state}: completion reminder reflects actual profile`);
    if(state==='empty')check((await page.locator('.owner-completion').innerText()).includes('报价区间'),`${width}: incomplete personal details specify the actual missing field`);
    if(width===390&&state==='filled'){
+    const palette=await page.evaluate(()=>{
+     const styles=(selector,property)=>getComputedStyle(document.querySelector(selector))[property];
+     return [
+      styles('.owner-profile-page','backgroundColor'),
+      styles('.owner-toolbar .icon-button:not(.owner-toolbar-edit)','backgroundColor'),
+      styles('.owner-toolbar-edit','backgroundColor'),
+      styles('.owner-toolbar-edit','borderTopColor'),
+      styles('.owner-name h1','color'),
+      styles('[data-profile-chip="languages"]>span','color'),
+      styles('.photo-wall-slogan.is-empty','color'),
+      styles('.owner-toolbar-edit','color'),
+      styles('[data-profile-chip="price"]>span','color'),
+      styles('.owner-kicker','color'),
+      styles('[data-profile-chip="cities"]','backgroundColor')
+     ];
+    });
+    check(new Set(palette).size===11,'the profile uses eleven distinct reference colors before hover');
+    const edit=page.locator('.owner-toolbar-edit');
+    await edit.hover();
+    await page.waitForFunction(()=>getComputedStyle(document.querySelector('.owner-toolbar-edit')).color==='rgb(240, 231, 164)');
+    check(true,'toolbar hover adds cream yellow without changing the button layout');
+    await page.mouse.move(1,1);
     const originalLayout=layout,originalBio=user.bio;
     layout={...layout,blocks:layout.blocks.filter(block=>block.type!=='gallery'&&block.type!=='prompts')};user.bio='';
     await page.reload();await page.locator('.bottom-nav button[data-tab="profile"]').click();await page.locator('.owner-name').waitFor();

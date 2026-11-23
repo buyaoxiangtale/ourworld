@@ -129,8 +129,8 @@ body:has(.app-shell) .thread-header{background:var(--ow-bg);border:0;padding:14p
 body:has(.app-shell) .thread-person strong{font-size:16px;color:var(--ow-ink)}
 body:has(.app-shell) .thread-person small{font-size:12px;color:var(--ow-inkMuted)}
 body:has(.app-shell) .message-bubble>p{font-size:16px;line-height:1.6}
-body:has(.app-shell) .message-info{font-size:12px;color:var(--ow-inkMuted)}
-body:has(.app-shell) .message-row.mine .message-info{color:var(--ow-inkMuted)}
+body:has(.app-shell) .message-info{font-size:12px;color:var(--ow-inkFaint)}
+body:has(.app-shell) .message-row.mine .message-info{color:var(--ow-inkFaint)}
 body:has(.app-shell) .thread-composer{background:var(--ow-bg);border:0}
 body:has(.app-shell) .thread-composer input{background:var(--ow-raised)}
 body:has(.app-shell) .thread-composer button[type=submit]{background:var(--ow-accent);color:var(--ow-accentInk)}
@@ -221,8 +221,16 @@ body:has(.app-shell) .profile-banner-pill{display:inline-flex;align-items:center
 body:has(.app-shell) .profile-banner-pill:hover{color:var(--ow-ink)}
 body:has(.app-shell) .profile-chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
 body:has(.app-shell) .public-profile-shell .profile-chips{margin:0 16px 24px}
-body:has(.app-shell) .profile-chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;line-height:1.4;color:var(--ow-ink);background:var(--ow-surface);border:1px solid transparent;border-radius:16px;padding:7px 11px;max-width:100%}
+body:has(.app-shell) .profile-chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;line-height:1.4;color:var(--ow-inkMuted);background:var(--ow-raised);border:1px solid transparent;border-radius:16px;padding:7px 11px;max-width:100%}
 body:has(.app-shell) .profile-chip svg{color:var(--ow-inkMuted);flex-shrink:0}
+body:has(.app-shell) .profile-chip[data-profile-chip="cities"]{background:var(--ow-upload);color:var(--ow-photoMat)}
+body:has(.app-shell) .profile-chip[data-profile-chip="price"]:not(.is-empty){color:var(--ow-photoMat)}
+body:has(.app-shell) .profile-chip:is([data-profile-chip="cities"],[data-profile-chip="education"],[data-profile-chip="years"],[data-profile-chip="price"])>svg:first-child{color:var(--ow-accentEnd)}
+body:has(.app-shell) .profile-chip[data-profile-chip="languages"]>svg:first-child{color:color-mix(in srgb,var(--ow-starSoft) 62%,var(--ow-inkFaint))}
+body:has(.app-shell) .profile-chip[data-profile-chip].is-empty:not([data-profile-chip="price"]){background:var(--ow-surface);color:var(--ow-inkMuted);border:1px dashed var(--ow-controlOutline)}
+body:has(.app-shell) .profile-chip[data-profile-chip].is-empty>svg:last-of-type{color:var(--ow-accent)}
+body:has(.app-shell) button.profile-chip[data-profile-chip]:hover{color:var(--ow-accentHover)}
+
 body:has(.app-shell) .profile-chip>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 body:has(.app-shell) button.profile-chip.is-empty{background:transparent;border:1px dashed color-mix(in srgb,var(--ow-accent) 55%,transparent);color:var(--ow-accent);font-weight:600}
 body:has(.app-shell) .profile-photos{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x proximity;padding-bottom:4px;margin:0 0 10px;scrollbar-width:thin}

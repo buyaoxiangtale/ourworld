@@ -4,14 +4,16 @@
 body:has(.app-shell) .owner-profile-page{padding:0 16px 24px;background:var(--ow-bg);color:var(--ow-ink)}
 .owner-overview{position:relative;padding-top:20px}
 .owner-toolbar{position:sticky;top:12px;z-index:4;display:flex;justify-content:flex-end;gap:8px;height:0;overflow:visible;pointer-events:none}
-body:has(.app-shell) .owner-toolbar .icon-button{pointer-events:auto;flex:none;width:44px;height:44px;border:1px solid var(--ow-line);border-radius:50%;background:var(--ow-bg);color:var(--ow-ink)}
+body:has(.app-shell) .owner-toolbar .icon-button{pointer-events:auto;flex:none;width:44px;height:44px;border:1px solid var(--ow-line);border-radius:50%;background:var(--ow-surface);color:var(--ow-inkMuted)}
+body:has(.app-shell) .owner-toolbar .icon-button.owner-toolbar-edit{background:var(--ow-raised);color:var(--ow-accent)}
+body:has(.app-shell) .owner-toolbar .icon-button:hover{border-color:var(--ow-controlOutline);color:var(--ow-accentHover)}
 .owner-identity{display:flex;align-items:center;gap:16px;min-height:128px;padding:8px 0 22px}
 .owner-avatar-stack{position:relative;isolation:isolate;flex:none;width:70px;height:88px;margin:8px 0 4px}
 .owner-avatar-stack::before,.owner-avatar-stack::after{content:"";position:absolute;inset:4px 0;border:2px solid var(--ow-bg);border-radius:12px;background:var(--ow-raised);transform:rotate(12deg);z-index:-1}
 .owner-avatar-stack::after{transform:rotate(6deg);background:var(--ow-line)}
 .owner-avatar-stack .cover{width:100%;height:100%;border:2px solid var(--ow-bg);border-radius:12px;object-fit:cover;transform:rotate(-5deg)}
 .owner-identity-copy{min-width:0;flex:1;padding-top:44px}
-.owner-kicker{display:block;font-size:11px;font-weight:500;color:var(--ow-inkMuted);margin-bottom:4px}
+.owner-kicker{display:block;font-size:11px;font-weight:500;color:var(--ow-accentEnd);margin-bottom:4px}
 .owner-name{display:flex;align-items:center;gap:7px;min-width:0}
 body:has(.app-shell) .owner-name h1{font-size:28px;line-height:1.22;letter-spacing:-.04em;font-weight:600;margin:0;overflow-wrap:anywhere}
 .owner-name>svg{flex:none;color:var(--ow-accent)}
@@ -22,7 +24,7 @@ body:has(.app-shell) .owner-name h1{font-size:28px;line-height:1.22;letter-spaci
 .owner-completion>span{flex:1}
 .owner-completion>svg:last-child{color:var(--ow-inkMuted);flex:none}
 body:has(.app-shell) .owner-profile-page .profile-chips{gap:8px 6px;margin:0 0 24px}
-body:has(.app-shell) .owner-profile-page .profile-chip,body:has(.app-shell) .owner-profile-page button.profile-chip.is-empty{position:relative;gap:7px;min-height:40px;max-width:100%;padding:8px 12px;background:var(--ow-raised);border:0;border-radius:24px;color:var(--ow-inkMuted);font-size:12px;font-weight:400}
+body:has(.app-shell) .owner-profile-page .profile-chip,body:has(.app-shell) .owner-profile-page button.profile-chip.is-empty{position:relative;gap:7px;min-height:40px;max-width:100%;padding:8px 12px;border:0;border-radius:24px;font-size:12px;font-weight:400}
 body:has(.app-shell) .owner-profile-page .profile-chip .red-dot{position:absolute;right:4px;top:0;width:7px;height:7px}
 .owner-section{margin:0 0 26px}
 .owner-section-heading{display:flex;align-items:center;gap:9px;padding:0 10px}
@@ -36,10 +38,10 @@ body:has(.app-shell) .photo-wall-header h2{font-size:26px;font-weight:650;line-h
 .photo-wall-manage,.photo-wall-slogan,.photo-wall-caption{display:flex;align-items:center;gap:7px;color:var(--ow-inkMuted)}
 .photo-wall-manage,.photo-wall-slogan{min-height:44px}
 .photo-wall-manage{flex:none;padding:6px 0 6px 8px;font-size:12px;color:var(--ow-accent)}
-.photo-wall-slogan{margin:1px 0 12px;padding:4px 0;max-width:100%;font-size:14px;line-height:1.55;text-align:left}
+.photo-wall-slogan{color:var(--ow-inkMuted);margin:1px 0 12px;padding:4px 0;max-width:100%;font-size:14px;line-height:1.55;text-align:left}
 .photo-wall-slogan span{white-space:pre-wrap;overflow-wrap:anywhere}
 .photo-wall :is(.photo-wall-slogan,.photo-wall-caption,.photo-wall-manage) svg{flex:none}
-.photo-wall :is(.photo-wall-slogan,.photo-wall-caption).is-empty{color:var(--ow-inkMuted)}
+.photo-wall :is(.photo-wall-slogan,.photo-wall-caption).is-empty{color:var(--ow-inkFaint)}
 .photo-wall-grid{display:grid;gap:9px;align-items:start}
 .photo-wall-grid:is(.photo-wall-grid-2,.photo-wall-grid-3){--photo-wall-height:clamp(212px,64vw,326px);grid-template-columns:minmax(0,1fr) minmax(0,1.35fr) minmax(0,1fr)}
 .photo-wall-grid:not(.photo-wall-grid-1) .photo-wall-feature{grid-area:1 / 2;min-width:0;height:var(--photo-wall-height)}
@@ -56,7 +58,7 @@ body:has(.app-shell) .photo-wall-header h2{font-size:26px;font-weight:650;line-h
 .photo-wall-image .cover{position:absolute;inset:0;width:100%;height:100%;border-radius:0;object-fit:cover}
 .photo-wall-caption{justify-content:center;gap:4px;min-height:36px;width:100%;padding:6px 2px;font-size:12px;line-height:1.45;text-align:center;color:var(--ow-ink)}
 .photo-wall-caption span{white-space:pre-wrap;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;overflow:hidden}
-.photo-wall-caption svg{opacity:.7}
+.photo-wall-caption svg,.photo-wall-slogan svg{color:var(--ow-accentEnd)}
 .photo-wall-upload{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:126px;border:1px dashed var(--ow-controlOutline);border-radius:12px;color:var(--ow-photoMat);background:var(--ow-upload)}
 .photo-wall button:focus-visible{outline:2px solid var(--ow-focus);outline-offset:-2px}
 .owner-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 12px;padding-top:8px}
@@ -67,13 +69,14 @@ body:has(.app-shell) .photo-wall-header h2{font-size:26px;font-weight:650;line-h
 .owner-content-card>strong{font-size:17px;line-height:1.4;font-weight:600;overflow-wrap:anywhere}
 .owner-content-card>span:not(.owner-card-add){font-size:12px;line-height:1.5;color:var(--ow-inkMuted)}
 .owner-prompt-card.is-filled{align-items:flex-start;justify-content:flex-start;text-align:left}
-.owner-card-eyebrow{font-size:12px;line-height:1.5}
+.owner-content-card>span.owner-card-eyebrow{font-size:12px;line-height:1.5;color:var(--ow-accentEnd)}
+.owner-content-card>span.owner-card-edit{color:var(--ow-accent)}
 body:has(.app-shell) .owner-prompt-card p.owner-prompt-answer{font-size:15px;line-height:1.65;color:var(--ow-ink);white-space:pre-wrap;overflow-wrap:anywhere;margin:0 0 12px}
 .owner-card-edit{display:inline-flex;align-items:center;gap:6px;margin-top:auto}
 .profile-hobby-cards{display:flex;gap:12px;max-width:100%;min-width:0;padding:14px 6px 9px 0;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:thin;scrollbar-color:var(--ow-line) transparent}
 .profile-hobby-card{position:relative;display:flex;flex:0 0 clamp(144px,46%,208px);flex-direction:column;align-items:flex-start;gap:7px;min-width:0;height:208px;margin:0;padding:18px 14px 14px;border-radius:26px;background:var(--ow-surface);color:var(--ow-ink);text-align:left;overflow:hidden;scroll-snap-align:start}
-.profile-hobby-card-category{display:flex;align-items:center;gap:6px;width:100%;min-height:20px;font-size:12px;line-height:1.5;color:var(--ow-inkMuted)}
-.profile-hobby-card-category>svg{flex:none}
+.profile-hobby-card-category{display:flex;align-items:center;gap:6px;width:100%;min-height:20px;font-size:12px;line-height:1.5;color:var(--ow-accentEnd)}
+.profile-hobby-card-category>svg{flex:none;color:var(--ow-accentEnd)}
 .profile-hobby-card-title{font-size:17px;font-weight:600;line-height:1.4}
 .profile-hobby-card-names{font-size:14px;line-height:1.5;color:var(--ow-inkMuted)}
 .profile-hobby-card-title,.profile-hobby-card-names,.profile-hobby-card-category>span{display:block;width:100%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -81,7 +84,8 @@ body:has(.app-shell) .owner-prompt-card p.owner-prompt-answer{font-size:15px;lin
 .profile-hobby-card-photos{display:grid;flex:none;width:100%;height:84px;grid-auto-rows:minmax(0,1fr);gap:3px;margin-top:2px;overflow:hidden;border-radius:10px}
 .profile-hobby-card-photos img{display:block;width:100%;height:100%;min-width:0;min-height:0;object-fit:cover}
 .profile-hobby-card.owner-interest-card{overflow:visible}
-.profile-hobby-card.owner-hobby-add{align-items:center;justify-content:center;padding:30px 12px 22px;text-align:center;overflow:visible}
+.profile-hobby-card.owner-hobby-add{background:var(--ow-upload);align-items:center;justify-content:center;padding:30px 12px 22px;text-align:center;overflow:visible}
+.owner-hobby-add .owner-card-symbol,.owner-hobby-add .owner-card-add{color:var(--ow-accent)}
 .profile-hobby-card:focus-visible,.profile-hobby-cards:focus-visible{outline:2px solid var(--ow-focus);outline-offset:-3px}
 body:has(.app-shell) .owner-profile-page .profile-management{margin:0;padding:0;border-top:1px solid var(--ow-line)}
 @media(max-width:360px){.owner-identity{gap:12px}.owner-avatar-stack{width:60px;height:78px}.owner-content-card{min-height:174px;padding:28px 12px 18px}.photo-wall-grid{gap:7px}}
@@ -185,7 +189,7 @@ body:has(.app-shell) .profile-about-editor-body>select{width:100%;max-width:100%
 body:has(.app-shell) .profile-about-editor-body>.button.ghost{margin-top:16px;color:var(--ow-danger)}
 
 
-.owner-avatar-empty{display:grid;place-items:center;width:100%;height:100%;border:2px solid var(--ow-bg);border-radius:12px;transform:rotate(-5deg);background:var(--ow-upload);color:var(--ow-accent)}
+.owner-avatar-empty{display:grid;place-items:center;width:100%;height:100%;border:2px solid var(--ow-bg);border-radius:12px;transform:rotate(-5deg);background:var(--ow-photoMat);color:var(--ow-accentInk)}
 .owner-avatar-count{position:absolute;right:-7px;bottom:0;display:grid;place-items:center;min-width:24px;height:24px;padding:0 5px;border:2px solid var(--ow-bg);border-radius:50%;background:var(--ow-space);color:var(--ow-starBright);font-size:11px}
 .profile-photo-open{display:block;min-width:0;padding:0;overflow:hidden;background:transparent;border:0;text-align:inherit}
 .profile-photo-open:disabled{opacity:1}
