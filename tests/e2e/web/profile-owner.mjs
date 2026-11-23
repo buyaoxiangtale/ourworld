@@ -45,7 +45,7 @@ try{
    check(await page.getByRole('button',{name:'搭建主页',exact:true}).count()===0,'legacy profile builder entry is removed');await page.evaluate(()=>document.fonts.ready);
    check(await page.locator('.owner-about-grid>button').count()===(state==='empty'?2:3),`${width}/${state}: bio and saved stories include one empty add-story card`);
    check(await page.getByText('再添加 2 条旅行问答',{exact:true}).count()===0,`${width}/${state}: old prompt reminder is removed`);
-   check(await page.locator('.owner-photo-slot').count()===6,`${width}/${state}: six photo slots`);
+   check(await page.locator('.photo-wall-image').count()===(state==='empty'?0:8),`${width}/${state}: photo wall shows all uploaded photos`);
    check(await page.locator('.owner-name svg').count()===0,`${width}/${state}: no checkmark beside the name`);
    check(await page.locator('.owner-profile-page .profile-portrait,.owner-profile-page .profile-banner-donut').count()===0,`${width}/${state}: compact header without progress indicator`);
    check(await page.locator('.tab-panel:has(.owner-profile-page)').evaluate(el=>getComputedStyle(el).scrollbarWidth)==='none',`${width}/${state}: sidebar scrollbar hidden`);
@@ -65,11 +65,15 @@ try{
     layout=originalLayout;user.bio=originalBio;await page.reload();await page.locator('.bottom-nav button[data-tab="profile"]').click();await page.locator('.owner-name').waitFor();
    }
 
-   if(state==='filled')check(await page.locator('.owner-photo-more').innerText()==='+2',`${width}: additional photos remain discoverable`);
+   if(state==='filled'){
+    const wall=page.locator('.photo-wall-grid');
+    check(await wall.evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length)===3,`${width}: photo wall has three columns`);
+    check(await wall.locator('.photo-wall-column').evaluateAll(columns=>columns.every(el=>el.scrollHeight>el.clientHeight&&getComputedStyle(el).overflowY==='auto')),`${width}: both side columns can scroll independently`);
+   }
    if(width===390)await page.screenshot({path:resolve(out,`${state}-top.png`),animations:'disabled'});
    if(state!=='empty'){
     const expected=layout.blocks.find(b=>b.id==='gallery').refs[0];
-    check(await page.locator('.owner-avatar-stack img').getAttribute('src')===expected&&await page.locator('.owner-photo-slot img').first().getAttribute('src')===expected,`${width}/${state}: header and My photos use the same first image`);
+    check(await page.locator('.owner-avatar-stack img').getAttribute('src')===expected&&await page.locator('.photo-wall-image img').first().getAttribute('src')===expected,`${width}/${state}: header and My photos use the same first image`);
     await page.locator('.owner-avatar-stack').click();const viewer=page.locator('.profile-photo-viewer');await viewer.waitFor();
     await viewer.locator('.profile-photo-position').getByText('1 / 8',{exact:true}).waitFor();
     check(await viewer.locator('.profile-photo-viewer-slide').count()===8,`${width}/${state}: viewer contains every gallery photo without story or caption photos`);
@@ -80,7 +84,7 @@ try{
     await viewer.locator('.profile-photo-previous').click();await viewer.locator('.profile-photo-position').getByText('2 / 8',{exact:true}).waitFor();
     await page.keyboard.press('Escape');await viewer.waitFor({state:'hidden'});
     check(await page.locator('.owner-avatar-stack').evaluate(el=>el===document.activeElement),`${width}/${state}: closing the viewer restores focus to the photo`);
-    await page.locator('.owner-photo-slot').nth(5).click();await viewer.locator('.profile-photo-position').getByText('6 / 8',{exact:true}).waitFor();
+    await page.getByRole('button',{name:en?'View photo 6':'查看第 6 张照片',exact:true}).click();await viewer.locator('.profile-photo-position').getByText('6 / 8',{exact:true}).waitFor();
     await viewer.locator('.profile-photo-next').click();await viewer.locator('.profile-photo-position').getByText('7 / 8',{exact:true}).waitFor();
     await viewer.locator('.profile-photo-next').click();await viewer.locator('.profile-photo-position').getByText('8 / 8',{exact:true}).waitFor();
     check(await viewer.locator('.profile-photo-next').isDisabled(),`${width}/${state}: final photo has no next action`);
@@ -106,11 +110,30 @@ try{
     }
     await page.keyboard.press('Escape');
     if(width===390&&state==='filled'){
-     await page.locator('.owner-photo-footer>button').click();let manager=page.getByRole('dialog',{name:'我的照片',exact:true});await manager.locator('article').nth(1).getByRole('button',{name:'前移照片',exact:true}).click();
+     await page.getByRole('button',{name:'编辑照片墙标语',exact:true}).click();
+     let manager=page.getByRole('dialog',{name:'我的照片',exact:true});
+     const slogan=manager.getByRole('textbox',{name:'照片墙标语',exact:true});
+     await slogan.fill('用脚步收集光和风。');
+     await manager.getByRole('button',{name:'保存并更新主页',exact:true}).click();
+     await manager.waitFor({state:'hidden'});
+     await page.locator('.photo-wall-slogan').getByText('用脚步收集光和风。',{exact:true}).waitFor();
+     await page.getByRole('button',{name:'编辑第 2 张照片的介绍',exact:true}).click();
+     const caption=manager.getByRole('textbox',{name:'照片 2 的介绍',exact:true});
+     await caption.waitFor();
+     check(await caption.evaluate(el=>el===document.activeElement),'caption shortcut focuses that photo’s field');
+     await caption.fill('下过雨的街角。');
+     await manager.locator('article').nth(1).getByRole('button',{name:'前移照片',exact:true}).click();
      await manager.getByRole('button',{name:'保存并更新主页',exact:true}).click();await manager.waitFor({state:'hidden'});
      await page.waitForFunction(()=>document.querySelector('.owner-avatar-stack img')?.getAttribute('src')==='/api/v1/fixture/photo-1.jpg');
-     check(await page.locator('.owner-photo-slot img').first().getAttribute('src')==='/api/v1/fixture/photo-1.jpg','reordering My photos changes the default header image');
-     await page.locator('.owner-photo-footer>button').click();manager=page.getByRole('dialog',{name:'我的照片',exact:true});await manager.getByRole('button',{name:'删除照片 1',exact:true}).click();await manager.getByRole('button',{name:'保存并更新主页',exact:true}).click();await manager.waitFor({state:'hidden'});
+     check(await page.locator('.photo-wall-image img').first().getAttribute('src')==='/api/v1/fixture/photo-1.jpg','reordering My photos changes the default header image');
+     await page.reload();await page.locator('.bottom-nav button[data-tab="profile"]').click();
+     await page.locator('.photo-wall-slogan').getByText('用脚步收集光和风。',{exact:true}).waitFor();
+     await page.locator('.photo-wall-feature .photo-wall-caption').getByText('下过雨的街角。',{exact:true}).waitFor();
+     check(true,'slogan survives reload and a caption follows its photo after reordering');
+     await page.locator('.photo-wall').scrollIntoViewIfNeeded();
+     await page.screenshot({path:resolve(out,'photo-wall.png'),animations:'disabled'});
+
+     await page.locator('.photo-wall-manage').click();manager=page.getByRole('dialog',{name:'我的照片',exact:true});await manager.getByRole('button',{name:'删除照片 1',exact:true}).click();await manager.getByRole('button',{name:'保存并更新主页',exact:true}).click();await manager.waitFor({state:'hidden'});
      await page.waitForFunction(()=>document.querySelector('.owner-avatar-stack img')?.getAttribute('src')==='/api/v1/fixture/photo-0.jpg');check(true,'deleting the first photo promotes the next gallery photo');
     }
    }else check(await page.locator('.owner-avatar-stack img').count()===0,`${width}: an empty gallery has a shared add-photo entry instead of an independent avatar`);
@@ -149,7 +172,7 @@ try{
    if(width===390){await page.locator('#owner-about-title').scrollIntoViewIfNeeded();await page.screenshot({path:resolve(out,`${state}-cards.png`),animations:'disabled'});}
    await page.locator('.owner-toolbar button').last().click();await page.getByRole('dialog').waitFor();await page.getByRole('button',{name:'Close',exact:true}).click();
    if(width===390&&state==='empty'){
-    await page.locator('.owner-photo-footer>button').click();await page.getByRole('dialog').waitFor();
+    await page.locator('.photo-wall-manage').click();await page.getByRole('dialog').waitFor();
     check(await page.locator('.editor-overlay,.agent-panel,.layout-editor-block').count()===0,'photo editing has no legacy studio or AI tools');
     await page.getByText('添加照片',{exact:true}).waitFor();
     check(true,'photo card opens its independent upload control');
@@ -158,11 +181,13 @@ try{
     await page.getByRole('button',{name:'保存并更新主页',exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});
     check(layout.blocks.some(b=>b.type==='gallery'&&b.refs.includes('/api/v1/fixture/upload-1.jpg')),'photo card uploads and publishes a real selected file');
     await page.waitForFunction(()=>document.querySelector('.owner-avatar-stack img')?.getAttribute('src')==='/api/v1/fixture/upload-1.jpg');
+    check(await page.locator('.photo-wall-caption.is-empty').count()===1,'uploads can be published without an introduction');
+
     await page.locator('.owner-avatar-stack').click();let photosDialog=page.locator('.profile-photo-viewer');await photosDialog.locator('.profile-photo-position').getByText('1 / 1',{exact:true}).waitFor();
     check(await photosDialog.locator('.profile-photo-next,.profile-photo-previous').count()===0,'a single photo has no redundant navigation controls');await page.keyboard.press('Escape');
     await photosDialog.waitFor({state:'hidden'});
 
-    await page.locator('.owner-photo-footer>button').click();await page.getByRole('button',{name:'删除照片 1',exact:true}).click();
+    await page.locator('.photo-wall-manage').click();await page.getByRole('button',{name:'删除照片 1',exact:true}).click();
     await page.getByRole('button',{name:'保存并更新主页',exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});
     check(layout.blocks.length>0&&!layout.blocks.some(b=>b.type==='gallery'),'removing the last photo preserves a valid non-empty layout');
     check(await page.locator('.owner-avatar-stack img').count()===0,'removing the last gallery photo also clears the header photo');
@@ -221,7 +246,7 @@ try{
     check(layout.blocks.filter(isStory).length===2&&layout.blocks.filter(isStory)[1].content==='第二段故事：山间的日落。','editing the first story preserves the second');
     await page.locator('#owner-about-title').scrollIntoViewIfNeeded();await page.screenshot({path:resolve(out,'multiple-photo-stories.png'),animations:'disabled'});
 
-    await page.locator('.owner-photo-footer>button').click();await page.getByRole('dialog').waitFor();
+    await page.locator('.photo-wall-manage').click();await page.getByRole('dialog').waitFor();
     await page.locator('input[type=file]').setInputFiles({name:'gallery.jpg',mimeType:'image/jpeg',buffer:photo});await page.locator('.card-photo-editor-grid article').waitFor();
     await page.getByRole('button',{name:'保存并更新主页',exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});
     check(layout.blocks.filter(isStory).length===2&&layout.blocks.find(block=>block.id===captionBlock.id)?.content==='清晨安静的河岸，一起走走。','editing the photo gallery preserves every separate photo story');
