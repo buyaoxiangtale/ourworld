@@ -133,8 +133,27 @@ try{
      await page.locator('.photo-wall').scrollIntoViewIfNeeded();
      await page.screenshot({path:resolve(out,'photo-wall.png'),animations:'disabled'});
 
-     await page.locator('.photo-wall-manage').click();manager=page.getByRole('dialog',{name:'我的照片',exact:true});await manager.getByRole('button',{name:'删除照片 1',exact:true}).click();await manager.getByRole('button',{name:'保存并更新主页',exact:true}).click();await manager.waitFor({state:'hidden'});
-     await page.waitForFunction(()=>document.querySelector('.owner-avatar-stack img')?.getAttribute('src')==='/api/v1/fixture/photo-0.jpg');check(true,'deleting the first photo promotes the next gallery photo');
+     await page.locator('.photo-wall-manage').click();
+     const mainPhotoCard=manager.locator('article').nth(2);
+     await manager.locator('article').nth(1).getByRole('button',{name:'设为主照片',exact:true}).click();
+     await mainPhotoCard.getByRole('button',{name:'设为主照片',exact:true}).click();
+     check(await manager.getByRole('button',{name:'主照片',pressed:true,exact:true}).count()===1,'only one photo can be selected as the main photo');
+     check(await mainPhotoCard.getByRole('button',{name:'主照片',pressed:true,exact:true}).count()===1,'the selected card shows the main-photo state');
+     await manager.getByRole('button',{name:'保存并更新主页',exact:true}).click();await manager.waitFor({state:'hidden'});
+     await page.reload();await page.locator('.bottom-nav button[data-tab="profile"]').click();
+     const featured=page.locator('.photo-wall-feature');
+     check(await featured.locator('img').getAttribute('src')==='/api/v1/fixture/photo-2.jpg','the chosen main photo stays in the center after reload');
+     check(await page.locator('.owner-avatar-stack img').getAttribute('src')==='/api/v1/fixture/photo-1.jpg','choosing the main photo preserves album order and the header image');
+     await featured.getByRole('button',{name:'查看第 3 张照片',exact:true}).click();
+     await viewer.locator('.profile-photo-position').getByText('3 / 8',{exact:true}).waitFor();
+     await page.keyboard.press('Escape');await viewer.waitFor({state:'hidden'});
+     check(true,'opening the centered photo uses its album position');
+     await page.locator('.photo-wall-manage').click();
+     await manager.getByRole('button',{name:'删除照片 3',exact:true}).click();
+     await manager.getByRole('button',{name:'删除照片 1',exact:true}).click();
+     await manager.getByRole('button',{name:'保存并更新主页',exact:true}).click();await manager.waitFor({state:'hidden'});
+     await page.waitForFunction(()=>document.querySelector('.photo-wall-feature img')?.getAttribute('src')==='/api/v1/fixture/photo-0.jpg');
+     check(await page.locator('.owner-avatar-stack img').getAttribute('src')==='/api/v1/fixture/photo-0.jpg','deleting the main photo restores the first remaining photo to the center');
     }
    }else check(await page.locator('.owner-avatar-stack img').count()===0,`${width}: an empty gallery has a shared add-photo entry instead of an independent avatar`);
 

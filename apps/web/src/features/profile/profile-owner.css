@@ -41,19 +41,18 @@ body:has(.app-shell) .photo-wall-header h2{font-size:26px;font-weight:650;line-h
 .photo-wall :is(.photo-wall-slogan,.photo-wall-caption,.photo-wall-manage) svg{flex:none}
 .photo-wall :is(.photo-wall-slogan,.photo-wall-caption).is-empty{color:var(--ow-inkMuted)}
 .photo-wall-grid{display:grid;gap:9px;align-items:start}
-.photo-wall-grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
-.photo-wall-grid-3{--photo-wall-height:clamp(212px,64vw,326px);grid-template-columns:minmax(0,1fr) minmax(0,1.35fr) minmax(0,1fr)}
-.photo-wall-grid-3 .photo-wall-feature{grid-area:1 / 2;min-width:0;height:var(--photo-wall-height)}
+.photo-wall-grid:is(.photo-wall-grid-2,.photo-wall-grid-3){--photo-wall-height:clamp(212px,64vw,326px);grid-template-columns:minmax(0,1fr) minmax(0,1.35fr) minmax(0,1fr)}
+.photo-wall-grid:not(.photo-wall-grid-1) .photo-wall-feature{grid-area:1 / 2;min-width:0;height:var(--photo-wall-height)}
 .photo-wall-grid-3 .photo-wall-left{grid-area:1 / 1}
-.photo-wall-grid-3 .photo-wall-right{grid-area:1 / 3}
+.photo-wall-grid .photo-wall-right{grid-area:1 / 3}
 .photo-wall-column{display:grid;align-content:start;gap:13px;min-width:0}
 .photo-wall-grid-3 .photo-wall-column{max-height:var(--photo-wall-height);overflow-y:auto;scroll-snap-type:y proximity;scrollbar-width:thin;scrollbar-color:var(--ow-line) transparent}
 .photo-wall-card{margin:0;min-width:0;scroll-snap-align:start}
-.photo-wall-grid-3 .photo-wall-feature .photo-wall-card{display:grid;grid-template-rows:minmax(0,1fr) auto;height:100%}
+.photo-wall-grid:not(.photo-wall-grid-1) .photo-wall-feature .photo-wall-card{display:grid;grid-template-rows:minmax(0,1fr) auto;height:100%}
 .photo-wall-image{display:block;overflow:hidden;position:relative;width:100%;aspect-ratio:1;background:var(--ow-raised);padding:0}
 .photo-wall-grid-1 .photo-wall-image{aspect-ratio:4 / 3;max-height:326px}
 .photo-wall-left .photo-wall-card:first-child .photo-wall-image{aspect-ratio:4 / 3}
-.photo-wall-grid-3 .photo-wall-feature .photo-wall-image{height:100%;aspect-ratio:auto}
+.photo-wall-grid:not(.photo-wall-grid-1) .photo-wall-feature .photo-wall-image{height:100%;aspect-ratio:auto}
 .photo-wall-image .cover{position:absolute;inset:0;width:100%;height:100%;border-radius:0;object-fit:cover}
 .photo-wall-caption{justify-content:center;gap:4px;min-height:36px;width:100%;padding:6px 2px;font-size:12px;line-height:1.45;text-align:center;color:var(--ow-ink)}
 .photo-wall-caption span{white-space:pre-wrap;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;overflow:hidden}
@@ -89,10 +88,17 @@ body:has(.app-shell) .owner-profile-page .profile-management{margin:0;padding:0;
 .card-photo-editor-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .card-photo-editor-grid>article{min-width:0;background:var(--ow-raised);border-radius:16px;overflow:hidden}
 .card-photo-editor-grid .cover{width:100%;height:150px;object-fit:cover}
-.card-photo-editor-grid>article>div{display:flex;justify-content:space-around}
+.photo-wall-photo-actions{display:flex;justify-content:space-around}
 .profile-card-editor .photo-wall-field{display:grid;gap:6px;font-size:13px;color:var(--ow-inkMuted)}
 .card-photo-editor-grid .photo-wall-field{padding:10px 8px 0}
 .photo-wall-field textarea{width:100%;min-width:0;resize:vertical}
+.photo-wall-field-heading{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.photo-wall-field-heading label{min-width:0;overflow-wrap:anywhere}
+.photo-wall-feature-toggle{display:inline-flex;align-items:center;justify-content:center;flex:none;gap:4px;min-height:34px;padding:4px 8px;border:1px solid var(--ow-line);border-radius:20px;color:var(--ow-inkMuted);font-size:12px}
+.photo-wall-feature-toggle[aria-pressed="true"]{border-color:var(--ow-ink);color:var(--ow-ink)}
+.photo-wall-feature-toggle[aria-pressed="true"] svg{fill:currentColor}
+.photo-wall-feature-toggle:focus-visible{outline:2px solid var(--ow-focus);outline-offset:2px}
+@media(max-width:460px){.card-photo-editor-grid{grid-template-columns:minmax(0,1fr)}}
 .card-prompt-editor-row{position:relative;display:flex;flex-direction:column;gap:12px;padding:16px;background:var(--ow-raised);border-radius:16px}
 .card-prompt-editor-row>label:first-child{padding-right:32px}
 .card-prompt-editor-row>.icon-button{position:absolute;top:8px;right:8px;color:var(--ow-nope)}

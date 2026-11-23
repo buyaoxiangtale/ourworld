@@ -14,6 +14,7 @@ export const photoWallPhotoKey = (ref: string) => ref.match(/\/(?:media|uploads)
 
 export function readPhotoWall(layout: ProfileLayout | null) {
  let slogan = '';
+ let featuredPhoto: string | undefined;
  const captions = new Map<string, string>();
  for (const block of layout?.blocks.filter(isPhotoGallery) ?? []) {
   const content = block.content;
@@ -25,6 +26,7 @@ export function readPhotoWall(layout: ProfileLayout | null) {
   try {
    const parsed = JSON.parse(content.slice(PHOTO_WALL_CONTENT.length));
    if (typeof parsed?.slogan === 'string') slogan ||= parsed.slogan;
+   if (typeof parsed?.featuredPhoto === 'string') featuredPhoto ||= parsed.featuredPhoto;
    if (!Array.isArray(parsed?.captions)) continue;
    for (const pair of parsed.captions) {
     if (Array.isArray(pair) && typeof pair[0] === 'string' && typeof pair[1] === 'string') {
@@ -35,17 +37,17 @@ export function readPhotoWall(layout: ProfileLayout | null) {
    slogan ||= content;
   }
  }
- return {slogan, captions};
+ return {slogan, captions, featuredPhoto};
 }
 
-export function writePhotoWall(slogan: string, photos: string[], captions: ReadonlyMap<string, string>) {
+export function writePhotoWall(slogan: string, photos: string[], captions: ReadonlyMap<string, string>, featuredPhoto?: string) {
  const entries = photos.flatMap(url => {
   const key = photoWallPhotoKey(url);
   const caption = captions.get(key)?.trim();
   return caption ? [[key, caption]] : [];
  });
- if (!entries.length && !slogan.startsWith(PHOTO_WALL_CONTENT)) return slogan || undefined;
- return PHOTO_WALL_CONTENT + JSON.stringify({slogan, captions: entries});
+ if (!featuredPhoto && !entries.length && !slogan.startsWith(PHOTO_WALL_CONTENT)) return slogan || undefined;
+ return PHOTO_WALL_CONTENT + JSON.stringify({slogan, captions: entries, featuredPhoto});
 }
 
 /** Optional profile cards never determine whether personal details are complete. */
