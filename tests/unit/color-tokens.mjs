@@ -66,5 +66,27 @@ for (const file of ['packages/globe/index.html', 'packages/globe/public/credits.
 }
 ok('globe boot/credits pages use only visual.json values');
 
+// Compare opaque token pairs. Component overlays and photos are checked in the browser.
+const luminance = (hex) => hex.slice(1).match(/../g)
+  .map((channel) => parseInt(channel, 16) / 255)
+  .map((value) => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4)
+  .reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index], 0);
+const contrastPairs = [
+  ...['bg', 'surface', 'raised'].flatMap((surface) =>
+    ['ink', 'inkMuted', 'inkFaint', 'accent', 'danger'].map((foreground) => [foreground, surface, 4.5])),
+  ['accentInk', 'accent', 4.5],
+  ['accentInk', 'accentHover', 4.5],
+  ['accentInk', 'photoMat', 4.5],
+  ['photoMat', 'upload', 4.5],
+  ...['bg', 'surface', 'raised', 'upload'].flatMap((surface) =>
+    ['controlOutline', 'focus'].map((foreground) => [foreground, surface, 3])),
+];
+for (const [foreground, background, threshold] of contrastPairs) {
+  const values = [foreground, background].map((name) => luminance(visual.colors[name]));
+  const ratio = (Math.max(...values) + 0.05) / (Math.min(...values) + 0.05);
+  if (!(ratio >= threshold)) fail(`${foreground} on ${background}: ${ratio.toFixed(2)} is below ${threshold}:1`);
+}
+ok(`${contrastPairs.length} text, border and focus token pairs meet contrast targets`);
+
 console.log(`color-tokens: ${checks.length} checks passed`);
 for (const label of checks) console.log(`  ✓ ${label}`);

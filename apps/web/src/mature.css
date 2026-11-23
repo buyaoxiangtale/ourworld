@@ -1,34 +1,34 @@
 /* User-facing screens. Administration shares the same night token palette. */
-body:has(.app-shell){background:color-mix(in srgb,var(--ow-bg) 85%,var(--ow-ink));color:var(--ow-ink)}
+body:has(.app-shell){background:var(--ow-bg);color:var(--ow-ink)}
 body:has(.app-shell) :is(.app-shell,.modal-backdrop,.toast){color:var(--ow-ink);font-family:Manrope,"Noto Sans SC",sans-serif}
 .app-shell{background:var(--ow-bg);background-image:none;padding:24px;min-height:100dvh}
 .mobile-app{background:var(--ow-bg);box-shadow:none;border:1px solid var(--ow-line);border-radius:28px;width:430px;height:min(940px,calc(100dvh - 48px))}
 .mobile-app .paper-page,.mobile-app .full-overlay,.mobile-app .people-overlay{background:var(--ow-bg);color:var(--ow-ink)}
 body:has(.app-shell) :is(h1,h2,h3){font-family:Manrope,"Noto Sans SC",sans-serif;font-style:normal;letter-spacing:-.035em;color:inherit;overflow-wrap:anywhere}
 body:has(.app-shell) :is(p){font-size:16px;line-height:1.65}
-body:has(.app-shell) :is(.eyebrow){font-size:12px;letter-spacing:0;text-transform:none;color:var(--ow-inkMuted)}
+body:has(.app-shell) :is(.eyebrow){font-size:12px;letter-spacing:0;text-transform:none;color:var(--ow-accentEnd)}
 body:has(.app-shell) :is(.page-header .eyebrow,.person-photo-name .eyebrow,.profile-management>.eyebrow){display:none}/* taste-skill-ignore: removes ornamental labels */
 body:has(.app-shell) :is(.muted,.micro-note,.page-lede){font-size:14px;color:var(--ow-inkMuted);letter-spacing:0;line-height:1.55}
 body:has(.app-shell) :is(.button){min-height:48px;border-radius:24px;padding:12px 20px;font-size:14px;font-weight:600;box-shadow:none!important;transform:none!important}
-body:has(.app-shell) :is(.button.primary){background:linear-gradient(135deg,var(--ow-accent),var(--ow-accentEnd));color:var(--ow-accentInk)}
-body:has(.app-shell) :is(.button.primary:hover:not(:disabled)){filter:brightness(1.08)}
-body:has(.app-shell) :is(.button.secondary){background:var(--ow-raised);border-color:transparent;color:var(--ow-ink)}
-body:has(.app-shell) :is(.button.ghost){color:var(--ow-inkMuted)}
-body:has(.app-shell) :is(.button.danger,.error-box){background:color-mix(in srgb,var(--ow-nope) 16%,var(--ow-surface));color:color-mix(in srgb,var(--ow-nope) 70%,var(--ow-ink))}
+body:has(.app-shell) :is(.button.primary){background:var(--ow-accent);color:var(--ow-accentInk)}
+body:has(.app-shell) :is(.button.primary:hover:not(:disabled)){background:var(--ow-accentHover)}
+body:has(.app-shell) :is(.button.secondary){background:var(--ow-raised);border-color:var(--ow-line);color:var(--ow-accent)}
+body:has(.app-shell) :is(.button.ghost){color:var(--ow-accent)}
+body:has(.app-shell) :is(.button.danger,.error-box){background:color-mix(in srgb,var(--ow-danger) 16%,var(--ow-surface));color:var(--ow-danger)}
 body:has(.app-shell) :is(.icon-button){min-width:44px;min-height:44px}
-body:has(.app-shell) :is(input,textarea,select){font-size:16px;min-height:48px;background:var(--ow-raised);color:var(--ow-ink);border-color:var(--ow-line);border-radius:12px}
+body:has(.app-shell) :is(input,textarea,select){font-size:16px;min-height:48px;background:var(--ow-raised);color:var(--ow-ink);border-color:var(--ow-controlOutline);border-radius:12px}
 body:has(.app-shell) :is(input:focus,textarea:focus,select:focus){border-color:var(--ow-focus);box-shadow:none}
-body:has(.app-shell) :is(button:focus-visible,a:focus-visible){outline:2px solid var(--ow-accent);outline-offset:3px}
+body:has(.app-shell) :is(button,a,input,select,textarea,[tabindex]):focus-visible{outline:2px solid var(--ow-accent);outline-offset:3px}
 body:has(.app-shell) :is(.form-stack label,.auth-form label,.settings-list label){font-size:14px;color:var(--ow-ink)}
 body:has(.app-shell) :is(.page-header){padding:20px 20px 12px}
 body:has(.app-shell) :is(.page-header h1){font:600 26px/1.25 Manrope,"Noto Sans SC",sans-serif;margin:0;letter-spacing:-.035em}
 body:has(.app-shell) :is(.tags>span){font-size:12px;background:var(--ow-raised);color:var(--ow-inkMuted);border-radius:20px;padding:6px 10px}
-body:has(.app-shell) :is(.modal){background:var(--ow-surface);border:1px solid var(--ow-line);border-radius:24px;color:var(--ow-ink)}
+body:has(.app-shell) :is(.modal){background:var(--ow-raised);border:1px solid var(--ow-line);border-radius:24px;color:var(--ow-ink)}
 body:has(.app-shell) :is(.modal-header h2){font-size:22px}
-body:has(.app-shell) :is(.bottom-sheet){background:var(--ow-surface);color:var(--ow-ink);border-radius:24px 24px 0 0;box-shadow:none}
+body:has(.app-shell) :is(.bottom-sheet){background:var(--ow-raised);color:var(--ow-ink);border-radius:24px 24px 0 0;box-shadow:none}
 body:has(.app-shell) :is(.sheet-handle){background:var(--ow-line)}
 .mobile-app .bottom-nav{height:calc(72px + env(safe-area-inset-bottom,0px));padding:8px 20px calc(8px + env(safe-area-inset-bottom,0px));background:var(--ow-bg);backdrop-filter:none/* taste-skill-ignore: disables existing blur */;border:0;border-top:1px solid var(--ow-line);color:var(--ow-inkMuted)}
-.mobile-app .bottom-nav .active{color:var(--ow-ink)}
+.mobile-app .bottom-nav .active{color:var(--ow-accent)}
 .mobile-app .bottom-nav .active>span:before{background:var(--ow-raised)}
 .mobile-app .bottom-nav i{background:var(--ow-accent)}
 .mobile-app .tab-panel{height:calc(100% - 72px - env(safe-area-inset-bottom,0px))}
@@ -92,7 +92,7 @@ body:has(.app-shell) :is(.message.mine .message-bubble,.message-row.own .message
 body:has(.app-shell) :is(.message-meta){font-size:12px;color:var(--ow-inkMuted)}
 body:has(.app-shell) :is(.chat-composer,.composer){background:var(--ow-bg);border:0;padding-bottom:max(12px,env(safe-area-inset-bottom))}
 body:has(.app-shell) :is(.chat-composer textarea,.composer textarea){background:var(--ow-raised);border-radius:24px;font-size:16px}
-body:has(.app-shell) :is(.send-button){background:linear-gradient(135deg,var(--ow-accent),var(--ow-accentEnd));color:var(--ow-accentInk);min-width:44px;min-height:44px}
+body:has(.app-shell) :is(.send-button){background:var(--ow-accent);color:var(--ow-accentInk);min-width:44px;min-height:44px}
 body:has(.app-shell) :is(.contact-card,.trip-card,.package-card,.notice){background:var(--ow-raised);color:var(--ow-ink);border:0;box-shadow:none;border-radius:16px}
 body:has(.app-shell) :is(.notice,.error-box){font-size:14px;line-height:1.5}
 body:has(.app-shell) :is(.city-title-row h2){font-size:30px;font-weight:600;line-height:1.2}
@@ -110,7 +110,7 @@ body:has(.app-shell) :is(.photo-credits){display:block;color:var(--ow-inkMuted);
 @media(prefers-reduced-motion:reduce){body:has(.app-shell) *{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
 
 .mobile-app.earth-mode:has(.people-overlay,.stories-page) .bottom-nav{background:var(--ow-bg);color:var(--ow-inkMuted);border:0}
-.mobile-app.earth-mode:has(.people-overlay,.stories-page) .bottom-nav .active{color:var(--ow-ink)}
+.mobile-app.earth-mode:has(.people-overlay,.stories-page) .bottom-nav .active{color:var(--ow-accent)}
 .mobile-app.earth-mode:has(.people-overlay,.stories-page) .bottom-nav .active>span:before{background:var(--ow-raised)}
 body:has(.app-shell) .mobile-app .profile-render{margin:0;padding:20px}
 body:has(.app-shell) .profile-identity{padding:0 0 24px}
@@ -121,7 +121,7 @@ body:has(.app-shell) .profile-portrait{width:100%}
 body:has(.app-shell) .profile-render.theme-ocean{--profile-accent:var(--ow-focus)}
 body:has(.app-shell) .profile-render.theme-forest{--profile-accent:var(--ow-like)}
 body:has(.app-shell) .profile-render.theme-nocturne{--profile-accent:var(--ow-accentEnd)}
-body:has(.app-shell) .theme-nocturne .profile-portrait{box-shadow:0 0 0 1px color-mix(in srgb,var(--ow-accentEnd) 35%,transparent),0 0 26px color-mix(in srgb,var(--ow-accentEnd) 15%,transparent)}
+body:has(.app-shell) .theme-nocturne .profile-portrait{box-shadow:0 0 0 1px var(--ow-line)}
 body:has(.app-shell) .profile-block h3{color:var(--profile-accent,var(--ow-ink))}
 body:has(.app-shell) .public-profile-actions{background:var(--ow-bg)}
 
@@ -133,7 +133,7 @@ body:has(.app-shell) .message-info{font-size:12px;color:var(--ow-inkMuted)}
 body:has(.app-shell) .message-row.mine .message-info{color:var(--ow-inkMuted)}
 body:has(.app-shell) .thread-composer{background:var(--ow-bg);border:0}
 body:has(.app-shell) .thread-composer input{background:var(--ow-raised)}
-body:has(.app-shell) .thread-composer button[type=submit]{background:linear-gradient(135deg,var(--ow-accent),var(--ow-accentEnd));color:var(--ow-accentInk)}
+body:has(.app-shell) .thread-composer button[type=submit]{background:var(--ow-accent);color:var(--ow-accentInk)}
 body:has(.app-shell) .profile-identity>p{opacity:1}
 .mobile-app .person-card{max-height:none}
 .mobile-app .person-photo{max-height:none}
@@ -168,9 +168,9 @@ body:has(.app-shell) .auth-form .auth-symbol{display:none}
 body:has(.app-shell) .auth-form>.eyebrow{display:none}/* taste-skill-ignore: removes a decorative kicker */
 body:has(.app-shell) .auth-form h2{font-size:26px;line-height:1.35;text-align:left;margin:4px 0 12px;color:var(--ow-ink)}
 body:has(.app-shell) .auth-form>p{font-size:16px;line-height:1.6;color:var(--ow-inkMuted);text-align:left}
-body:has(.app-shell) .auth-links button{font-size:14px;color:var(--ow-inkMuted);min-height:44px}
+body:has(.app-shell) .auth-links button{font-size:14px;color:var(--ow-accent);min-height:44px}
 body:has(.app-shell) .editor-tabs button{font-size:14px;color:var(--ow-inkMuted);min-height:44px}
-body:has(.app-shell) .editor-tabs button.active{background:var(--ow-raised);color:var(--ow-ink)}
+body:has(.app-shell) .editor-tabs button.active{background:var(--ow-raised);color:var(--ow-accent);box-shadow:inset 0 -2px 0 var(--ow-accent)}
 body:has(.app-shell) .agent-mark{display:none}
 body:has(.app-shell) .theme-swatches{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) 48px;gap:8px}
 body:has(.app-shell) .theme-swatches button{width:auto;min-width:0;min-height:88px;border:0;border-radius:12px;box-shadow:none;padding:10px 6px;font-size:12px;color:var(--ow-ink)}
@@ -186,7 +186,7 @@ body:has(.app-shell) .theme-swatches button :is(span,small){font-size:12px;color
 body:has(.app-shell) .accent-picker{font-size:12px;color:var(--ow-inkMuted);width:48px}
 /* The shared satellite globe retains the native dark navigation and search. */
 .mobile-app.earth-mode:not(:has(.people-overlay,.stories-page)) .bottom-nav{background:var(--ow-space);color:var(--ow-inkMuted)}
-.mobile-app.earth-mode:not(:has(.people-overlay,.stories-page)) .bottom-nav .active{color:var(--ow-ink)}
+.mobile-app.earth-mode:not(:has(.people-overlay,.stories-page)) .bottom-nav .active{color:var(--ow-accent)}
 .mobile-app.earth-mode:not(:has(.people-overlay,.stories-page)) .bottom-nav .active>span:before{background:transparent}
 body:has(.app-shell) .editor-tabs>span{font-size:12px;color:var(--ow-inkMuted)}
 

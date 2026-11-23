@@ -1,13 +1,14 @@
 {
-  "name": "星空黑白 · Monochrome starlight",
+  "name": "炭黑 · 硫黄 · 骨白",
   "colors": {
-    "bg": "#05080D", "surface": "#141414", "raised": "#222222",
-    "line": "#414141", "ink": "#F5F5F5", "inkMuted": "#B7B7B7", "inkFaint": "#929292",
-    "accent": "#E7E7E7", "accentEnd": "#BDBDBD", "accentInk": "#111111",
-    "like": "#EEEEEE", "nope": "#AAAAAA",
-    "focus": "#D1D1D1", "focusDeep": "#6A6A6A",
+    "bg": "#121112", "surface": "#1B191B", "raised": "#252225",
+    "line": "#494349", "controlOutline": "#797279", "ink": "#F2F0E4", "inkMuted": "#BCB9AD", "inkFaint": "#92918A",
+    "accent": "#E5DB87", "accentEnd": "#C6BF8A", "accentHover": "#F0E7A4", "accentInk": "#121112",
+    "upload": "#2B2C23", "photoMat": "#E9E5C9",
+    "like": "#EEEEEE", "nope": "#AAAAAA", "danger": "#E8A5AA",
+    "focus": "#E5DB87", "focusDeep": "#736B73",
     "sea": "#091725", "seaShelf": "#102535", "land": "#26343C", "highland": "#3A4A50",
-    "nebula": "#13161C", "starSoft": "#D7E1F0", "starBright": "#F5F9FF", "space": "#05080D", "atmosphere": "#6496E6"
+    "nebula": "#1B191B", "starSoft": "#D7E1F0", "starBright": "#F5F9FF", "space": "#121112", "atmosphere": "#6496E6"
   },
   "radii": { "card": 24, "control": 24, "field": 12 },
   "spacing": { "gutter": 16, "gap": 16, "touch": 48, "planetIcon": 42, "planetViewport": 40, "searchButton": 38, "searchHeight": 52 },

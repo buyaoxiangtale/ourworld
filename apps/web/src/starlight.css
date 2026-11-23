@@ -4,13 +4,14 @@ body:has(.app-shell) .app-shell,
 .mobile-app.paper-mode,
 .mobile-app .paper-page,
 .mobile-app .full-overlay,
-body:has(.app-shell) :is(.modal, .bottom-sheet),
 body:has(.app-shell) .public-profile-shell,
 .admin-app, .admin-guard {
-  background-color: var(--ow-space);
-  background-image: url('/globe/textures/stars.png'), radial-gradient(ellipse at 50% 42%, var(--ow-nebula), var(--ow-space) 75%);
-  background-position: center;
+  background: var(--ow-bg);
 }
+body:has(.app-shell) :is(.modal, .bottom-sheet) {
+  background: var(--ow-raised);
+}
+
 .mobile-app {
   --nav-height: calc(var(--ow-spacing-touch) + 24px + env(safe-area-inset-bottom, 0px));
 }
@@ -40,17 +41,16 @@ body:has(.app-shell) .public-profile-shell,
 }
 .mobile-app .bottom-nav > button > .nav-planet::before { display: none; }
 .mobile-app .bottom-nav > button.active .nav-planet {
-  background: radial-gradient(circle, color-mix(in srgb, var(--ow-ink) 33%, transparent), transparent 74%);
+  background: var(--ow-raised);
 }
 .mobile-app .bottom-nav > button.active .nav-planet::before {
   display: block;
   content: '';
   position: absolute;
   inset: 0;
-  border: 1.5px solid color-mix(in srgb, var(--ow-ink) 85%, transparent);
+  border: 1.5px solid var(--ow-accent);
   border-radius: 50%;
   background: transparent;
-  box-shadow: 0 0 10px color-mix(in srgb, var(--ow-ink) 40%, transparent);
   pointer-events: none;
 }
 .mobile-app .bottom-nav .nav-planet :is(.nav-earth, .planet-atlas) {
@@ -78,13 +78,13 @@ body:has(.app-shell) .public-profile-shell,
   width: 17px;
   height: 3px;
   border-radius: 2px;
-  background: var(--ow-ink);
+  background: var(--ow-accent);
 }
 .mobile-app .pure-earth .home-search {
   width: calc(100% - 2 * var(--ow-spacing-gutter));
   min-height: var(--ow-spacing-searchHeight);
   padding: 4px 5px 4px var(--ow-spacing-gutter);
-  border: 1px solid var(--ow-line) !important;
+  border: 1px solid var(--ow-controlOutline) !important;
   border-radius: calc(var(--ow-radii-control) * 2);
   background: var(--ow-surface);
   box-shadow: 0 4px 18px color-mix(in srgb, var(--ow-accentInk) 66%, transparent);
@@ -100,17 +100,44 @@ body:has(.app-shell) .public-profile-shell,
 }
 .mobile-app .pure-earth .home-search .home-search-submit svg { color: inherit; }
 .pure-earth .earth-stage { inset: 0; }
-
-.app-shell::after {
-  position: fixed;
-  inset: 0;
-  content: '';
-  pointer-events: none;
-  background:
-    radial-gradient(circle at 16% 21%, var(--ow-starBright) 1px, transparent 2px),
-    radial-gradient(circle at 84% 41%, var(--ow-starBright) 1px, transparent 2px),
-    radial-gradient(circle at 38% 78%, var(--ow-starBright) 1px, transparent 2px);
-  animation: app-stars-twinkle 5.2s ease-in-out infinite alternate;
+.mobile-app .bottom-nav > button.active,
+.mobile-app.earth-mode .bottom-nav > button.active { color: var(--ow-accent); }
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--ow-focus);
+  outline-offset: 3px;
 }
-@keyframes app-stars-twinkle { from { opacity: .12; } to { opacity: .65; } }
-@media (prefers-reduced-motion: reduce) { .app-shell::after { animation: none; opacity: .4; } }
+body:has(.app-shell) .button.primary:disabled,
+body:has(.app-shell) .send-button:disabled {
+  background: var(--ow-raised);
+  color: var(--ow-inkFaint);
+  opacity: 1;
+}
+body:has(.app-shell) :is(.thread-composer, .message-composer) button[type=submit]:hover:not(:disabled) {
+  background: var(--ow-accentHover);
+  color: var(--ow-accentInk);
+}
+body:has(.app-shell) :is(input, select, textarea)::placeholder {
+  color: var(--ow-inkFaint);
+  opacity: 1;
+}
+.file-button {
+  position: relative;
+  background: var(--ow-upload);
+  border-color: var(--ow-controlOutline);
+  color: var(--ow-photoMat) !important;
+}
+.file-button svg { color: var(--ow-accent); }
+.file-button input[type=file] {
+  display: block;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  min-height: 0;
+  padding: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.file-button:focus-within { outline: 2px solid var(--ow-focus); outline-offset: 3px; }
+.file-button:has(input:disabled) { color: var(--ow-inkMuted) !important; cursor: default; }
+.admin-sidebar nav .active { color: var(--ow-accent); }
+.admin-sidebar nav .active i { background: var(--ow-accent); }

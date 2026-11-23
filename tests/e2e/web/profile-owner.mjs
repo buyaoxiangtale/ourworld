@@ -193,7 +193,7 @@ try{
    if(width===390&&state==='empty'){
     await page.locator('.photo-wall-manage').click();await page.getByRole('dialog').waitFor();
     check(await page.locator('.editor-overlay,.agent-panel,.layout-editor-block').count()===0,'photo editing has no legacy studio or AI tools');
-    await page.getByText('添加照片',{exact:true}).waitFor();
+    await page.getByRole('dialog',{name:'我的照片',exact:true}).getByText('添加照片',{exact:true}).waitFor();
     check(true,'photo card opens its independent upload control');
     await page.locator('input[type=file]').setInputFiles({name:'travel.jpg',mimeType:'image/jpeg',buffer:photo});
     await page.locator('.card-photo-editor-grid article').waitFor();

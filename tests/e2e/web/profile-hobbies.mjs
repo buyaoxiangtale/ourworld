@@ -118,7 +118,7 @@ try{
    await arts.locator('.profile-hobby-card-emojis').waitFor();
    check(await arts.locator('img').count()===0,'removing an uploaded photo restores the default Emoji');
    user.tags=[];await page.reload();await page.locator('.bottom-nav button[data-tab="profile"]').click();await page.locator('.owner-name').waitFor();dialog=await open();
-   check(await dialog.locator('.profile-hobby-pills>button').first().evaluate(element=>getComputedStyle(element).backgroundColor!==getComputedStyle(element.closest('.profile-card-sheet')).backgroundColor),'hobby chips have a visible background distinct from the sheet');
+   check(await dialog.locator('.profile-hobby-pills>button').first().evaluate(element=>getComputedStyle(element).backgroundColor!==getComputedStyle(element.closest('.profile-hobby-category')).backgroundColor),'hobby chips have a visible background distinct from their category');
    await page.screenshot({path:resolve(out,'hobbies-empty.png'),animations:'disabled'});await dialog.getByRole('button',{name:'取消',exact:true}).click();
    user.tags=Array.from({length:12},(_,index)=>`原有爱好 ${index+1}`);await page.reload();await page.locator('.bottom-nav button[data-tab="profile"]').click();await page.locator('.owner-name').waitFor();dialog=await open();
    check(await dialog.getByLabel('已选爱好数量',{exact:true}).innerText()==='12/10'&&await dialog.getByRole('button',{name:'保存爱好',exact:true}).isDisabled(),`legacy profiles with more than ten hobbies are preserved and can be reduced explicitly`);

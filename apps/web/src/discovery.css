@@ -7,7 +7,7 @@
 .mobile-app .pure-earth .home-search .home-search-field{display:flex;align-items:center;gap:9px;flex:1;min-width:0;font-size:14px;color:var(--ow-inkMuted)}
 .mobile-app .pure-earth .home-search .home-search-field>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;color:var(--ow-inkMuted)}
 .mobile-app .pure-earth .home-search .home-search-field svg{flex:none;color:var(--ow-inkMuted)}
-.mobile-app .pure-earth .home-search .home-search-submit{display:grid;place-items:center;flex:none;width:46px;height:46px;border-radius:23px;background:linear-gradient(135deg,var(--ow-accent),var(--ow-accentEnd));color:var(--ow-accentInk)}
+.mobile-app .pure-earth .home-search .home-search-submit{display:grid;place-items:center;flex:none;width:46px;height:46px;border-radius:23px;background:var(--ow-accent);color:var(--ow-accentInk)}
 .mobile-app .pure-earth .home-search .home-search-submit svg{color:var(--ow-accentInk);width:20px;height:20px}
 /* Keep navigation floating over the star field in each destination. */
 .mobile-app .bottom-nav{display:flex;align-items:center;padding:12px 28px calc(12px + env(safe-area-inset-bottom,0px));background:transparent!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important}
@@ -44,7 +44,7 @@
 .mobile-app .people-overlay>.error-box{margin:0 16px 4px;font-size:14px;flex-shrink:0}
 .mobile-app .people-overlay>.empty-state{background:var(--ow-surface);color:var(--ow-ink);border-radius:24px;margin:24px 16px}
 .mobile-app .people-overlay .empty-state p{color:var(--ow-inkMuted)}
-body:has(.app-shell) .button.primary{background:linear-gradient(135deg,var(--ow-accent),var(--ow-accentEnd));color:var(--ow-accentInk)}
+body:has(.app-shell) .button.primary{background:var(--ow-accent);color:var(--ow-accentInk)}
 .public-profile-shell{position:fixed;z-index:110;inset:0;max-width:540px;margin:auto;display:flex;flex-direction:column;background:var(--ow-bg);color:var(--ow-ink);font-family:Manrope,"Noto Sans SC",sans-serif}
 .public-profile-header{display:flex;align-items:center;gap:8px;padding:calc(4px + env(safe-area-inset-top)) 8px 4px;flex-shrink:0;min-height:56px}
 .public-profile-header h1{flex:1;font:600 20px Manrope,"Noto Sans SC",sans-serif;margin:0}
@@ -82,7 +82,7 @@ body:has(.app-shell) .mobile-app .conversation-row{padding:16px 0}
 .mobile-app .message-composer textarea{flex:1;min-width:0;resize:none;min-height:48px;max-height:140px;padding:13px 16px;font:400 16px/22px Manrope,"Noto Sans SC",sans-serif;border-radius:24px;border:1px solid var(--ow-line);background:var(--ow-raised);color:var(--ow-ink)}
 .mobile-app .message-composer>.icon-button{height:48px;width:48px;flex-shrink:0}
 .mobile-app .message-composer>.icon-button:first-child{background:transparent;color:var(--ow-ink)}
-body:has(.app-shell) .mobile-app .message-composer .send-button{background:linear-gradient(135deg,var(--ow-accent),var(--ow-accentEnd));color:var(--ow-accentInk);border-radius:50%}
+body:has(.app-shell) .mobile-app .message-composer .send-button{background:var(--ow-accent);color:var(--ow-accentInk);border-radius:50%}
 body:has(.app-shell) .mobile-app .message-composer .send-button:disabled{background:var(--ow-raised);color:var(--ow-inkMuted)}
 .mobile-app .chat-introduction{display:flex;flex-direction:column;align-items:center;gap:16px;padding:32px 8px 24px;text-align:center}
 .mobile-app .chat-introduction>.avatar{width:80px;height:80px}
