@@ -36,7 +36,7 @@ export function ProfilePhotoWall({layout, photos, onOpenPhoto, onEdit}: {
 
  return <section className="owner-section photo-wall" aria-labelledby="owner-photos-title">
   <div className="photo-wall-header">
-   <h2 id="owner-photos-title">{t('我的照片', 'My photos')}</h2>
+   <h2 id="owner-photos-title">{t('我的足迹', 'My footprints')}</h2>
    <button type="button" className="photo-wall-manage" onClick={() => onEdit()}>
     <Pencil size={14} aria-hidden="true" />{t('编辑照片墙', 'Edit photo wall')}
    </button>

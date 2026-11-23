@@ -1,3 +1,5 @@
+import type {ProfileLayout} from '@ourworld/contracts';
+
 type HobbyTuple=[string,string,string,string,string[]?];
 export interface Hobby {id:string;emoji:string;zh:string;en:string;aliases:string[]}
 export interface HobbyGroup {id:string;zh:string;en:string;preview:number;items:Hobby[]}
@@ -33,6 +35,48 @@ export const normalizeHobby=(value:string)=>value.normalize('NFKD').replace(/\p{
 const byAlias=new Map(HOBBY_GROUPS.flatMap(group=>group.items).flatMap(item=>[item.zh,item.en,`${item.zh} ${item.en}`,...item.aliases].map(alias=>[normalizeHobby(alias),item] as const)));
 export const findHobby=(value:string)=>byAlias.get(normalizeHobby(value));
 export const hobbyLabel=(value:string,locale:'zh'|'en')=>findHobby(value)?.[locale]||value;
+export const hobbyKey=(value:string)=>findHobby(value)?.id||normalizeHobby(value);
+
+// Store uploaded media IDs as optional references on the existing skills block.
+const HOBBY_PHOTO_PREFIX='hobby-photo:';
+export function readHobbyPhotos(layout?:ProfileLayout|null){
+ const photos=new Map<string,string>();
+ for(const block of layout?.blocks??[]){
+  if(block.type!=='skills')continue;
+  for(const ref of block.refs??[]){
+   if(!ref.startsWith(HOBBY_PHOTO_PREFIX))continue;
+   try{
+    const pair=JSON.parse(ref.slice(HOBBY_PHOTO_PREFIX.length));
+    if(Array.isArray(pair)&&typeof pair[0]==='string'&&typeof pair[1]==='string'&&/^[a-z0-9-]+$/i.test(pair[1]))photos.set(pair[0],pair[1]);
+   }catch{continue;}
+  }
+ }
+ return photos;
+}
+
+export function updateHobbyPhotos(layout:ProfileLayout,selected:string[],changes:ReadonlyMap<string,string|null>):ProfileLayout{
+ const photos=readHobbyPhotos(layout);
+ for(const [key,id] of changes){
+  if(id)photos.set(key,id);
+  else photos.delete(key);
+ }
+ const photoRefs=selected.map(hobbyKey).flatMap(key=>{
+  const id=photos.get(key);
+  return id?[HOBBY_PHOTO_PREFIX+JSON.stringify([key,id])]:[];
+ });
+ const index=layout.blocks.findIndex(block=>block.type==='skills');
+ const blocks=layout.blocks.map((block,i)=>{
+  if(block.type!=='skills')return block;
+  const refs=(block.refs??[]).filter(ref=>!ref.startsWith(HOBBY_PHOTO_PREFIX));
+  if(i===index)refs.push(...photoRefs);
+  return {...block,refs};
+ });
+ if(index<0&&photoRefs.length){
+  const id=Array.from(crypto.getRandomValues(new Uint8Array(16)),byte=>byte.toString(16).padStart(2,'0')).join('');
+  blocks.push({id,type:'skills',span:1,size:'compact',refs:photoRefs});
+ }
+ return {...layout,blocks};
+}
 
 export function groupSelectedHobbies(values:string[]){
  const groups=new Map<string,{id:string;zh:string;en:string;items:{value:string;hobby:Hobby|undefined}[]}>();

@@ -70,14 +70,16 @@ body:has(.app-shell) .photo-wall-header h2{font-size:26px;font-weight:650;line-h
 .owner-card-eyebrow{font-size:12px;line-height:1.5}
 body:has(.app-shell) .owner-prompt-card p.owner-prompt-answer{font-size:15px;line-height:1.65;color:var(--ow-ink);white-space:pre-wrap;overflow-wrap:anywhere;margin:0 0 12px}
 .owner-card-edit{display:inline-flex;align-items:center;gap:6px;margin-top:auto}
-.profile-hobby-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 12px;min-width:0;max-width:100%;padding:14px 3px 4px 0}
-.profile-hobby-card{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:7px;min-width:0;height:208px;margin:0;padding:18px 14px 48px;border-radius:26px;background:var(--ow-surface);color:var(--ow-ink);text-align:left;overflow:hidden}
+.profile-hobby-cards{display:flex;gap:12px;max-width:100%;min-width:0;padding:14px 6px 9px 0;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:thin;scrollbar-color:var(--ow-line) transparent}
+.profile-hobby-card{position:relative;display:flex;flex:0 0 clamp(144px,46%,208px);flex-direction:column;align-items:flex-start;gap:7px;min-width:0;height:208px;margin:0;padding:18px 14px 14px;border-radius:26px;background:var(--ow-surface);color:var(--ow-ink);text-align:left;overflow:hidden;scroll-snap-align:start}
 .profile-hobby-card-category{display:flex;align-items:center;gap:6px;width:100%;min-height:20px;font-size:12px;line-height:1.5;color:var(--ow-inkMuted)}
 .profile-hobby-card-category>svg{flex:none}
 .profile-hobby-card-title{font-size:17px;font-weight:600;line-height:1.4}
 .profile-hobby-card-names{font-size:14px;line-height:1.5;color:var(--ow-inkMuted)}
 .profile-hobby-card-title,.profile-hobby-card-names,.profile-hobby-card-category>span{display:block;width:100%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .profile-hobby-card-emojis{display:flex;gap:4px;width:100%;overflow:hidden;margin-top:2px;font-size:32px;line-height:1.25}
+.profile-hobby-card-photos{display:grid;flex:none;width:100%;height:84px;grid-auto-rows:minmax(0,1fr);gap:3px;margin-top:2px;overflow:hidden;border-radius:10px}
+.profile-hobby-card-photos img{display:block;width:100%;height:100%;min-width:0;min-height:0;object-fit:cover}
 .profile-hobby-card.owner-interest-card{overflow:visible}
 .profile-hobby-card.owner-hobby-add{align-items:center;justify-content:center;padding:30px 12px 22px;text-align:center;overflow:visible}
 .profile-hobby-card:focus-visible,.profile-hobby-cards:focus-visible{outline:2px solid var(--ow-focus);outline-offset:-3px}
@@ -251,6 +253,11 @@ body:has(.app-shell) .profile-hobbies-sheet button:focus-visible,body:has(.app-s
 .profile-hobby-more{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:44px;padding:12px 0;margin-top:14px;color:color-mix(in srgb,var(--ow-space) 75%,var(--ow-starBright));font-size:13px}
 .profile-hobby-more>span{flex:1;height:1px;background:color-mix(in srgb,var(--ow-space) 9%,transparent)}
 .profile-hobbies-scroll>.error-box{margin:0 0 20px}
+.profile-hobby-image-editor{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:8px 12px;margin:0 0 16px;padding:12px 14px;border-radius:16px;background:var(--ow-starBright);color:var(--ow-space);font-size:14px}
+.profile-hobby-image-editor select{width:100%;min-width:0;padding:8px;border:1px solid color-mix(in srgb,var(--ow-space) 22%,transparent);border-radius:10px;background:var(--ow-starBright);color:var(--ow-space)}
+.profile-hobby-image-actions{display:flex;align-items:center;flex-wrap:wrap;grid-column:1 / -1;gap:6px}
+.profile-hobby-image-actions button{display:inline-flex;align-items:center;gap:5px;min-height:40px;padding:5px 10px;border-radius:20px;background:color-mix(in srgb,var(--ow-space) 12%,var(--ow-starBright));color:var(--ow-space)}
+.profile-hobby-image-actions img{flex:none;width:58px;height:42px;border-radius:7px;object-fit:cover}
 body:has(.app-shell) .profile-hobbies-sheet .error-box{background:var(--ow-starBright);color:var(--ow-nope)}
 body:has(.app-shell) .profile-hobbies-sheet .empty{color:var(--ow-space)}
 body:has(.app-shell) .profile-hobbies-sheet .empty p{color:color-mix(in srgb,var(--ow-space) 65%,var(--ow-starBright))}
