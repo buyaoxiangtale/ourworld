@@ -74,12 +74,12 @@ body:has(.app-shell) .mobile-app .conversation-row{padding:16px 0}
 .mobile-app .message-scroll{flex:1;min-height:0;overflow-y:auto;padding:16px;overscroll-behavior:contain;scroll-behavior:auto}
 .mobile-app .message-row{margin:0 0 8px}
 .mobile-app .message-bubble{max-width:85%;border-radius:20px;background:var(--ow-surface);color:var(--ow-ink);padding:12px;min-width:72px}
-.mobile-app .message-row.mine .message-bubble{background:color-mix(in srgb,var(--ow-accent) 26%,var(--ow-surface));color:var(--ow-ink)}
+.mobile-app .message-row.mine .message-bubble{background:var(--ow-raised);color:var(--ow-ink)}
 .mobile-app .message-bubble>p{font-size:16px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;margin:0}
 .mobile-app .message-info{font-size:12px;line-height:1.5;margin-top:6px;opacity:.8}
 .mobile-app .message-info button{color:inherit;min-height:36px;font-size:12px}
 .mobile-app .message-composer{display:flex;align-items:flex-end;gap:6px;padding:10px 8px calc(10px + env(safe-area-inset-bottom));background:var(--ow-bg);flex-shrink:0}
-.mobile-app .message-composer textarea{flex:1;min-width:0;resize:none;min-height:48px;max-height:140px;padding:13px 16px;font:400 16px/22px Manrope,"Noto Sans SC",sans-serif;border-radius:24px;border:1px solid var(--ow-line);background:var(--ow-raised);color:var(--ow-ink)}
+.mobile-app .message-composer textarea{flex:1;min-width:0;resize:none;min-height:48px;max-height:140px;padding:13px 16px;font:400 16px/22px Manrope,"Noto Sans SC",sans-serif;border-radius:24px;border:1px solid var(--ow-controlOutline);background:var(--ow-raised);color:var(--ow-ink)}
 .mobile-app .message-composer>.icon-button{height:48px;width:48px;flex-shrink:0}
 .mobile-app .message-composer>.icon-button:first-child{background:transparent;color:var(--ow-ink)}
 body:has(.app-shell) .mobile-app .message-composer .send-button{background:var(--ow-accent);color:var(--ow-accentInk);border-radius:50%}

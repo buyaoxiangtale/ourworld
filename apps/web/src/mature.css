@@ -88,7 +88,7 @@ body:has(.app-shell) :is(.conversation-row strong){font-size:16px;color:var(--ow
 body:has(.app-shell) :is(.conversation-row p,.conversation-row small){font-size:14px;color:var(--ow-inkMuted)}
 body:has(.app-shell) :is(.chat-header){background:var(--ow-bg);border:0}
 body:has(.app-shell) :is(.message-bubble){font-size:16px;line-height:1.6;background:var(--ow-surface);color:var(--ow-ink);border-radius:18px}
-body:has(.app-shell) :is(.message.mine .message-bubble,.message-row.own .message-bubble,.message-row.mine .message-bubble){background:color-mix(in srgb,var(--ow-accent) 26%,var(--ow-surface));color:var(--ow-ink)}
+body:has(.app-shell) :is(.message.mine .message-bubble,.message-row.own .message-bubble,.message-row.mine .message-bubble){background:var(--ow-raised);color:var(--ow-ink)}
 body:has(.app-shell) :is(.message-meta){font-size:12px;color:var(--ow-inkMuted)}
 body:has(.app-shell) :is(.chat-composer,.composer){background:var(--ow-bg);border:0;padding-bottom:max(12px,env(safe-area-inset-bottom))}
 body:has(.app-shell) :is(.chat-composer textarea,.composer textarea){background:var(--ow-raised);border-radius:24px;font-size:16px}
