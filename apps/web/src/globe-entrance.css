@@ -1,0 +1,108 @@
+.globe-entrance-background,
+.globe-entrance-scene,
+.globe-entrance-visual {
+  position: absolute;
+  inset: 0;
+}
+
+.globe-entrance-scene {
+  container-type: size;
+  animation: globe-entrance-scale 350ms cubic-bezier(.2, .7, .25, 1) backwards;
+}
+
+.globe-entrance-scene .globe-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 1;
+  transition: opacity 360ms ease-out;
+}
+
+.globe-entrance-scene[data-entrance="waiting"] .globe-frame {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.globe-entrance-visual {
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  transition: opacity 440ms ease-out;
+}
+
+.globe-entrance-orb {
+  position: relative;
+  isolation: isolate;
+  width: 75cqmin;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--ow-atmosphere) 79%, transparent);
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 48% 12%, var(--ow-seaShelf), var(--ow-space) 72%);
+  box-shadow: 0 0 32px color-mix(in srgb, var(--ow-atmosphere) 38%, transparent),
+    inset 0 0 18px color-mix(in srgb, var(--ow-atmosphere) 26%, transparent);
+}
+
+.globe-entrance-grid {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  animation: globe-entrance-grid-in 500ms ease-out both;
+}
+
+.globe-entrance-grid i {
+  position: relative;
+  left: -9%;
+  width: 118%;
+  height: 13%;
+  border-bottom: 1px solid color-mix(in srgb, var(--ow-atmosphere) 55%, transparent);
+  border-radius: 50%;
+}
+
+/* Natural Earth 110m coastline, projected to the globe's starting camera pose. */
+.globe-entrance-orb::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--ow-atmosphere);
+  mask: url('/globe-entrance-coast.png') center / 100% 100% no-repeat;
+  opacity: .78;
+  animation: globe-entrance-coast 880ms ease-out 140ms both;
+}
+
+.globe-entrance-scan {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 28%, color-mix(in srgb, var(--ow-atmosphere) 20%, transparent) 49%, var(--ow-atmosphere) 50%, transparent 51%);
+  animation: globe-entrance-sweep 2.25s ease-in-out infinite;
+}
+
+.globe-entrance-scene[data-entrance="revealing"] .globe-entrance-visual {
+  opacity: 0;
+}
+
+.globe-entrance-status {
+  position: absolute;
+  inset: calc(50% + 37.5cqmin + 18px) 0 auto;
+  text-align: center;
+  color: var(--ow-inkMuted);
+  font-size: 14px;
+  pointer-events: none;
+}
+
+@keyframes globe-entrance-scale { from { transform: scale(.6); } to { transform: scale(1); } }
+@keyframes globe-entrance-grid-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes globe-entrance-coast { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0); } }
+@keyframes globe-entrance-sweep {
+  0% { opacity: 0; transform: translateY(-55%); }
+  12%, 75% { opacity: .8; }
+  90%, 100% { opacity: 0; transform: translateY(55%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .globe-entrance-scene, .globe-entrance-grid, .globe-entrance-orb::before { animation: none; }
+  .globe-entrance-scan { display: none; }
+  .globe-entrance-scene .globe-frame, .globe-entrance-visual { transition: none; }
+}
