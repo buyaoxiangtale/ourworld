@@ -1,10 +1,14 @@
 <!doctype html><html lang="zh"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/><meta name="theme-color" content="#05080D"/><meta name="description" content="Ourworld — find a place, meet its people."/><title>Ourworld · 与世界相遇</title><link rel="icon" type="image/png" href="/ourworld-icon.png"><link rel="stylesheet" href="/globe/starlight.css"><link rel="stylesheet" href="/globe/planet-atlas.css"><style>
-#pre-starlight{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;transition:opacity .55s ease}
-#pre-starlight.done{opacity:0;pointer-events:none}
+#pre-starlight{background-color:#05080D;position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center}
 #pre-starlight .starfield{position:absolute;inset:0;pointer-events:none;overflow:hidden}
 #pre-starlight .starfield i{position:absolute;background:var(--ow-starSoft);width:2px;height:2px;border-radius:50%;box-shadow:0 0 6px rgba(255,255,255,.35);animation:pre-twinkle 7s ease-in-out infinite}
 #pre-starlight .starfield i:nth-child(5n){width:1px;height:1px}
 #pre-starlight .starfield i:nth-child(7n){width:3px;height:3px;background:var(--ow-starBright)}
+#pre-starlight .pre-orbit{display:none}
+@media (max-width:800px) and (min-height:620px){
+ #pre-starlight .pre-orbit{display:block;position:absolute;left:50%;top:calc((100% - 72px - env(safe-area-inset-bottom,0px))/2);width:min(45vw,243px);aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;border:1px solid color-mix(in srgb,#6496E6 79%,transparent);background:#05080D;box-shadow:0 0 20px color-mix(in srgb,#6496E6 38%,transparent)}
+}
+@media (max-width:800px) and (min-height:620px) and (prefers-reduced-motion:reduce){#pre-starlight .pre-orbit{width:min(75vw,405px)}}
 @keyframes pre-twinkle{0%,100%{transform:scale(.8);opacity:.15}50%{transform:scale(1.2);opacity:.6}}
-@media (prefers-reduced-motion:reduce){#pre-starlight .starfield i{animation:none;opacity:.5}#pre-starlight{transition:none}}
-</style></head><body><div id="pre-starlight" class="starlight" aria-hidden="true"><div class="starfield"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span class="earth-spinner"></span></div><div id="root"></div><script>for(const star of document.querySelectorAll('#pre-starlight .starfield i')){star.style.left=Math.random()*100+'%';star.style.top=Math.random()*100+'%';star.style.animationDelay=(Math.random()*7).toFixed(2)+'s';}</script><script type="module" src="/src/main.tsx"></script></body></html>
+@media (prefers-reduced-motion:reduce){#pre-starlight .starfield i{animation:none;opacity:.5}}
+</style></head><body><div id="pre-starlight" class="starlight" aria-hidden="true"><div class="starfield"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span class="pre-orbit"></span></div><div id="root"></div><script>for(const star of document.querySelectorAll('#pre-starlight .starfield i')){star.style.left=Math.random()*100+'%';star.style.top=Math.random()*100+'%';star.style.animationDelay=(Math.random()*7).toFixed(2)+'s';}</script><script type="module" src="/src/main.tsx"></script></body></html>

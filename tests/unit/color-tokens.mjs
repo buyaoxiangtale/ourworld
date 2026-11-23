@@ -19,7 +19,7 @@ execFileSync('node', ['scripts/generate/sync-design.mjs', '--check'], { cwd: roo
 ok('visual tokens synced across web, Android, iOS and globe');
 
 // 2. Web CSS: no raw hex outside visual-tokens.css; rgba limited to photo scrims.
-const cssFiles = ['apps/web/src/styles.css', 'apps/web/src/starlight.css', 'apps/web/src/discovery.css', 'apps/web/src/mature.css', 'apps/web/src/features/profile/profile-owner.css', 'apps/web/src/features/explore/country-cities.css'];
+const cssFiles = ['apps/web/src/styles.css', 'apps/web/src/starlight.css', 'apps/web/src/globe-entrance.css', 'apps/web/src/discovery.css', 'apps/web/src/mature.css', 'apps/web/src/features/profile/profile-owner.css', 'apps/web/src/features/explore/country-cities.css'];
 for (const file of cssFiles) {
   const css = await read(file);
   const hex = css.match(/#[0-9a-fA-F]{3,8}\b/g) || [];

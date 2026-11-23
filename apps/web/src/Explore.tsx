@@ -16,6 +16,8 @@ export function Explore({active}:{active:boolean}){
  const {t,locale,user,requireAuth,toast}=useApp();
  const iframe=useRef<HTMLIFrameElement>(null);
  const [ready,setReady]=useState(false);const [globeError,setGlobeError]=useState(false);
+ const [entranceFinished,setEntranceFinished]=useState(false);
+ const [slowBoot,setSlowBoot]=useState(false);
  const [globeVersion,setGlobeVersion]=useState(0);const [frameLoad,setFrameLoad]=useState(0);const recoveryAttempts=useRef(0);
  const [query,setQuery]=useState('');const [results,setResults]=useState<Place[]>([]);const [searching,setSearching]=useState(false);const [searchError,setSearchError]=useState('');
  const [showSearch,setShowSearch]=useState(false);const [searchCountry,setSearchCountry]=useState<Place|null>(null);const [searchScope,setSearchScope]=useState<'all'|'country'>('all');
@@ -26,19 +28,38 @@ export function Explore({active}:{active:boolean}){
  const camera=useRef<Record<string,unknown>|null>(null);
  const catalog=useLoad(async()=>{const [countries,cities]=await Promise.all([api<{items:Place[]}>('/places?kind=country'),api<{items:Place[]}>('/places?kind=city')]);return [...countries.items,...cities.items];},[]);
  const command=(event:GlobeCommand['event'],data:Record<string,unknown>)=>iframe.current?.contentWindow?.postMessage({bridgeVersion:1,event,data} satisfies GlobeCommand,location.origin);
- const reloadGlobe=()=>{setReady(false);setGlobeError(false);setGlobeVersion(version=>version+1);};
+ const reloadGlobe=()=>{setReady(false);setGlobeError(false);setSlowBoot(false);setGlobeVersion(version=>version+1);};
+ const frameReady=()=>{
+  try {
+   const frame=iframe.current?.contentWindow as (Window&{OurworldGlobe?:{ready?:boolean}})|null;
+   return frame?.OurworldGlobe?.ready===true;
+  } catch {
+   return false;
+  }
+ };
+ const markReady=()=>{recoveryAttempts.current=0;setReady(true);setGlobeError(false);};
+ useEffect(()=>{
+  if(entranceFinished||ready||globeError)return;
+  const timer=window.setTimeout(()=>setSlowBoot(true),2000);
+  return()=>clearTimeout(timer);
+ },[entranceFinished,ready,globeError,globeVersion]);
+ useEffect(()=>{
+  if(entranceFinished||!ready)return;
+  const timer=window.setTimeout(()=>setEntranceFinished(true),460);
+  return()=>clearTimeout(timer);
+ },[entranceFinished,ready]);
  useEffect(()=>{if(!user){setFavoriteIds([]);return;}api<{items:Place[]}>('/favorites').then(r=>setFavoriteIds(r.items.map(p=>p.id))).catch(()=>{});},[user?.id]);
  useEffect(()=>{const refresh=()=>{if(user)api<{items:Place[]}>('/favorites').then(r=>setFavoriteIds(r.items.map(p=>p.id))).catch(()=>{});};window.addEventListener('ourworld:favorites',refresh);return()=>window.removeEventListener('ourworld:favorites',refresh);},[user?.id]);
  useEffect(()=>{if(ready)command('setMarkers',{places:catalog.data||[],favoriteIds});},[ready,frameLoad,catalog.data,favoriteIds]);
  const globeActive=active&&!peopleCity&&!storyCity&&!browsingCountry;
  useEffect(()=>{if(ready){command('setActive',{active:globeActive});if(globeActive&&camera.current)command('restoreCamera',camera.current);}},[globeActive,ready,frameLoad]);
- useEffect(()=>{if(ready)return;const timeout=window.setTimeout(()=>{const bridge=iframe.current?.contentWindow as (Window&{OurworldGlobe?:{ready?:boolean}})|null;if(bridge?.OurworldGlobe?.ready===true)setReady(true);else setGlobeError(true);},15000);return()=>clearTimeout(timeout);},[ready,globeVersion,frameLoad]);
+ useEffect(()=>{if(ready)return;const timeout=window.setTimeout(()=>{if(frameReady())markReady();else setGlobeError(true);},15000);return()=>clearTimeout(timeout);},[ready,globeVersion,frameLoad]);
  useEffect(()=>{if(!globeError||recoveryAttempts.current>=1)return;const timer=window.setTimeout(()=>{recoveryAttempts.current++;reloadGlobe();},1000);return()=>clearTimeout(timer);},[globeError]);
  useEffect(()=>{
   const receive=(e:MessageEvent<GlobeEvent>)=>{
    if(e.source!==iframe.current?.contentWindow||e.origin!==location.origin||e.data?.bridgeVersion!==1)return;
    const {event,data}=e.data;
-   if(event==='rendererReady'){recoveryAttempts.current=0;setReady(true);setGlobeError(false);}
+   if(event==='rendererReady')markReady();
    if(event==='rendererError'){setReady(false);setGlobeError(true);}
    if(event==='cameraChanged')camera.current=data;
    if(event==='placeSelected'){
@@ -69,7 +90,26 @@ export function Explore({active}:{active:boolean}){
  const favorite=async()=>{const city=cityForDetails;if(!city||city.kind!=='city'||saving)return;if(!requireAuth(()=>void favorite()))return;setSaving(true);const exists=favoriteIds.includes(city.id);try{await send(`/favorites/${city.id}`,undefined,exists?'DELETE':'PUT');setFavoriteIds(ids=>exists?ids.filter(id=>id!==city.id):[...ids,city.id]);toast(exists?t('已取消收藏','Removed from your places'):t('已在地图上标记这座城市','City saved to your map'));}catch(e){toast(errorMessage(e));}finally{setSaving(false);}};
  return <section className={`explore-page pure-earth ${peopleCity?'is-discovering':''}`} aria-label={t('探索地球','Explore the world')}>
   <button className="search-pill home-search" aria-label={t('搜索国家、城市、景点','Search countries, cities and landmarks')} onClick={()=>openSearch()}><span className="home-search-field"><Search size={18}/><span>{t('搜索国家、城市、景点','Search countries, cities and landmarks')}</span></span><span className="home-search-submit"><Search size={18}/></span></button>
-  <div className="earth-stage"><iframe key={globeVersion} ref={iframe} title={t('可交互地球','Interactive globe')} src="/globe/index.html" className="globe-frame" loading="eager" onLoad={()=>{setFrameLoad(load=>load+1);const bridge=iframe.current?.contentWindow as (Window&{OurworldGlobe?:{ready?:boolean}})|null;setReady(bridge?.OurworldGlobe?.ready===true);setGlobeError(false);}} onError={()=>setGlobeError(true)}/>{globeError&&<button className="globe-fallback" aria-label={t('重新加载地球','Reload globe')} onClick={()=>{recoveryAttempts.current=0;reloadGlobe();}}><Globe2 size={120}/><span>{t('点击重新加载地球','Tap to reload the globe')}</span></button>}</div>
+  <div className="earth-stage">
+   {!entranceFinished&&<div className="starlight globe-entrance-background" aria-hidden="true"/>}
+   <div className="globe-entrance-scene" data-entrance={entranceFinished?'settled':ready?'revealing':'waiting'}>
+    <iframe key={globeVersion} ref={iframe} title={t('可交互地球','Interactive globe')}
+     src="/globe/index.html" className="globe-frame" loading="eager" aria-hidden={!ready&&!entranceFinished}
+     tabIndex={!ready&&!entranceFinished?-1:undefined}
+     onLoad={()=>{setFrameLoad(load=>load+1);if(frameReady())markReady();}} onError={()=>setGlobeError(true)}/>
+    {!entranceFinished&&<div className="globe-entrance-visual" aria-hidden="true">
+     <div className="globe-entrance-orb">
+      <div className="globe-entrance-grid"><i/><i/><i/></div>
+      <div className="globe-entrance-scan"/>
+     </div>
+    </div>}
+    {!entranceFinished&&!ready&&!globeError&&slowBoot&&<div className="globe-entrance-status" role="status">
+     {t('正在加载地球','Loading the globe')}
+    </div>}
+   </div>
+   {globeError&&<button className="globe-fallback" aria-label={t('重新加载地球','Reload globe')}
+    onClick={()=>{recoveryAttempts.current=0;reloadGlobe();}}><Globe2 size={120}/><span>{t('点击重新加载地球','Tap to reload the globe')}</span></button>}
+  </div>
   <SlidePresence>{showSearch&&<Sheet label={t('探索地点','Explore places')} onClose={()=>setShowSearch(false)}><div className="search-sheet-input"><Search size={20}/><input autoFocus placeholder={t('搜索国家、城市、景点','Search a country, city or landmark')} value={query} onChange={e=>setQuery(e.target.value)}/><IconButton label={t('关闭','Close')} onClick={()=>setShowSearch(false)}><X size={18}/></IconButton></div>{searchCountry&&<div className="place-search-scopes"><button className={searchScope==='country'?'active':''} onClick={()=>setSearchScope('country')}>{searchCountry.name[locale]}</button><button className={searchScope==='all'?'active':''} onClick={()=>setSearchScope('all')}>{t('全部目的地','All destinations')}</button></div>}<div className="section-heading"><span className="eyebrow">{query?t('搜索结果','SEARCH RESULTS'):t('探索地点','EXPLORE PLACES')}</span><span>{results.length}</span></div><ErrorBox message={searchError}/>{searching?<Loading/>:results.length?<div className="place-results">{results.map(place=><button className="place-result" key={place.id} onClick={()=>choose(place)}><Cover src={place.image} alt={place.name[locale]}/><span><strong>{place.name[locale]}</strong><small>{place.country} · {place.kind==='country'?t('国家','Country'):place.kind==='city'?t('城市','City'):t('景点','Landmark')}</small></span><ArrowRight size={17}/></button>)}</div>:<Empty title={t('还没有找到这个地方','No places found')} description={t('换一个名称，或试试中英文别名。','Try another name or an alias in Chinese or English.')}/>}</Sheet>}</SlidePresence>
   {selected?.kind==='country'&&!browsingCountry&&!showSearch&&!peopleCity&&!storyCity&&<CountryDialog key={selected.id} country={selected} onClose={()=>setSelected(null)} onBrowse={country=>setBrowsingCountry({country,index:0})}/>}
   {unknownCountry&&!browsingCountry&&!showSearch&&<Modal title={unknownCountry.name} className="country-info-modal" onClose={()=>setUnknownCountry(null)} footer={<Button onClick={()=>setBrowsingCountry({country:{name:{zh:unknownCountry.name,en:unknownCountry.name}},index:0})}>{t('浏览城市','Browse cities')}<ArrowRight size={18}/></Button>}><div className="unknown-country"><MapPin size={27}/><p>{t('这个国家的详细图片与介绍尚未收录。','Detailed images and information for this country are not available yet.')}</p><ErrorBox message={placeError||catalog.error}/><Button kind="secondary" onClick={()=>openSearch()}><Search size={16}/>{t('探索已收录地点','Explore available places')}</Button></div></Modal>}
