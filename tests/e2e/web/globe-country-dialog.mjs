@@ -17,7 +17,8 @@ try{
   // so both delayed touch clicks and unknown-country lookups are deterministic.
   await context.route('**/globe/**',route=>route.fulfill({contentType:'text/html',body:`<!doctype html><style>html,body{margin:0;width:100%;height:100%}</style><body><div>Interactive globe</div><script>
    const emit=(event,data)=>parent.postMessage({bridgeVersion:1,event,data},location.origin);
-   window.OurworldGlobe={ready:true,receive(){}};let taps=0;
+   window.__commands=[];
+   window.OurworldGlobe={ready:true,receive(){}};addEventListener('message',({data})=>window.__commands.push(data.event));let taps=0;
    addEventListener('pointerup',()=>{if(++taps%2)emit('cameraChanged',{lat:46,lng:2,altitude:1.1});else emit('placeSelected',{place:${JSON.stringify(country)}});});
    setTimeout(()=>emit('rendererReady',{texturesReady:true}),30);
   </script>`}));
@@ -43,7 +44,7 @@ try{
   await dialog.getByRole('button',{name:'Close',exact:true}).dispatchEvent('click',{detail:1,bubbles:true});await page.waitForTimeout(550);
   check(await dialog.isVisible(),`${width}: trailing touch click on close handle is ignored`);
   await dialog.getByRole('button',{name:'Close',exact:true}).click();await dialog.waitFor({state:'hidden'});
-  check(true,`${width}: a new intentional click still closes the country sheet`);
+  check(await frame.locator('body').evaluate(()=>window.__commands.includes('clearCountryFocus')),`${width}: closing the country sheet releases the globe lock`);
   await frame.locator('body').evaluate(()=>parent.postMessage({bridgeVersion:1,event:'placeSelected',data:{geoName:'Unlisted country',geoId:'fixture',lat:10,lng:10}},location.origin));
   dialog=page.getByRole('dialog',{name:'Unlisted country',exact:true});await dialog.waitFor();
   await page.locator('.modal-backdrop').dispatchEvent('click',{detail:1,bubbles:true});await page.waitForTimeout(550);

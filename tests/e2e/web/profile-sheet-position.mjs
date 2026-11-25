@@ -18,7 +18,7 @@ try{
    const json=path.startsWith('/users/')?{user,layout,posts:[],packages:[],reviews:[],places:[]}:path==='/profile/draft'?{revision:1,publishedRevision:1,layout}:path==='/me'?user:{items:[]};return route.fulfill({json});
   });
   const page=await context.newPage();page.setDefaultTimeout(10000);await page.goto(base);await page.locator('.bottom-nav button[data-tab="profile"]').click();await page.locator('.owner-name').waitFor();
-  for(const [button,title] of [['编辑个人简介','编辑个人简介'],['编辑照片故事 1','编辑照片故事'],['编辑爱好 · 文化艺术','我的爱好']]){
+  for(const [button,title] of [['编辑个人简介','编辑个人简介'],['编辑卡片 1','编辑卡片'],['编辑爱好 · 文化艺术','我的爱好']]){
    const trigger=page.getByRole('button',{name:button,exact:true});await trigger.scrollIntoViewIfNeeded();const before=await page.locator('.tab-panel:has(.owner-profile-page)').evaluate(element=>element.scrollTop);await trigger.click();
    const dialog=page.getByRole('dialog',{name:title,exact:true});await dialog.waitFor();
    const samples=await dialog.evaluate(async element=>{

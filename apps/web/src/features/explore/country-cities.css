@@ -44,3 +44,14 @@ body:has(.app-shell) .city-detail-layer .city-details-page{height:100%;max-heigh
 @media(prefers-reduced-motion:no-preference){.country-cities-page{animation:countryCitiesIn .32s cubic-bezier(.22,.8,.2,1)}.country-city-card{transition:transform .2s ease,opacity .2s ease}}
 @keyframes countryCitiesIn{from{translate:0 100%}to{translate:0 0}}
 @media(max-height:650px){.country-cities-header{padding-block:6px}.country-city-card-content{padding:12px 16px}.country-city-card-content>p{-webkit-line-clamp:2}.country-city-controls{padding-bottom:8px}}
+
+/* The search sheet sits outside the clipped globe and follows the visible viewport. */
+.explore-search-layer{position:fixed;inset-inline:0;top:var(--search-viewport-top,0px);height:var(--search-viewport-height,100dvh);z-index:90;pointer-events:none}
+.explore-search-layer>.sheet-backdrop{position:absolute;inset:0 0 calc(72px + env(safe-area-inset-bottom,0px));pointer-events:auto}
+.explore-search-layer[data-compact]>.sheet-backdrop{bottom:0}
+.explore-search-layer .explore-search-sheet{min-height:min(350px,100%);max-height:100%}
+.explore-search-layer[data-compact] .explore-search-sheet{height:100%}
+.explore-search-sheet>.sheet-body{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden}
+.explore-search-sheet .search-sheet-input{flex:none}
+body:has(.app-shell) .explore-search-sheet .search-sheet-input input{flex:1;min-width:0;font-size:16px}
+.explore-search-results{flex:1;min-height:0;overflow-y:auto;overscroll-behavior-y:contain}

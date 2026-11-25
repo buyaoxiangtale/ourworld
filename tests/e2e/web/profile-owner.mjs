@@ -43,13 +43,27 @@ try{
    await page.goto(base,{waitUntil:'domcontentloaded'});await page.locator('.bottom-nav button[data-tab="profile"]').click();
    await page.locator('.owner-identity h1').waitFor();
    check(await page.getByRole('button',{name:'搭建主页',exact:true}).count()===0,'legacy profile builder entry is removed');await page.evaluate(()=>document.fonts.ready);
-   check(await page.locator('.owner-about-grid>button').count()===(state==='empty'?2:3),`${width}/${state}: bio and saved stories include one empty add-story card`);
+   const about=page.locator('.owner-about-track');
+   const cards=about.locator('.owner-about-card');
+   check(await cards.count()===(state==='empty'?1:3)&&await about.locator('.owner-about-add').count()===0,`${width}/${state}: add-card control stays outside the rail`);
+   check(await cards.first().evaluate(el=>el.classList.contains('owner-about-bio')),`${width}/${state}: bio is always the first card`);
    check(await page.getByText('再添加 2 条旅行问答',{exact:true}).count()===0,`${width}/${state}: old prompt reminder is removed`);
    check(await page.locator('.photo-wall-image').count()===(state==='empty'?0:8),`${width}/${state}: photo wall shows all uploaded photos`);
    check(await page.locator('.owner-name svg').count()===0,`${width}/${state}: no checkmark beside the name`);
    check(await page.locator('.owner-profile-page .profile-portrait,.owner-profile-page .profile-banner-donut').count()===0,`${width}/${state}: compact header without progress indicator`);
    check(await page.locator('.tab-panel:has(.owner-profile-page)').evaluate(el=>getComputedStyle(el).scrollbarWidth)==='none',`${width}/${state}: sidebar scrollbar hidden`);
-   check(await page.locator('.owner-card-grid').first().evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length)===2,`${width}/${state}: two card columns`);
+   if(state==='empty'){
+    check(await about.locator('.owner-about-photo').count()===0&&await about.locator('.owner-about-bio').isVisible(),`${width}: empty About me keeps the bio editor without a blank photo`);
+   }else{
+    const [bio,first,picture]=['.owner-about-bio','.owner-about-story','.owner-about-photo'].map(selector=>about.locator(selector));
+    const [rail,intro,story,image]=await Promise.all([about,bio,first,picture].map(item=>item.boundingBox()));
+    check([story,image].every(card=>Math.abs(card.y-intro.y)<1&&Math.abs(card.width-intro.width)<1&&card.height===intro.height)&&
+     Math.abs(rail.x-intro.x)<1&&Math.abs(rail.x+rail.width-story.x-story.width)<1&&image.x>=rail.x+rail.width,
+     `${width}/${state}: one row of equal cards fits exactly two in the viewport`);
+    check(await picture.locator('img').getAttribute('src')===layout.blocks.find(block=>block.id==='gallery').refs[0]&&
+     (await picture.textContent()).trim()===''&&await first.locator('img').getAttribute('src')===layout.blocks.find(isStory).refs[0]&&
+     await bio.getByText(user.bio,{exact:true}).count()===1,`${width}/${state}: About me keeps the original photos and bio, with no text on the photo-only tile`);
+   }
    check(await page.locator('.owner-profile-page').evaluate(el=>el.scrollWidth<=el.clientWidth),`${width}/${state}: profile has no horizontal overflow`);
    check(await page.locator('.owner-completion').count()===(state==='empty'?1:0),`${width}/${state}: completion reminder reflects actual profile`);
    if(state==='empty')check((await page.locator('.owner-completion').innerText()).includes('报价区间'),`${width}: incomplete personal details specify the actual missing field`);
@@ -91,6 +105,61 @@ try{
     const wall=page.locator('.photo-wall-grid');
     check(await wall.evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length)===3,`${width}: photo wall has three columns`);
     check(await wall.locator('.photo-wall-column').evaluateAll(columns=>columns.every(el=>el.scrollHeight>el.clientHeight&&getComputedStyle(el).overflowY==='auto')),`${width}: both side columns can scroll independently`);
+    const gallery=layout.blocks.find(block=>block.id==='gallery');
+    const savedRefs=gallery.refs;
+    const initialGrid=await wall.boundingBox();
+    const closeEnough=(a,b)=>Math.abs(a-b)<1;
+    for(const count of [7,1,2,3,4,5,6]){
+     gallery.refs=savedRefs.slice(0,count);
+     await page.reload();await page.locator('.bottom-nav button[data-tab="profile"]').click();await wall.waitFor();
+     if(count<=3){
+      await page.locator('.photo-wall-manage').click();
+      const editor=page.getByRole('dialog',{name:'我的照片',exact:true});
+      await editor.locator('.card-photo-editor-grid article').first().waitFor();
+      check(await editor.locator('.photo-wall-feature-toggle').count()===0,`${width}: main-photo option is hidden for ${count} photos`);
+      await editor.getByRole('button',{name:'Close',exact:true}).click();
+      await editor.waitFor({state:'hidden'});
+      if(count===1)continue;
+     }
+     if(count===4||count===6){
+      const primary=wall.getByRole('region',{name:'大图浏览'});
+      const secondary=wall.getByRole('region',{name:'次图浏览'});
+      const left=await primary.boundingBox(),right=await secondary.boundingBox(),grid=await wall.boundingBox();
+      check(await primary.locator('.photo-wall-image').count()===count&&await secondary.locator('.photo-wall-image').count()===count-1,`${width}: ${count} photos start with the main image on the left and show the other photos on the right`);
+      check(closeEnough(left.width,2*right.width)&&closeEnough(grid.width,initialGrid.width)&&closeEnough(grid.height,initialGrid.height),`${width}: ${count} photos use a 2:1 split at the original wall size`);
+      check(await primary.locator('.photo-wall-image').first().getAttribute('aria-label')==='查看第 1 张照片',`${width}: the default main photo appears first`);
+      for(const track of [primary,secondary]){
+       check(await track.evaluate(el=>el.scrollHeight>el.clientHeight&&getComputedStyle(el).overflowY==='auto'),`${width}: both columns can scroll vertically with ${count} photos`);
+       await track.evaluate(el=>el.scrollTo({top:el.scrollHeight}));
+       check(await track.evaluate(el=>el.scrollTop>0),`${width}: the photo column can scroll beyond the first frame`);
+      }
+      continue;
+     }
+     const frames=await wall.locator('.photo-wall-image').evaluateAll(images=>images.map(image=>{
+      const {x,y,width,height}=image.getBoundingClientRect();
+      return {x,y,width,height};
+     }));
+     check(frames.length===count,`${width}: the ${count}-photo layout displays every photo`);
+     const grid=await wall.boundingBox();
+     check(closeEnough(grid.width,initialGrid.width)&&closeEnough(grid.height,initialGrid.height),`${width}: ${count} photos keep the original wall dimensions`);
+     if(count===7){
+      check(await wall.locator('.photo-wall-column').count()===2&&frames[0].width>frames[1].width,`${width}: seven photos retain the original center feature and side columns`);
+     }else if(count===5){
+      const [left,center,right,lowerLeft,lowerRight]=frames;
+      check(left.x<center.x&&center.x<right.x&&closeEnough(left.width,center.width)&&closeEnough(right.width,center.width),`${width}: five photos have three equal columns with the main photo centered`);
+      check(closeEnough(center.y,left.y)&&closeEnough(center.y,right.y)&&closeEnough(center.y+center.height,lowerLeft.y+lowerLeft.height)&&closeEnough(center.y+center.height,lowerRight.y+lowerRight.height),`${width}: the main and side images align at the top and bottom`);
+     }else{
+      const columns=count;
+      check(frames.every((frame,index)=>{
+       const column=frames[index%columns];
+       const row=frames[Math.floor(index/columns)*columns];
+       return closeEnough(frame.x,column.x)&&closeEnough(frame.y,row.y)&&closeEnough(frame.width,frames[0].width)&&closeEnough(frame.height,frames[0].height);
+      }),`${width}: ${count} photos form equal cells across ${columns} columns`);
+      if(count===3)check(await wall.locator('.photo-wall-image').nth(1).getAttribute('aria-label')==='查看第 1 张照片',`${width}: the main photo is centered for three photos`);
+     }
+    }
+    gallery.refs=savedRefs;
+    await page.reload();await page.locator('.bottom-nav button[data-tab="profile"]').click();await wall.waitFor();
    }
    if(width===390)await page.screenshot({path:resolve(out,`${state}-top.png`),animations:'disabled'});
    if(state!=='empty'){
@@ -134,11 +203,54 @@ try{
     if(width===390&&state==='filled'){
      await page.getByRole('button',{name:'编辑照片墙标语',exact:true}).click();
      let manager=page.getByRole('dialog',{name:'我的照片',exact:true});
+     const rail=manager.getByRole('region',{name:'左右浏览照片编辑卡片'});
+     const firstCaption=rail.getByRole('textbox',{name:'照片 1 的介绍',exact:true});
+     await firstCaption.waitFor();
+     check(await firstCaption.getAttribute('placeholder')==='照片 1 的介绍'&&await rail.locator('label').count()===0,'photo captions are labeled inside the field without a duplicate heading');
+     check(await rail.evaluate(el=>{
+      const cards=[...el.children].map(card=>card.getBoundingClientRect());
+      return cards.length===8&&el.scrollWidth>el.clientWidth&&el.scrollHeight<=el.clientHeight+1
+       &&cards.every(card=>Math.abs(card.y-cards[0].y)<1);
+     }),'eight photo cards remain on one horizontally scrollable row');
+     const editorColors=await rail.evaluate(el=>[
+      getComputedStyle(el.closest('.modal')).backgroundColor,
+      getComputedStyle(el.querySelector('article')).backgroundColor,
+      getComputedStyle(el.querySelector('textarea')).backgroundColor,
+      getComputedStyle(el.querySelector('.photo-wall-photo-actions button:last-child')).color
+     ]);
+     assert.deepEqual(editorColors,['rgb(18, 17, 18)','rgb(27, 25, 27)','rgb(37, 34, 37)','rgb(232, 165, 170)']);
+     checks.push('the modal, cards, fields and delete action use distinct palette colors');
+     await rail.press('ArrowRight');
+     await page.waitForFunction(()=>document.querySelector('.card-photo-editor-grid')?.scrollLeft>0);
+     check(true,'the editing rail supports keyboard scrolling without leaving the dialog');
+     await rail.evaluate(el=>el.scrollTo({left:0,behavior:'instant'}));
+     await rail.scrollIntoViewIfNeeded();
+     const bounds=await rail.boundingBox(),touch=await context.newCDPSession(page);
+     const startX=bounds.x+bounds.width*.8,y=bounds.y+45;
+     await touch.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:startX,y}]});
+     for(let step=1;step<=8;step++){
+      await touch.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:startX-step*bounds.width*.075,y}]});
+      await new Promise(resolve=>setTimeout(resolve,20));
+     }
+     await touch.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+     await page.waitForFunction(()=>document.querySelector('.card-photo-editor-grid')?.scrollLeft>40);
+     check(true,'a touch swipe scrolls the cards sideways');
+     await manager.screenshot({path:resolve(out,'photo-editor-rail.png'),animations:'disabled'});
      const slogan=manager.getByRole('textbox',{name:'照片墙标语',exact:true});
      await slogan.fill('用脚步收集光和风。');
      await manager.getByRole('button',{name:'保存并更新主页',exact:true}).click();
      await manager.waitFor({state:'hidden'});
      await page.locator('.photo-wall-slogan').getByText('用脚步收集光和风。',{exact:true}).waitFor();
+     await page.getByRole('button',{name:'编辑第 8 张照片的介绍',exact:true}).click();
+     const lastCaption=manager.getByRole('textbox',{name:'照片 8 的介绍',exact:true});
+     await lastCaption.waitFor();
+     await page.waitForFunction(()=>document.activeElement?.getAttribute('aria-label')==='照片 8 的介绍');
+     check(await lastCaption.evaluate(el=>{
+      const frame=el.closest('.card-photo-editor-grid').getBoundingClientRect(),box=el.getBoundingClientRect();
+      return box.left>=frame.left&&box.right<=frame.right+1;
+     }),'opening a later caption scrolls its card into view and focuses the field');
+     await manager.getByRole('button',{name:'Close',exact:true}).click();
+     await manager.waitFor({state:'hidden'});
      await page.getByRole('button',{name:'编辑第 2 张照片的介绍',exact:true}).click();
      const caption=manager.getByRole('textbox',{name:'照片 2 的介绍',exact:true});
      await caption.waitFor();
@@ -165,6 +277,11 @@ try{
      await page.reload();await page.locator('.bottom-nav button[data-tab="profile"]').click();
      const featured=page.locator('.photo-wall-feature');
      check(await featured.locator('img').getAttribute('src')==='/api/v1/fixture/photo-2.jpg','the chosen main photo stays in the center after reload');
+     const aboutPhoto=page.locator('.owner-about-photo');
+     check(await aboutPhoto.locator('img').getAttribute('src')==='/api/v1/fixture/photo-2.jpg','About me uses the chosen main photo');
+     await aboutPhoto.click();
+     await viewer.locator('.profile-photo-position').getByText('3 / 8',{exact:true}).waitFor();
+     await page.keyboard.press('Escape');await viewer.waitFor({state:'hidden'});
      check(await page.locator('.owner-avatar-stack img').getAttribute('src')==='/api/v1/fixture/photo-1.jpg','choosing the main photo preserves album order and the header image');
      await featured.getByRole('button',{name:'查看第 3 张照片',exact:true}).click();
      await viewer.locator('.profile-photo-position').getByText('3 / 8',{exact:true}).waitFor();
@@ -174,8 +291,17 @@ try{
      await manager.getByRole('button',{name:'删除照片 3',exact:true}).click();
      await manager.getByRole('button',{name:'删除照片 1',exact:true}).click();
      await manager.getByRole('button',{name:'保存并更新主页',exact:true}).click();await manager.waitFor({state:'hidden'});
-     await page.waitForFunction(()=>document.querySelector('.photo-wall-feature img')?.getAttribute('src')==='/api/v1/fixture/photo-0.jpg');
-     check(await page.locator('.owner-avatar-stack img').getAttribute('src')==='/api/v1/fixture/photo-0.jpg','deleting the main photo restores the first remaining photo to the center');
+     await page.waitForFunction(()=>document.querySelector('.photo-wall-grid-6 .photo-wall-image img')?.getAttribute('src')==='/api/v1/fixture/photo-0.jpg');
+     check(await page.locator('.owner-avatar-stack img').getAttribute('src')==='/api/v1/fixture/photo-0.jpg','deleting the main photo falls back to the first remaining photo in the six-photo split layout');
+     const largePhotos=page.getByRole('region',{name:'大图浏览'});
+     await largePhotos.evaluate(el=>el.scrollTo({top:el.scrollHeight}));
+     await page.locator('.photo-wall-manage').click();
+     await manager.locator('article').nth(1).getByRole('button',{name:'设为主照片',exact:true}).click();
+     await manager.getByRole('button',{name:'保存并更新主页',exact:true}).click();await manager.waitFor({state:'hidden'});
+     await page.waitForFunction(()=>document.querySelector('.photo-wall-primary img')?.getAttribute('src')==='/api/v1/fixture/photo-3.jpg');
+     check(await largePhotos.evaluate(el=>el.scrollTop===0),'saving a new main photo jumps the large gallery back to the selected photo');
+     await page.reload();await page.locator('.bottom-nav button[data-tab="profile"]').click();
+     check(await largePhotos.locator('img').first().getAttribute('src')==='/api/v1/fixture/photo-3.jpg','the selected large photo stays first after reload');
     }
    }else check(await page.locator('.owner-avatar-stack img').count()===0,`${width}: an empty gallery has a shared add-photo entry instead of an independent avatar`);
 
@@ -251,9 +377,9 @@ try{
     check(await editor.getByRole('textbox',{name:'个人简介',exact:true}).inputValue()==='喜欢城市漫步、摄影和海边的日常。','bio save failure preserves the entered text');
     await editor.getByRole('button',{name:'保存',exact:true}).click();await editor.waitFor({state:'hidden'});
     check(Object.keys(patches.at(-1)).join(',')==='bio'&&user.bio==='喜欢城市漫步、摄影和海边的日常。','bio editor saves only the bio and updates the owner card');
-    await page.locator('.owner-bio-card').getByText(user.bio,{exact:true}).waitFor();
-    await page.getByRole('button',{name:'选择一条照片配文',exact:true}).click();editor=page.getByRole('dialog',{name:'新增照片故事',exact:true});
-    await editor.getByRole('button',{name:'保存',exact:true}).waitFor();check(await editor.getByRole('button',{name:'保存',exact:true}).isDisabled(),'photo story requires both a photo and caption');
+    await page.locator('.owner-about-bio').getByText(user.bio,{exact:true}).waitFor();
+    await page.getByRole('button',{name:'新增卡片',exact:true}).click();editor=page.getByRole('dialog',{name:'新增卡片',exact:true});
+    await editor.getByRole('button',{name:'保存',exact:true}).waitFor();check(await editor.getByRole('button',{name:'保存',exact:true}).isDisabled(),'photo card requires a photo');
     const uploadContrast=await editor.locator('.profile-caption-upload').evaluate(element=>{
      const canvas=document.createElement('canvas');canvas.width=canvas.height=1;const context=canvas.getContext('2d');
      const sample=color=>{context.fillStyle=color;context.fillRect(0,0,1,1);return [...context.getImageData(0,0,1,1).data].slice(0,3).map(value=>{const s=value/255;return s<=.04045?s/12.92:((s+.055)/1.055)**2.4;}).reduce((sum,value,index)=>sum+value*[.2126,.7152,.0722][index],0);};
@@ -263,27 +389,31 @@ try{
 
     await editor.locator('input[type=file]').setInputFiles({name:'story.jpg',mimeType:'image/jpeg',buffer:photo});
     await editor.getByRole('button',{name:'选择照片 1',exact:true}).waitFor();
-    await editor.getByLabel('选择配文主题',{exact:true}).selectOption('我想与你分享的风景');await editor.getByRole('textbox',{name:'照片配文',exact:true}).fill('清晨安静的河岸。');
+    await editor.getByLabel('标题（选填）',{exact:true}).fill('我想与你分享的风景');await editor.getByRole('textbox',{name:'照片配文',exact:true}).fill('清晨安静的河岸。');
     failPublishOnce=true;await editor.getByRole('button',{name:'保存',exact:true}).click();await editor.getByRole('alert').filter({hasText:'暂时无法更新'}).waitFor();
     await page.screenshot({path:resolve(out,'photo-story-editor.png'),animations:'disabled'});
     check(await editor.getByRole('textbox',{name:'照片配文',exact:true}).inputValue()==='清晨安静的河岸。','failed publish preserves the photo caption');
     await editor.getByRole('button',{name:'保存',exact:true}).click();await editor.waitFor({state:'hidden'});
     const captionBlock=layout.blocks.find(isStory);
     check(published===3&&captionBlock.content==='清晨安静的河岸。'&&captionBlock.title==='我想与你分享的风景'&&captionBlock.refs[0]==='/api/v1/fixture/upload-2.jpg','photo story retries with the latest draft revision and publishes its selected image, title and caption');
-    await page.locator('.owner-caption-card').getByText('清晨安静的河岸。',{exact:true}).waitFor();
-    check(await page.locator('.owner-story-add').count()===1&&await page.locator('.owner-about-grid>button').count()===3,'saving the first story creates an empty card for another story');
-    await page.getByRole('button',{name:'新增照片故事',exact:true}).click();editor=page.getByRole('dialog',{name:'新增照片故事',exact:true});
+    await page.locator('.owner-about-story').getByText('清晨安静的河岸。',{exact:true}).waitFor();
+    check(await page.locator('.owner-about-add').count()===1&&await cards.count()===2,'saving the first story adds one card');
+    await page.getByRole('button',{name:'新增卡片',exact:true}).click();editor=page.getByRole('dialog',{name:'新增卡片',exact:true});
     await editor.getByRole('textbox',{name:'照片配文',exact:true}).waitFor();check(await editor.getByRole('textbox',{name:'照片配文',exact:true}).inputValue()==='','adding another story opens a blank editor');
     await editor.locator('input[type=file]').setInputFiles({name:'another-story.jpg',mimeType:'image/jpeg',buffer:photo});await editor.getByRole('button',{name:'选择照片 1',exact:true}).waitFor();
     await editor.getByRole('textbox',{name:'照片配文',exact:true}).fill('第二段故事：山间的日落。');await editor.getByRole('button',{name:'保存',exact:true}).click();await editor.waitFor({state:'hidden'});
-    await page.locator('.owner-caption-card.is-filled').getByText('第二段故事：山间的日落。',{exact:true}).waitFor();
+    await page.locator('.owner-about-story').getByText('第二段故事：山间的日落。',{exact:true}).waitFor();
     check(layout.blocks.filter(isStory).length===2&&new Set(layout.blocks.filter(isStory).map(block=>block.id)).size===2,'multiple stories use independent identifiers');
-    check(layout.blocks.find(block=>block.id===captionBlock.id).content==='清晨安静的河岸。'&&await page.locator('.owner-story-add').count()===1&&await page.locator('.owner-about-grid>button').count()===4,'adding a second story keeps the first and leaves another empty story card');
-    await page.getByRole('button',{name:'新增照片故事',exact:true}).click();await page.getByRole('button',{name:'取消',exact:true}).click();await page.getByRole('dialog',{name:'新增照片故事',exact:true}).waitFor({state:'hidden'});check(layout.blocks.filter(isStory).length===2,'cancelling a new story does not create an empty saved block');
-    await page.getByRole('button',{name:'编辑照片故事 1',exact:true}).click();editor=page.getByRole('dialog',{name:'编辑照片故事',exact:true});
+    check(layout.blocks.find(block=>block.id===captionBlock.id).content==='清晨安静的河岸。'&&await cards.count()===3,'adding a second story keeps the first');
+    const firstStoryImage=page.locator('.owner-about-story .owner-about-image').nth(0);
+    const secondStoryImage=page.locator('.owner-about-story .owner-about-image').nth(1);
+    check(await page.locator('.owner-about-story').nth(1).getByText('第二段故事：山间的日落。',{exact:true}).count()===1&&
+     Math.abs((await firstStoryImage.boundingBox()).height-(await secondStoryImage.boundingBox()).height)<1,'both photo stories use the same layout');
+    await page.getByRole('button',{name:'新增卡片',exact:true}).click();await page.getByRole('button',{name:'取消',exact:true}).click();await page.getByRole('dialog',{name:'新增卡片',exact:true}).waitFor({state:'hidden'});check(layout.blocks.filter(isStory).length===2,'cancelling a new story does not create an empty saved block');
+    await page.getByRole('button',{name:'编辑卡片 1',exact:true}).click();editor=page.getByRole('dialog',{name:'编辑卡片',exact:true});
     await editor.getByRole('textbox',{name:'照片配文',exact:true}).waitFor();check(await editor.getByRole('textbox',{name:'照片配文',exact:true}).inputValue()==='清晨安静的河岸。','editing a story opens only that story');
     await editor.getByRole('textbox',{name:'照片配文',exact:true}).fill('清晨安静的河岸，一起走走。');await editor.getByRole('button',{name:'保存',exact:true}).click();await editor.waitFor({state:'hidden'});
-    await page.locator('.owner-caption-card.is-filled').getByText('清晨安静的河岸，一起走走。',{exact:true}).waitFor();
+    await page.locator('.owner-about-story').getByText('清晨安静的河岸，一起走走。',{exact:true}).waitFor();
     check(layout.blocks.filter(isStory).length===2&&layout.blocks.filter(isStory)[1].content==='第二段故事：山间的日落。','editing the first story preserves the second');
     await page.locator('#owner-about-title').scrollIntoViewIfNeeded();await page.screenshot({path:resolve(out,'multiple-photo-stories.png'),animations:'disabled'});
 
@@ -292,6 +422,39 @@ try{
     await page.getByRole('button',{name:'保存并更新主页',exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});
     check(layout.blocks.filter(isStory).length===2&&layout.blocks.find(block=>block.id===captionBlock.id)?.content==='清晨安静的河岸，一起走走。','editing the photo gallery preserves every separate photo story');
     await page.waitForFunction(()=>document.querySelector('.owner-avatar-stack img')?.getAttribute('src')==='/api/v1/fixture/upload-4.jpg');
+    check(await cards.count()===4&&await cards.last().locator('img').getAttribute('src')==='/api/v1/fixture/upload-4.jpg','the uploaded photo joins the four-card row');
+    const seek=offset=>page.waitForFunction(index=>{
+     const rail=document.querySelector('.owner-about-track');
+     return Math.abs(rail.scrollLeft-index*(rail.children[1].offsetLeft-rail.children[0].offsetLeft))<1;
+    },offset);
+    await about.evaluate(rail=>{rail.scrollLeft=0;});await seek(0);
+    await about.focus();await page.keyboard.press('ArrowRight');await seek(1);
+    await page.getByRole('button',{name:'下一张卡片',exact:true}).click();await seek(2);
+    const railBox=await about.boundingBox();const dragY=railBox.y+railBox.height*.3;
+    await page.mouse.move(railBox.x+railBox.width*.2,dragY);await page.mouse.down();
+    await page.mouse.move(railBox.x+railBox.width*.72,dragY,{steps:12});await page.mouse.up();await seek(1);
+    const cdp=await context.newCDPSession(page);
+    await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:railBox.x+railBox.width*.78,y:dragY}]});
+    for(let step=1;step<=10;step++)await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:railBox.x+railBox.width*(.78-.57*step/10),y:dragY}]});
+    await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await seek(2);
+    check(await page.getByRole('button',{name:'下一张卡片',exact:true}).isDisabled(),'keyboard, buttons, mouse drag and touch snap to card boundaries');
+    await page.getByRole('button',{name:'新增卡片',exact:true}).click();
+    editor=page.getByRole('dialog',{name:'新增卡片',exact:true});
+    await editor.getByRole('button',{name:'选择照片 1',exact:true}).click();
+    await editor.getByRole('button',{name:'保存',exact:true}).click();await editor.waitFor({state:'hidden'});
+    const imageOnly=about.locator('.owner-about-story.is-image-only');
+    await imageOnly.waitFor({state:'attached'});
+    const savedImage=layout.blocks.filter(isStory).at(-1);
+    check(!savedImage.title&&!savedImage.content&&await cards.count()===5&&await imageOnly.locator('.owner-about-copy').count()===0&&
+     (await imageOnly.boundingBox()).height===(await imageOnly.locator('img').boundingBox()).height,'pure-image cards save without text and fill the entire card');
+    await imageOnly.getByRole('button').click();editor=page.getByRole('dialog',{name:'编辑卡片',exact:true});
+    await editor.getByRole('textbox',{name:'照片配文',exact:true}).fill('一段很长的照片故事。'.repeat(45));
+    await editor.getByRole('button',{name:'保存',exact:true}).click();await editor.waitFor({state:'hidden'});
+    const longStory=about.locator('.owner-about-story').last();
+    await longStory.locator('.owner-about-copy').waitFor({state:'attached'});
+    check(await longStory.locator('.owner-about-copy').evaluate(element=>{element.scrollTop=20;return element.scrollTop>0;})&&
+     (await longStory.boundingBox()).height===(await cards.first().boundingBox()).height,'long stories scroll vertically inside a card of the same height');
+    await longStory.getByRole('button').click();await editor.getByRole('button',{name:'移除卡片',exact:true}).click();await editor.waitFor({state:'hidden'});
     await page.locator('.owner-toolbar button').first().click();await page.getByLabel('名字',{exact:true}).fill('林予 · 更新');
     const details=page.getByRole('dialog',{name:'让别人认识你',exact:true});
     check(await details.locator('.avatar-edit,input[type=file]').count()===0&&await details.getByRole('button',{name:'管理我的照片',exact:true}).count()===0,'personal details contain no photo editor or photo-management entry');
@@ -333,11 +496,11 @@ try{
     await page.keyboard.press('Escape');await preview.waitFor({state:'hidden'});
    }else check(await page.locator('.owner-preview').isDisabled(),`${width}: empty photo previews are disabled`);
    if(width===390&&state==='empty'){
-    await page.getByRole('button',{name:'编辑照片故事 1',exact:true}).click();await page.getByRole('button',{name:'移除照片配文',exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});
-    await page.locator('.owner-caption-card.is-filled').getByText('第二段故事：山间的日落。',{exact:true}).waitFor();
+    await page.getByRole('button',{name:'编辑卡片 1',exact:true}).click();await page.getByRole('button',{name:'移除卡片',exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});
+    await page.locator('.owner-about-story').getByText('第二段故事：山间的日落。',{exact:true}).waitFor();
     check(layout.blocks.filter(isStory).length===1&&layout.blocks.find(isStory).content==='第二段故事：山间的日落。','removing one story preserves the other story');
-    await page.getByRole('button',{name:'编辑照片故事 1',exact:true}).click();await page.getByRole('button',{name:'移除照片配文',exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});
-    check(!layout.blocks.some(isStory)&&layout.blocks.some(b=>b.type==='gallery')&&await page.locator('.owner-story-add').count()===1,'removing the last story preserves the gallery and a new-story placeholder');
+    await page.getByRole('button',{name:'编辑卡片 1',exact:true}).click();await page.getByRole('button',{name:'移除卡片',exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});
+    check(!layout.blocks.some(isStory)&&layout.blocks.some(b=>b.type==='gallery')&&await page.locator('.owner-about-add').count()===1,'removing the last story preserves the gallery and a new-story placeholder');
    }
 
    await context.close();

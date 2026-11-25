@@ -55,9 +55,9 @@ try{
   await exit(target,()=>target.getByRole('button',{name:'保存',exact:true}).click(),'bio save');check(user.bio==='更新后的个人简介',`${width}: saved bio survives the exit`);
   await page.locator('.owner-interest-card').first().click();target=dialog('我的爱好');await exit(target,()=>target.getByRole('button',{name:'取消',exact:true}).click(),'hobbies cancel');
   await page.locator('.owner-interest-card').first().click();target=dialog('我的爱好');await exit(target,()=>target.getByRole('button',{name:'保存爱好',exact:true}).click(),'hobbies save');
-  await page.getByRole('button',{name:'编辑照片故事 1',exact:true}).click();target=dialog('编辑照片故事');await target.getByRole('textbox',{name:'照片配文',exact:true}).fill('修改后的照片故事');await exit(target,()=>target.getByRole('button',{name:'保存',exact:true}).click(),'photo story save');
-  await page.getByRole('button',{name:'编辑照片故事 1',exact:true}).click();target=dialog('编辑照片故事');await exit(target,()=>target.getByRole('button',{name:'移除照片配文',exact:true}).click(),'photo story remove');
-  await page.locator('.owner-story-add').click();target=dialog('新增照片故事');await exit(target,()=>target.getByRole('button',{name:'取消',exact:true}).click(),'new story cancel');
+  await page.getByRole('button',{name:'编辑卡片 1',exact:true}).click();target=dialog('编辑卡片');await target.getByRole('textbox',{name:'照片配文',exact:true}).fill('修改后的照片故事');await exit(target,()=>target.getByRole('button',{name:'保存',exact:true}).click(),'photo story save');
+  await page.getByRole('button',{name:'编辑卡片 1',exact:true}).click();target=dialog('编辑卡片');await exit(target,()=>target.getByRole('button',{name:'移除卡片',exact:true}).click(),'photo story remove');
+  await page.locator('.owner-about-add').click();target=dialog('新增卡片');await exit(target,()=>target.getByRole('button',{name:'取消',exact:true}).click(),'new story cancel');
   for(const [trigger,title,save] of [['编辑 服务城市','服务城市','保存所选城市（1）'],['编辑 语言','服务语言','保存所选语言（1）']]){
    await page.getByRole('button',{name:trigger,exact:true}).click();target=dialog(title);await exit(target,()=>target.getByRole('button',{name:'返回',exact:true}).click(),`${title} back`);
    await page.getByRole('button',{name:trigger,exact:true}).click();target=dialog(title);await target.getByRole('button',{name:save,exact:true}).waitFor();await exit(target,()=>target.getByRole('button',{name:save,exact:true}).click(),`${title} save`);

@@ -40,7 +40,7 @@ try{
   user.tags=['政治','平等','社会性发展','咖啡','旧爱好'];
   const hobbies=render([{id:'skills',type:'skills',span:2,size:'expanded'}]);
   assert((hobbies.match(/class="profile-hobby-card"/g)||[]).length===3,'public homepage groups related hobbies into three category cards');
-  assert(hobbies.includes('Politics, Equality, Social development')&&hobbies.includes('Coffee')&&hobbies.includes('旧爱好'),'public hobby cards localize known hobbies and retain custom interests');
+  assert(['Politics','Equality','Social development'].every(label=>hobbies.includes(`<li>${label}</li>`))&&hobbies.includes('Coffee')&&hobbies.includes('旧爱好'),'public hobby cards localize known hobbies and retain custom interests');
   assert(!hobbies.includes('profile-hobby-card-edit')&&!hobbies.includes('owner-interest-card'),'visitors see hobby cards without editing controls');
   await mkdir(resolve(root,'artifacts'),{recursive:true});
   await writeFile(resolve(root,'artifacts/ui-profile-refs-report.json'),JSON.stringify({passed:true,checks},null,2));

@@ -91,6 +91,7 @@ async function mount(){
   const BASE_ALTITUDE=.004, SELECTED_ALTITUDE=.014;
   let selectedCountryId:string|undefined;
   let focusedCountryId:string|undefined;
+  let returningToOverview=false;
   const isSelected=(d:object)=>selectedCountryId!==undefined&&String((d as Feature).id??'')===selectedCountryId;
   const paintCountries=()=>globe.polygonsData(countries.features)
     .polygonAltitude((d:object)=>isSelected(d)?SELECTED_ALTITUDE:BASE_ALTITUDE)
@@ -101,7 +102,7 @@ async function mount(){
   paintCountries();
   const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)');
   const controls=globe.controls();
-  controls.enablePan=false;controls.minDistance=120;controls.maxDistance=800;controls.rotateSpeed=.7;controls.zoomSpeed=.7;controls.enableDamping=true;controls.dampingFactor=.08;controls.autoRotateSpeed=.9;
+  controls.enablePan=false;controls.minDistance=120;controls.maxDistance=800;controls.rotateSpeed=.7;controls.zoomSpeed=.7;controls.dampingFactor=.08;controls.autoRotateSpeed=.9;
   let contextLost=false,texturesReady=false;
   let recoveryTimer:number|undefined;
   let hoverPointer=false;
@@ -113,7 +114,9 @@ async function mount(){
   host.addEventListener('pointerenter',event=>{hoverPointer=event.pointerType!=='touch';syncHover();});
   host.addEventListener('pointerleave',()=>{hoverPointer=false;syncHover();});
   const syncAnimation=()=>{
-    controls.autoRotate=!reducedMotion.matches;
+    controls.enableRotate=focusedCountryId===undefined&&!returningToOverview;
+    controls.enableDamping=controls.enableRotate;
+    controls.autoRotate=controls.enableRotate&&!reducedMotion.matches;
     syncHover();
     if(active&&!document.hidden&&!contextLost)globe.resumeAnimation();
     else globe.pauseAnimation();
@@ -155,6 +158,11 @@ async function mount(){
   // The initial view frames the whole planet with breathing room for the starfield,
   // matching the reference presentation instead of an edge-to-edge zoom.
   let lastWidth=0,lastHeight=0;
+  const overviewAltitude=(width:number,height:number)=>{
+    const fov=(globe.camera() as PerspectiveCamera).fov||50;
+    const angle=Math.atan((Math.min(width,height)*.75/height)*Math.tan(fov*Math.PI/360));
+    return Math.min(1/Math.sin(angle),controls.maxDistance/globe.getGlobeRadius())-1;
+  };
   const resize=()=>{
     const width=host.clientWidth,height=host.clientHeight;
     if(width<=0||height<=0)return;
@@ -165,11 +173,7 @@ async function mount(){
     if(width!==lastWidth||height!==lastHeight){
       lastWidth=width;lastHeight=height;
       globe.width(width).height(height);paintStars();
-      if(untouched){
-        const fov=(globe.camera() as PerspectiveCamera).fov||50;
-        const angle=Math.atan((Math.min(width,height)*.75/height)*Math.tan(fov*Math.PI/360));
-        setCameraPose({lat:22,lng:85,altitude:1/Math.sin(angle)-1});
-      }
+      if(untouched)setCameraPose({lat:22,lng:85,altitude:overviewAltitude(width,height)});
     }
     repaint();
   };
@@ -180,14 +184,28 @@ async function mount(){
   const finishFocus=()=>{
     if(!pendingFocus)return;
     clearTimeout(focusTimer);setCameraPose(pendingFocus);pendingFocus=undefined;
+    if(returningToOverview){
+      returningToOverview=false;
+      syncAnimation();
+    }
     if(!contextLost)globe.renderer().render(globe.scene(),globe.camera());
     emit('cameraChanged',{...globe.pointOfView()});
   };
-  const focusCamera=(pov:{lat:number;lng:number;altitude:number})=>{
-    clearTimeout(focusTimer);pendingFocus=pov;
+  const focusCamera=(pov:{lat:number;lng:number;altitude:number},overview=false)=>{
+    clearTimeout(focusTimer);pendingFocus=pov;returningToOverview=overview;
+    syncAnimation();
     if(!active||reducedMotion.matches){finishFocus();return;}
-    syncAnimation();globe.pointOfView(pov,850);
-    focusTimer=window.setTimeout(finishFocus,880);
+    const duration=overview?500:850;
+    globe.pointOfView(pov,duration);
+    focusTimer=window.setTimeout(finishFocus,duration+30);
+  };
+  const clearCountryFocus=()=>{
+    if(focusedCountryId===undefined)return;
+    const pov=globe.pointOfView();
+    if(pendingFocus)setCameraPose(pov);
+    focusedCountryId=undefined;
+    highlight();
+    focusCamera({...pov,altitude:overviewAltitude(lastWidth,lastHeight)},true);
   };
   const selectCity=(place:Place)=>{
     untouched=false;
@@ -204,7 +222,6 @@ async function mount(){
     const alreadyFocused=focusedCountryId===countryId;
     focusedCountryId=countryId;
     highlight(known,String(polygon.id??''));
-    syncAnimation();
     // A land tap first brings that country into view. Only another tap on the
     // same country opens details; changing countries starts with a fresh focus.
     if(!alreadyFocused){focusCamera({lat:known?.lat??lat,lng:known?.lng??lng,altitude:1.1});return;}
@@ -218,12 +235,11 @@ async function mount(){
   // stationary tap from the visible camera in the pointer event itself.
   let tap:{id:number;x:number;y:number}|null=null;
   const pointers=new Set<number>();
-  host.addEventListener('pointerdown',event=>{if(!active)return;pointers.add(event.pointerId);tap=pointers.size===1?{id:event.pointerId,x:event.clientX,y:event.clientY}:null;if(pointers.size>1)focusedCountryId=undefined;},{capture:true});
+  host.addEventListener('pointerdown',event=>{if(!active)return;pointers.add(event.pointerId);tap=pointers.size===1?{id:event.pointerId,x:event.clientX,y:event.clientY}:null;},{capture:true});
   host.addEventListener('pointermove',event=>{
     if(!hoverPointer&&event.pointerType!=='touch'){hoverPointer=true;syncHover();}
-    if(tap&&Math.hypot(event.clientX-tap.x,event.clientY-tap.y)>7){tap=null;focusedCountryId=undefined;}
+    if(tap&&Math.hypot(event.clientX-tap.x,event.clientY-tap.y)>7)tap=null;
   },{capture:true});
-  host.addEventListener('wheel',()=>{focusedCountryId=undefined;},{capture:true,passive:true});
   host.addEventListener('pointercancel',event=>{pointers.delete(event.pointerId);tap=null;},{capture:true});
   host.addEventListener('pointerup',event=>{
     pointers.delete(event.pointerId);const pressed=tap;tap=null;
@@ -231,7 +247,7 @@ async function mount(){
     const rect=host.getBoundingClientRect();
     const x=event.clientX-rect.left,y=event.clientY-rect.top;
     const coords=globe.toGlobeCoords(x,y);
-    if(!coords)return;
+    if(!coords){clearCountryFocus();return;}
     let closestCity:Place|undefined;
     let distance=11;
     for(const place of places){
@@ -243,8 +259,9 @@ async function mount(){
     if(closestCity){selectCity(closestCity);return;}
     const polygon=countries.features.find(feature=>geoContains(feature,[coords.lng,coords.lat]));
     if(polygon){untouched=false;chooseCountry(polygon);}
+    else clearCountryFocus();
   },{capture:true});
-  controls.addEventListener('start',()=>{untouched=false;clearTimeout(focusTimer);pendingFocus=undefined;syncAnimation();});
+  controls.addEventListener('start',()=>{untouched=false;if(controls.enableRotate){clearTimeout(focusTimer);pendingFocus=undefined;}syncAnimation();});
   controls.addEventListener('end',()=>{syncAnimation();clearTimeout(cameraTimer);cameraTimer=window.setTimeout(()=>{emit('cameraChanged',{...globe.pointOfView()});},400);});
   const update=()=>globe.pointsData(places.filter(p=>p.kind==='city'));
   const receive=(command:GlobeCommand)=>{
@@ -257,9 +274,10 @@ async function mount(){
       syncAnimation();
     }
     if(command.event==='focusPlace'){
-      const p=d.place as Place|undefined;if(p&&Number.isFinite(p.lat)&&Number.isFinite(p.lng)){untouched=false;highlight(p);focusedCountryId=p.kind==='country'?selectedCountryId:undefined;focusCamera({lat:p.lat,lng:p.lng,altitude:p.kind==='country'?1.15:.65});}
+      const p=d.place as Place|undefined;if(p&&Number.isFinite(p.lat)&&Number.isFinite(p.lng)){untouched=false;highlight(p);focusedCountryId=p.kind==='country'?(selectedCountryId??p.id):undefined;focusCamera({lat:p.lat,lng:p.lng,altitude:p.kind==='country'?1.15:.65});}
     }
-    if(command.event==='restoreCamera'&&Number.isFinite(d.lat)&&Number.isFinite(d.lng)&&Number.isFinite(d.altitude)){untouched=false;clearTimeout(focusTimer);pendingFocus=undefined;syncAnimation();setCameraPose({lat:Number(d.lat),lng:Number(d.lng),altitude:Number(d.altitude)});
+    if(command.event==='clearCountryFocus')clearCountryFocus();
+    if(command.event==='restoreCamera'&&Number.isFinite(d.lat)&&Number.isFinite(d.lng)&&Number.isFinite(d.altitude)){untouched=false;clearTimeout(focusTimer);pendingFocus=undefined;returningToOverview=false;syncAnimation();setCameraPose({lat:Number(d.lat),lng:Number(d.lng),altitude:Number(d.altitude)});
      // A restored view must land immediately, even while the animation loop is
      // paused, so hit-testing and the visible frame both use the settled camera.
      if(!contextLost)globe.renderer().render(globe.scene(),globe.camera());}

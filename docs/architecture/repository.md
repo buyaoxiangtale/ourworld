@@ -4,7 +4,7 @@
 
 `apps` 是可交付应用，保持 Android、iOS 的原生工程约定；`packages` 保存跨客户端共享源码和源素材。网页业务模块按功能归类，个人主页统一放在 `apps/web/src/features/profile`。
 
-`scripts` 保存构建、开发、素材及压测自动化；`tools/ourworld_tools` 提供 uv 命令入口。执行外部工具时保留其退出码，以仓库根目录为工作目录，不经过拼接的 shell 命令。
+`scripts` 保存构建、开发、部署、素材及压测自动化；`tools/ourworld_tools` 提供 uv 命令入口。执行外部工具时保留其退出码，以仓库根目录为工作目录，不经过拼接的 shell 命令。
 
 `tests/unit` 为仓库和前端逻辑检查，`tests/tools` 为 Python 工具测试，`tests/e2e/web` 为浏览器回归，`tests/integration` 为真实服务验收，`tests/load` 为 k6。API 工作区单元测试位于 `apps/api/test`。
 

@@ -21,7 +21,7 @@ export interface Message { id:string; conversationId:string; senderId:string; cl
 export interface Trip { id:string; conversationId:string; creatorId:string; peerId:string; cityId:string; endAt:string; status:'proposed'|'active'|'reviewable'|'cancelled'; frozen:boolean; confirmations:string[]; openedBy?:'scheduled'|'mutual'|'admin'; title:string }
 export interface LayoutJob { id:string; status:'queued'|'running'|'validating'|'ready'|'failed'|'cancelled'; baseRevision:number; layout?:ProfileLayout; error?:string }
 export interface RealtimeEvent { event:string; data:Record<string,unknown> }
-export interface GlobeCommand { bridgeVersion:1; event:'focusPlace'|'setMarkers'|'restoreCamera'|'setTheme'|'setActive'; data:Record<string,unknown> }
+export interface GlobeCommand { bridgeVersion:1; event:'focusPlace'|'clearCountryFocus'|'setMarkers'|'restoreCamera'|'setTheme'|'setActive'; data:Record<string,unknown> }
 export interface GlobeEvent { bridgeVersion:1; event:'rendererReady'|'placeSelected'|'cameraChanged'|'rendererError'; data:Record<string,unknown> }
 export const BLOCK_TYPES: BlockType[] = ['intro','prompts','gallery','experiences','skills','cities','packages','posts','reviews','social'];
 export const PROFILE_THEMES = ['ocean','forest','nocturne'] as const;

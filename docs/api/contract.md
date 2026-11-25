@@ -6,7 +6,7 @@
 
 服务城市从独立搜索列表选择，通过 `PATCH /me {cityIds: [...]}` 保存，最多 50 个有效城市 ID，可传空数组清除。常规个人资料表单不再提交 `cityIds`，避免覆盖独立城市页的更新。学校学历保存同样只提交自身字段。
 
-`GET /places` 增加 `limit`（1–250，默认 250）和 `offset`（默认 0）参数，响应为 `{items: Place[], nextOffset: number|null}`；`nextOffset=null` 表示已读完。排序以地点类型、英文名和 ID 保持稳定。城市选择器读取 `kind=city` 全部分页，并读取国家名称用于中英文和国家/地区搜索；搜索还支持城市别名和忽略拉丁字母重音。
+`GET /places` 支持 `limit`（1–250，默认 250）和 `offset`（默认 0）参数，响应为 `{items: Place[], nextOffset: number|null}`；`nextOffset=null` 表示已读完。空查询按地点类型、英文名和 ID 排序。关键词查询会归一化全半角和大小写，按空白或逗号拆词，每个词均须命中地点名称、别名或所属地。精确名称、精确别名、前缀和子串依次优先，同级结果按地点类型、英文名和 ID 稳定排序。城市选择器读取 `kind=city` 全部分页，并读取国家名称用于中英文和国家/地区搜索；搜索还支持城市别名和忽略拉丁字母重音。
 
 
 Prefix `/api/v1`. Success returns the resource directly (not an extra data envelope). Errors `{code,message,requestId?}`. IDs are opaque strings, times ISO UTC. Bearer access token. WebSocket `/api/v1/ws`, first JSON frame `{event:"auth",data:{token}}`, then `{event,data}` events. Message sends use HTTP; WS notifies after commit.

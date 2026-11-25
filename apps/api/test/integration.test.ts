@@ -48,6 +48,10 @@ test('the city catalogue paginates completely and supports bilingual and alias s
  do{const result=await request('GET',`/places?kind=city&limit=7&offset=${offset}`);assert.equal(result.statusCode,200);const page=result.json();assert(page.items.length<=7);assert(page.items.every((place:any)=>place.kind==='city'));collected.push(...page.items.map((place:any)=>place.id));if(page.nextOffset===null)break;assert(page.nextOffset>offset);offset=page.nextOffset;}while(true);
  assert.deepEqual(collected,expected);assert.equal(new Set(collected).size,collected.length);
  for(const search of ['巴黎','Paris','city of light']){const result=await request('GET',`/places?kind=city&q=${encodeURIComponent(search)}&limit=7`);assert.equal(result.statusCode,200);assert(result.json().items.some((place:any)=>place.id==='city-paris'));}
+ for(const [search,id] of [['lon','city-london'],['Paris, France','city-paris'],['new  york','city-new-york'],['Ｌｏｎｄｏｎ','city-london']]){
+  const result=await request('GET',`/places?q=${encodeURIComponent(search)}&limit=1`);
+  assert.equal(result.statusCode,200);assert.equal(result.json().items[0]?.id,id);
+ }
  for(const query of ['limit=0','limit=251','offset=-1','offset=abc'])assert.equal((await request('GET',`/places?kind=city&${query}`)).statusCode,400);
 });
 

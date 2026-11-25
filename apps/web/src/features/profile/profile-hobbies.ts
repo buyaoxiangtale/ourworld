@@ -37,43 +37,60 @@ export const findHobby=(value:string)=>byAlias.get(normalizeHobby(value));
 export const hobbyLabel=(value:string,locale:'zh'|'en')=>findHobby(value)?.[locale]||value;
 export const hobbyKey=(value:string)=>findHobby(value)?.id||normalizeHobby(value);
 
-// Store uploaded media IDs as optional references on the existing skills block.
+// Keep hobby metadata in the existing skills block and accept legacy single-photo refs.
 const HOBBY_PHOTO_PREFIX='hobby-photo:';
-export function readHobbyPhotos(layout?:ProfileLayout|null){
- const photos=new Map<string,string>();
+const HOBBY_INTRO_PREFIX='hobby-intro:';
+export const HOBBY_PHOTO_LIMIT=6;
+export const HOBBY_INTRO_LIMIT=180;
+
+export function readHobbyDetails(layout?:ProfileLayout|null){
+ const photos=new Map<string,string[]>();
+ const intros=new Map<string,string>();
  for(const block of layout?.blocks??[]){
   if(block.type!=='skills')continue;
   for(const ref of block.refs??[]){
-   if(!ref.startsWith(HOBBY_PHOTO_PREFIX))continue;
+   const isPhoto=ref.startsWith(HOBBY_PHOTO_PREFIX);
+   if(!isPhoto&&!ref.startsWith(HOBBY_INTRO_PREFIX))continue;
    try{
-    const pair=JSON.parse(ref.slice(HOBBY_PHOTO_PREFIX.length));
-    if(Array.isArray(pair)&&typeof pair[0]==='string'&&typeof pair[1]==='string'&&/^[a-z0-9-]+$/i.test(pair[1]))photos.set(pair[0],pair[1]);
+    const pair=JSON.parse(ref.slice((isPhoto?HOBBY_PHOTO_PREFIX:HOBBY_INTRO_PREFIX).length));
+    if(!Array.isArray(pair)||typeof pair[0]!=='string')continue;
+    const [key,value]=pair;
+    if(!isPhoto){
+     if(typeof value==='string'&&value.trim())intros.set(key,value);
+     continue;
+    }
+    const ids=(Array.isArray(value)?value:[value]).filter(
+     (id):id is string=>typeof id==='string'&&/^[a-z0-9-]+$/i.test(id)
+    );
+    if(ids.length)photos.set(key,[...new Set(ids)]);
    }catch{continue;}
   }
  }
- return photos;
+ return {photos,intros};
 }
 
-export function updateHobbyPhotos(layout:ProfileLayout,selected:string[],changes:ReadonlyMap<string,string|null>):ProfileLayout{
- const photos=readHobbyPhotos(layout);
- for(const [key,id] of changes){
-  if(id)photos.set(key,id);
-  else photos.delete(key);
- }
- const photoRefs=selected.map(hobbyKey).flatMap(key=>{
-  const id=photos.get(key);
-  return id?[HOBBY_PHOTO_PREFIX+JSON.stringify([key,id])]:[];
+export function updateHobbies(layout:ProfileLayout,selected:string[],photoChanges:ReadonlyMap<string,string[]>,introChanges:ReadonlyMap<string,string>):ProfileLayout{
+ const {photos,intros}=readHobbyDetails(layout);
+ for(const [key,ids] of photoChanges)photos.set(key,ids);
+ for(const [key,intro] of introChanges)intros.set(key,intro.trim());
+ const hobbyRefs=selected.map(hobbyKey).flatMap(key=>{
+  const ids=photos.get(key);
+  return ids?.length?[HOBBY_PHOTO_PREFIX+JSON.stringify([key,ids.length===1?ids[0]:ids])]:[];
  });
+ for(const group of groupSelectedHobbies(selected)){
+  const intro=intros.get(group.id);
+  if(intro)hobbyRefs.push(HOBBY_INTRO_PREFIX+JSON.stringify([group.id,intro]));
+ }
  const index=layout.blocks.findIndex(block=>block.type==='skills');
  const blocks=layout.blocks.map((block,i)=>{
   if(block.type!=='skills')return block;
-  const refs=(block.refs??[]).filter(ref=>!ref.startsWith(HOBBY_PHOTO_PREFIX));
-  if(i===index)refs.push(...photoRefs);
+  const refs=(block.refs??[]).filter(ref=>!ref.startsWith(HOBBY_PHOTO_PREFIX)&&!ref.startsWith(HOBBY_INTRO_PREFIX));
+  if(i===index)refs.push(...hobbyRefs);
   return {...block,refs};
  });
- if(index<0&&photoRefs.length){
+ if(index<0&&hobbyRefs.length){
   const id=Array.from(crypto.getRandomValues(new Uint8Array(16)),byte=>byte.toString(16).padStart(2,'0')).join('');
-  blocks.push({id,type:'skills',span:1,size:'compact',refs:photoRefs});
+  blocks.push({id,type:'skills',span:1,size:'compact',refs:hobbyRefs});
  }
  return {...layout,blocks};
 }

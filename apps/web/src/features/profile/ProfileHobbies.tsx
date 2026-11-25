@@ -5,21 +5,34 @@ import {API_BASE,api,getSession,send,setSession,upload} from '../../api';
 import {useApp} from '../../context';
 import {errorMessage} from '../../hooks';
 import {ProfileCardSheet} from './ProfileCardSheet';
-import {findHobby,hobbyKey,hobbyLabel,HOBBY_GROUPS,HOBBY_LIMIT,normalizeHobby,readHobbyPhotos,updateHobbyPhotos} from './profile-hobbies';
+import {findHobby,groupSelectedHobbies,hobbyKey,hobbyLabel,HOBBY_GROUPS,HOBBY_INTRO_LIMIT,HOBBY_LIMIT,HOBBY_PHOTO_LIMIT,normalizeHobby,readHobbyDetails,updateHobbies} from './profile-hobbies';
 import { EarthSpinner,Empty,ErrorBox,IconButton} from '../../ui';
 
 export function InterestsDialog({onClose,onDone,initialUser,layout}:{onClose:()=>void;onDone:()=>void;initialUser?:User;layout?:ProfileLayout|null}){
  const {t,locale,user,refreshUser,toast}=useApp();const id=useId();
  const [initial]=useState(()=>[...new Map(((initialUser||user)?.tags||[]).map(value=>[findHobby(value)?.id||normalizeHobby(value),value])).values()]);
  const [selected,setSelected]=useState(initial);const [query,setQuery]=useState('');const [expanded,setExpanded]=useState<string[]>([]);const [busy,setBusy]=useState(false);const [error,setError]=useState('');
- const [originalPhotos]=useState(()=>readHobbyPhotos(layout));
- const [photoChanges,setPhotoChanges]=useState<ReadonlyMap<string,string|null>>(new Map());
+ const [originalDetails]=useState(()=>readHobbyDetails(layout));
+ const [photoChanges,setPhotoChanges]=useState<ReadonlyMap<string,string[]>>(new Map());
+ const [introChanges,setIntroChanges]=useState<ReadonlyMap<string,string>>(new Map());
  const [photoHobby,setPhotoHobby]=useState('');
  const [uploading,setUploading]=useState(false);
  const photoInput=useRef<HTMLInputElement>(null);
+ const hobbyRail=useRef<HTMLDivElement>(null);
  const currentHobby=selected.includes(photoHobby)?photoHobby:selected[0];
+ useEffect(()=>{
+  const rail=hobbyRail.current;
+  const button=rail?.querySelector<HTMLButtonElement>('[aria-pressed="true"]');
+  if(!rail||!button)return;
+  const left=button.offsetLeft,right=left+button.offsetWidth;
+  if(left<rail.scrollLeft)rail.scrollLeft=left;
+  else if(right>rail.scrollLeft+rail.clientWidth)rail.scrollLeft=right-rail.clientWidth;
+ },[currentHobby,selected]);
  const currentPhotoKey=currentHobby?hobbyKey(currentHobby):'';
- const currentPhoto=photoChanges.has(currentPhotoKey)?photoChanges.get(currentPhotoKey):originalPhotos.get(currentPhotoKey);
+ const currentPhotos=photoChanges.get(currentPhotoKey)??originalDetails.photos.get(currentPhotoKey)??[];
+ const currentCategory=groupSelectedHobbies(selected).find(group=>group.items.some(item=>item.value===currentHobby));
+ const currentIntro=currentCategory?(introChanges.get(currentCategory.id)??originalDetails.intros.get(currentCategory.id)??''):'';
+ const replaceIndex=useRef<number|null>(null);
  const waiting=busy||uploading;
  const [groups]=useState(()=>{
   const known=HOBBY_GROUPS.map(group=>({...group,items:group.items.map(item=>({...item,value:initial.find(value=>findHobby(value)?.id===item.id)||item.zh}))}));
@@ -36,12 +49,32 @@ export function InterestsDialog({onClose,onDone,initialUser,layout}:{onClose:()=
    setPhotoHobby(value);
   }
  };
- const setPhoto=(key:string,mediaId:string|null)=>setPhotoChanges(changes=>new Map(changes).set(key,mediaId));
- const uploadPhoto=async(file:File)=>{
+ const setPhotos=(key:string,ids:string[])=>setPhotoChanges(changes=>new Map(changes).set(key,ids));
+ const choosePhotos=(index:number|null)=>{
+  const input=photoInput.current;
+  if(!input)return;
+  replaceIndex.current=index;
+  input.multiple=index===null;
+  input.click();
+ };
+ const uploadPhotos=async(files:File[])=>{
   if(!currentPhotoKey||waiting)return;
+  const index=replaceIndex.current;
+  const batch=files.slice(0,index===null?Math.max(0,HOBBY_PHOTO_LIMIT-currentPhotos.length):1);
+  if(!batch.length)return;
+  const next=[...currentPhotos];
   setUploading(true);setError('');
-  try{const media=await upload(file);setPhoto(currentPhotoKey,media.id);}
-  catch(error){setError(errorMessage(error));}finally{setUploading(false);}
+  try{
+   for(const file of batch){
+    const media=await upload(file);
+    if(index===null)next.push(media.id);
+    else next[index]=media.id;
+   }
+  }catch(error){setError(errorMessage(error));}
+  finally{
+   if(next.some((id,i)=>id!==currentPhotos[i]))setPhotos(currentPhotoKey,[...new Set(next)]);
+   setUploading(false);
+  }
  };
  const save=async()=>{
   if(waiting||selected.length>HOBBY_LIMIT)return;setBusy(true);setError('');
@@ -50,10 +83,10 @@ export function InterestsDialog({onClose,onDone,initialUser,layout}:{onClose:()=
    setSession({...getSession()!,user:updated});
    const selectedKeys=new Set(selected.map(hobbyKey));
    const changes=new Map([...photoChanges].filter(([key])=>selectedKeys.has(key)));
-   if(changes.size){
+   if(changes.size||introChanges.size){
     const draft=await api<ProfileDraft>('/profile/draft');
     const saved=await send<ProfileDraft>('/profile/draft',{
-     revision:draft.revision,layout:updateHobbyPhotos(draft.layout,selected,changes)
+     revision:draft.revision,layout:updateHobbies(draft.layout,selected,changes,introChanges)
     },'PUT');
     await send('/profile/publish',{revision:saved.revision});
    }
@@ -64,26 +97,43 @@ export function InterestsDialog({onClose,onDone,initialUser,layout}:{onClose:()=
   <header className="profile-hobbies-header"><div className="profile-hobbies-controls"><IconButton label={t('取消','Cancel')} disabled={waiting} onClick={close}><X size={25}/></IconButton><IconButton label={t('保存爱好','Save hobbies')} className="profile-hobbies-save" disabled={waiting||selected.length>HOBBY_LIMIT} onClick={()=>void save()}>{busy?<EarthSpinner small/>:<Check size={26}/>}</IconButton></div><div className="profile-hobbies-title"><h2>{t('我的爱好','My hobbies')}</h2><span aria-live="polite" aria-label={t('已选爱好数量','Selected hobby count')}>{selected.length}/{HOBBY_LIMIT}</span></div><p>{t('添加最多十项爱好，发现与你志趣相投的旅人。','Choose up to ten hobbies to find travellers who share your interests.')}</p><div className="profile-hobbies-search"><Search size={21}/><input type="search" aria-label={t('搜索爱好','Search hobbies')} placeholder={t('搜索爱好','Search hobbies')} value={query} disabled={busy} onChange={event=>setQuery(event.target.value)}/>{query&&<IconButton label={t('清空搜索','Clear search')} disabled={busy} onClick={()=>setQuery('')}><X size={17}/></IconButton>}</div></header>
   <div ref={scroll} className="profile-hobbies-scroll"><ErrorBox message={error||(selected.length>HOBBY_LIMIT?t('已选爱好超过 10 项，请取消部分选择后保存。','More than 10 hobbies are selected. Remove a few before saving.'):'')}/>
    {currentHobby&&<div className="profile-hobby-image-editor">
-    <label htmlFor={`${id}-image-hobby`}>{t('爱好图片','Hobby photo')}</label>
-    <select id={`${id}-image-hobby`} value={currentHobby} disabled={waiting}
-     onChange={event=>setPhotoHobby(event.target.value)}>
-     {selected.map(value=><option value={value} key={value}>{hobbyLabel(value,locale)}</option>)}
-    </select>
-    <div className="profile-hobby-image-actions">
-     {currentPhoto&&<img src={`${API_BASE}/media/${encodeURIComponent(currentPhoto)}`} alt="" />}
-     <button type="button" disabled={waiting} onClick={()=>photoInput.current?.click()}>
-      {uploading?<EarthSpinner small/>:<ImagePlus size={17} aria-hidden="true" />}
-      {uploading?t('正在上传…','Uploading…'):currentPhoto?t('更换图片','Replace photo'):t('上传图片','Upload photo')}
-     </button>
-     {currentPhoto&&<button type="button" disabled={waiting}
-      onClick={()=>setPhoto(currentPhotoKey,null)}>{t('移除图片','Remove photo')}</button>}
+    <h3 id={`${id}-image-hobby`} className="profile-hobby-image-heading">{t('爱好图片','Hobby photos')}</h3>
+    <div ref={hobbyRail} className="profile-hobby-image-choices" role="group" aria-labelledby={`${id}-image-hobby`}>
+     {selected.map(value=>{
+      const active=value===currentHobby;
+      const label=hobbyLabel(value,locale);
+      return <button type="button" key={value} aria-pressed={active} disabled={waiting} onClick={()=>setPhotoHobby(value)}>
+       <span>{label}</span>{active&&<Check size={14} aria-hidden="true"/>}
+      </button>;
+     })}
     </div>
-    <input ref={photoInput} type="file" accept="image/*" hidden disabled={waiting}
+    <div className="profile-hobby-image-actions">
+     <button type="button" className="profile-hobby-image-upload" disabled={waiting||currentPhotos.length>=HOBBY_PHOTO_LIMIT} onClick={()=>choosePhotos(null)}>
+      {uploading?<EarthSpinner small/>:<ImagePlus size={17} aria-hidden="true" />}
+      {uploading?t('正在上传…','Uploading…'):t('上传图片','Upload photos')}
+     </button>
+     <span className="profile-hobby-image-count">{currentPhotos.length}/{HOBBY_PHOTO_LIMIT}</span>
+    </div>
+    {currentPhotos.length>0&&<ul className="profile-hobby-image-list">{currentPhotos.map((mediaId,index)=><li className="profile-hobby-image-actions" key={mediaId}>
+     <img src={`${API_BASE}/media/${encodeURIComponent(mediaId)}`} alt={t(`第 ${index+1} 张爱好图片`,`Hobby photo ${index+1}`)}/>
+     <button type="button" disabled={waiting} onClick={()=>choosePhotos(index)}>{t('更换图片','Replace photo')}</button>
+     <button type="button" className="profile-hobby-image-remove" disabled={waiting}
+      onClick={()=>setPhotos(currentPhotoKey,currentPhotos.filter((_,i)=>i!==index))}>{t('移除图片','Remove photo')}</button>
+    </li>)}</ul>}
+    <input ref={photoInput} type="file" accept="image/*" multiple hidden disabled={waiting}
      onChange={event=>{
-      const file=event.target.files?.[0];
+      const files=Array.from(event.target.files??[]);
       event.target.value='';
-      if(file)void uploadPhoto(file);
+      if(files.length)void uploadPhotos(files);
      }}/>
+    {currentCategory&&<label className="profile-hobby-intro-field">
+     <span>{t(`${currentCategory[locale]}介绍（选填）`,`${currentCategory[locale]} introduction (optional)`)}</span>
+     <textarea value={currentIntro} maxLength={HOBBY_INTRO_LIMIT} rows={3} disabled={waiting}
+      onChange={event=>{
+       const intro=event.target.value;
+       setIntroChanges(changes=>new Map(changes).set(currentCategory.id,intro));
+      }}/>
+    </label>}
    </div>}
    {filtered.length?filtered.map(group=>{
    const isExpanded=expanded.includes(group.id),all=!!query.trim()||isExpanded;

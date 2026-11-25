@@ -34,8 +34,16 @@ export async function seed():Promise<void>{
    await c.query("INSERT INTO places(id,kind,parent_id,country,name,lat,lng,description,image,aliases) VALUES($1,'city',$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT(id) DO NOTHING",[cityId,`country-${country}`,countries[country][1],JSON.stringify({zh,en}),lat,lng,JSON.stringify({zh:`走进${zh}的街巷，与当地人分享一段慢下来的旅程。`,en:`Discover the quieter corners of ${en}, through the eyes of someone who calls it home.`}),image,id==='paris'?['巴黎市','city of light']:id==='tokyo'?['东京市','東京']:[]]);
    for(let i=0;i<4;i++){const labels=[['老城漫步','Old Town Walk'],['当地市集','Local Market'],['河畔日落','Riverside Sunset'],['城市博物馆','City Museum']];let attractionZh=`${zh} · ${labels[i][0]}`,attractionEn=`${en} · ${labels[i][1]}`;
     const attractionId=id==='paris'&&i===0?'attraction-eiffel-tower':id==='beijing'&&i===0?'attraction-great-wall':`attraction-${id}-${i}`;
-    if(attractionId==='attraction-eiffel-tower'){attractionZh='埃菲尔铁塔';attractionEn='Eiffel Tower';}if(attractionId==='attraction-great-wall'){attractionZh='长城';attractionEn='Great Wall';}
-    await c.query("INSERT INTO places(id,kind,parent_id,country,name,lat,lng,description,image,aliases) VALUES($1,'attraction',$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT(id) DO NOTHING",[attractionId,cityId,countries[country][1],JSON.stringify({zh:attractionZh,en:attractionEn}),lat+(i-1)*0.015,lng+(i-1)*0.015,JSON.stringify({zh:'示例地点，具体体验请与当地人沟通。',en:'Illustrative place. Discuss your experience with a local.'}),image,attractionId==='attraction-eiffel-tower'?['铁塔','Tour Eiffel']:attractionId==='attraction-great-wall'?['万里长城']:[]]);
+    let attractionLat=lat+(i-1)*0.015,attractionLng=lng+(i-1)*0.015;
+    if(attractionId==='attraction-eiffel-tower'){
+     // https://www.wikidata.org/wiki/Q243
+     attractionZh='埃菲尔铁塔';attractionEn='Eiffel Tower';attractionLat=48.858296;attractionLng=2.294479;
+    }
+    if(attractionId==='attraction-great-wall'){
+     // https://whc.unesco.org/document/216747 (Badaling)
+     attractionZh='八达岭长城';attractionEn='Badaling Great Wall';attractionLat=40.35;attractionLng=116.017;
+    }
+    await c.query("INSERT INTO places(id,kind,parent_id,country,name,lat,lng,description,image,aliases) VALUES($1,'attraction',$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT(id) DO NOTHING",[attractionId,cityId,countries[country][1],JSON.stringify({zh:attractionZh,en:attractionEn}),attractionLat,attractionLng,JSON.stringify({zh:'示例地点，具体体验请与当地人沟通。',en:'Illustrative place. Discuss your experience with a local.'}),image,attractionId==='attraction-eiffel-tower'?['铁塔','Tour Eiffel']:attractionId==='attraction-great-wall'?['长城','万里长城','Great Wall']:[]]);
    }
   }
   const demo=[{id:'demo-traveler',email:'traveler@ourworld.test',name:'林间 · Lin',role:'user',status:'none',bio:'喜欢散步、旧书店和不赶时间的旅行。 Looking for little moments in a big world.'},{id:'demo-local',email:'local@ourworld.test',name:'Léa · 林屿',role:'user',status:'approved',bio:'住在巴黎，喜欢摄影、艺术和街角咖啡。 Let’s discover the city at your pace.',price:{min:70,max:120},years:6,languages:['中文 Chinese','English','Français']},{id:'demo-admin',email:'admin@ourworld.test',name:'Ourworld Admin',role:'admin',status:'none',bio:'Local development administrator'}];

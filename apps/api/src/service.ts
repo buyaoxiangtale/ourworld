@@ -92,10 +92,41 @@ export class AppService {
  }
  async validCities(cityIds:string[]):Promise<void> { if(!cityIds.length)return;const found=await query("SELECT id FROM places WHERE kind='city' AND id=ANY($1::text[])",[cityIds]);assert(found.length===new Set(cityIds).size,400,'INVALID_CITY','One or more cities do not exist'); }
  async places(q:Record<string,any>):Promise<any> {
-  const search=typeof q.q==='string'?q.q.trim().slice(0,100):'';
+  const tokens=typeof q.q==='string'?q.q.slice(0,100).normalize('NFKC').toLowerCase().split(/[\s,]+/).filter(Boolean):[];
+  const search=tokens.join(' ');
   const limit=parse(z.coerce.number().int().min(1).max(250).default(250),q.limit);
   const offset=parse(z.coerce.number().int().min(0).max(1000000).default(0),q.offset);
-  const rows=await query("SELECT * FROM places WHERE ($1='' OR name->>'zh' ILIKE '%'||$1||'%' OR name->>'en' ILIKE '%'||$1||'%' OR EXISTS(SELECT 1 FROM unnest(aliases) a WHERE a ILIKE '%'||$1||'%')) AND ($2::text IS NULL OR kind=$2) AND ($3::text IS NULL OR parent_id=$3) ORDER BY CASE kind WHEN 'country' THEN 1 WHEN 'city' THEN 2 ELSE 3 END,name->>'en',id LIMIT $4 OFFSET $5",[search,['country','city','attraction'].includes(q.kind)?q.kind:null,typeof q.parentId==='string'?q.parentId:null,limit+1,offset]);
+  const kind=['country','city','attraction'].includes(q.kind)?q.kind:null;
+  const parentId=typeof q.parentId==='string'?q.parentId:null;
+  const rows=await query(search?`
+   SELECT p.*
+   FROM places p
+   LEFT JOIN places parent ON parent.id=p.parent_id
+   CROSS JOIN LATERAL (
+    SELECT lower(normalize(p.name->>'zh', NFKC)) AS zh,
+           lower(normalize(p.name->>'en', NFKC)) AS en,
+           ARRAY(SELECT lower(normalize(alias, NFKC)) FROM unnest(p.aliases) AS a(alias)) AS aliases,
+           lower(normalize(concat_ws(' ',p.country,parent.name->>'zh',parent.name->>'en',array_to_string(parent.aliases,' ')), NFKC)) AS context
+   ) AS terms
+   WHERE ($2::text IS NULL OR p.kind=$2) AND ($3::text IS NULL OR p.parent_id=$3)
+    AND NOT EXISTS (
+     SELECT 1 FROM unnest($6::text[]) AS t(token)
+     WHERE strpos(concat_ws(' ',terms.zh,terms.en,array_to_string(terms.aliases,' '),terms.context),token)=0
+    )
+   ORDER BY CASE
+    WHEN $1 IN (terms.zh,terms.en) THEN 0
+    WHEN $1=ANY(terms.aliases) THEN 1
+    WHEN starts_with(terms.zh,$1) OR starts_with(terms.en,$1) THEN 2
+    WHEN EXISTS (SELECT 1 FROM unnest(terms.aliases) AS a(alias) WHERE starts_with(alias,$1)) THEN 3
+    WHEN strpos(concat_ws(' ',terms.zh,terms.en,array_to_string(terms.aliases,' ')),$1)>0 THEN 4
+    ELSE 5
+   END, CASE p.kind WHEN 'country' THEN 1 WHEN 'city' THEN 2 ELSE 3 END,p.name->>'en',p.id
+   LIMIT $4 OFFSET $5
+  `:`
+   SELECT * FROM places WHERE ($1::text IS NULL OR kind=$1) AND ($2::text IS NULL OR parent_id=$2)
+   ORDER BY CASE kind WHEN 'country' THEN 1 WHEN 'city' THEN 2 ELSE 3 END,name->>'en',id
+   LIMIT $3 OFFSET $4
+  `,search?[search,kind,parentId,limit+1,offset,tokens]:[kind,parentId,limit+1,offset]);
   return {items:rows.slice(0,limit).map(shapes.place),nextOffset:rows.length>limit?offset+limit:null};
  }
  async getPlace(id:string):Promise<any> {const p=await one('SELECT * FROM places WHERE id=$1',[id]);assert(p,404,'NOT_FOUND','Place not found');return shapes.place(p);}

@@ -74,10 +74,20 @@ uv run docker compose exec frontend-watch cat /srv/frontend/watch-status.json
 
 调整 Dockerfile、入口路径或依赖安装逻辑后，重新运行 `watch` 更新监听容器。普通网页源代码修改由常驻监听器处理。
 
-开发服务器的 `yubs` 预览使用 8189。它从该分支的提交构建 Web 和离线地球，`/api`、`/media` 转发到同机 8188，复用现有 API、worker 和持久化数据。8188 的自动发布由 `frontend-watch` 处理，来源以容器挂载的源码目录为准。发布预览后通过 `/frontend-version.json` 核对提交，通过 `/api/v1/ready` 核对 API，并确认地球 JavaScript 使用 HTTP 压缩。
+当前 Web 入口使用 8188。开发服务器的 `frontend-watch` 从挂载的工作区源码构建 Web 和离线地球，成功后切换发布目录。`/frontend-version.json` 返回发布版本和构建时间，版本值包含源码指纹。它可以包含工作区改动。
+
+## 后端发布
+
+在运行 Ourworld Compose 项目的主机上，从仓库根目录执行：
+
+```sh
+./scripts/deploy/backend.sh yubs
+```
+
+省略分支名时使用当前检出分支。脚本通过 Git 提交构建镜像，保留旧镜像用于回滚，使用新镜像执行数据库迁移，再更新两个 API 实例和 worker。迁移失败时，运行中的实例继续服务。迁移成功但新服务就绪失败时，脚本尝试恢复旧镜像，已经完成的数据库迁移会保留。该入口用于有现成数据库和网关的环境，首次初始化使用上面的完整容器流程。
 
 ## 部署后验证与清理
 
-- 发布 API 或 worker 后，检查 `/api/v1/ready`。前端发布通过 `/frontend-version.json` 确认生效版本，并核对首页与静态资源能否加载。
+- 发布 API 或 worker 后，检查 `/api/v1/ready`。前端发布通过 `/frontend-version.json` 确认生效版本，并核对首页与静态资源能否加载。部署地点搜索变更后，可用 `/api/v1/places?q=lon&limit=1` 检查伦敦优先排序。
 - 容器、镜像和数据卷需在同一部署主机和 Compose 项目下清点。清理旧镜像时，按镜像 ID 核对运行中及已停止的容器引用，并保留需要用于回滚的版本。不要通过全局 prune 清理同机项目。
 - 当前 PostgreSQL 服务使用 `postgres-data` 卷，文件存储和 Redis 也各有持久卷。只有确认用途、消费者和备份的旧库或旧卷才适合删除。停服务命令保留这些卷。仓库的 `apps/api/migrations/` 是新库初始化和旧库升级所需的迁移链。

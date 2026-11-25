@@ -42,72 +42,82 @@ body:has(.app-shell) .photo-wall-header h2{font-size:26px;font-weight:650;line-h
 .photo-wall-slogan span{white-space:pre-wrap;overflow-wrap:anywhere}
 .photo-wall :is(.photo-wall-slogan,.photo-wall-caption,.photo-wall-manage) svg{flex:none}
 .photo-wall :is(.photo-wall-slogan,.photo-wall-caption).is-empty{color:var(--ow-inkFaint)}
-.photo-wall-grid{display:grid;gap:9px;align-items:start}
-.photo-wall-grid:is(.photo-wall-grid-2,.photo-wall-grid-3){--photo-wall-height:clamp(212px,64vw,326px);grid-template-columns:minmax(0,1fr) minmax(0,1.35fr) minmax(0,1fr)}
-.photo-wall-grid:not(.photo-wall-grid-1) .photo-wall-feature{grid-area:1 / 2;min-width:0;height:var(--photo-wall-height)}
-.photo-wall-grid-3 .photo-wall-left{grid-area:1 / 1}
-.photo-wall-grid .photo-wall-right{grid-area:1 / 3}
-.photo-wall-column{display:grid;align-content:start;gap:13px;min-width:0}
-.photo-wall-grid-3 .photo-wall-column{max-height:var(--photo-wall-height);overflow-y:auto;scroll-snap-type:y proximity;scrollbar-width:thin;scrollbar-color:var(--ow-line) transparent}
+.photo-wall-grid{--photo-wall-height:clamp(212px,64vw,326px);display:grid;gap:9px;align-items:start}
+.photo-wall-grid:not(.photo-wall-grid-1){height:var(--photo-wall-height)}
+.photo-wall-grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.photo-wall-grid:is(.photo-wall-grid-3,.photo-wall-grid-5){grid-template-columns:repeat(3,minmax(0,1fr))}
+.photo-wall-grid:is(.photo-wall-grid-2,.photo-wall-grid-3){grid-template-rows:minmax(0,1fr)}
+.photo-wall-grid:is(.photo-wall-grid-4,.photo-wall-grid-6){grid-template-columns:minmax(0,2fr) minmax(0,1fr);grid-template-rows:minmax(0,1fr)}
+.photo-wall-grid-5{grid-template-rows:repeat(2,minmax(0,1fr))}
+.photo-wall-grid-5>.photo-wall-card:nth-child(2){grid-row:span 2}
+.photo-wall-grid-7{grid-template-columns:minmax(0,1fr) minmax(0,1.35fr) minmax(0,1fr)}
+.photo-wall-grid-7 .photo-wall-feature{grid-area:1 / 2;min-width:0;height:var(--photo-wall-height)}
+.photo-wall-left{grid-area:1 / 1}
+.photo-wall-right{grid-area:1 / 3}
+.photo-wall-column{display:grid;align-content:start;gap:13px;min-width:0;max-height:var(--photo-wall-height);overflow-y:auto;scroll-snap-type:y proximity;scrollbar-width:thin;scrollbar-color:var(--ow-line) transparent}
+.photo-wall-primary{height:var(--photo-wall-height);grid-auto-rows:100%;scroll-snap-type:y mandatory}
 .photo-wall-card{margin:0;min-width:0;scroll-snap-align:start}
-.photo-wall-grid:not(.photo-wall-grid-1) .photo-wall-feature .photo-wall-card{display:grid;grid-template-rows:minmax(0,1fr) auto;height:100%}
+.photo-wall-grid>.photo-wall-card,.photo-wall-primary .photo-wall-card,.photo-wall-grid-7 .photo-wall-feature .photo-wall-card{display:grid;grid-template-rows:minmax(0,1fr) auto;height:100%}
+.photo-wall-grid>.photo-wall-card{grid-template-rows:minmax(0,1fr) 48px}
+.photo-wall-grid>.photo-wall-card .photo-wall-caption{height:100%}
 .photo-wall-image{display:block;overflow:hidden;position:relative;width:100%;aspect-ratio:1;background:var(--ow-raised);padding:0}
 .photo-wall-grid-1 .photo-wall-image{aspect-ratio:4 / 3;max-height:326px}
 .photo-wall-left .photo-wall-card:first-child .photo-wall-image{aspect-ratio:4 / 3}
-.photo-wall-grid:not(.photo-wall-grid-1) .photo-wall-feature .photo-wall-image{height:100%;aspect-ratio:auto}
+.photo-wall-grid>.photo-wall-card .photo-wall-image,.photo-wall-primary .photo-wall-image,.photo-wall-grid-7 .photo-wall-feature .photo-wall-image{height:100%;aspect-ratio:auto}
 .photo-wall-image .cover{position:absolute;inset:0;width:100%;height:100%;border-radius:0;object-fit:cover}
 .photo-wall-caption{justify-content:center;gap:4px;min-height:36px;width:100%;padding:6px 2px;font-size:12px;line-height:1.45;text-align:center;color:var(--ow-ink)}
 .photo-wall-caption span{white-space:pre-wrap;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;overflow:hidden}
+.photo-wall-grid>.photo-wall-card .photo-wall-caption span{-webkit-line-clamp:2}
 .photo-wall-caption svg,.photo-wall-slogan svg{color:var(--ow-accentEnd)}
 .photo-wall-upload{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:126px;border:1px dashed var(--ow-controlOutline);border-radius:12px;color:var(--ow-photoMat);background:var(--ow-upload)}
-.photo-wall button:focus-visible{outline:2px solid var(--ow-focus);outline-offset:-2px}
-.owner-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 12px;padding-top:8px}
-.owner-section-heading+.owner-card-grid{margin-top:10px}
-.owner-content-card{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;min-width:0;min-height:192px;padding:30px 16px 22px;border-radius:26px;background:var(--ow-surface);color:var(--ow-ink);text-align:center}
-.owner-card-add{position:absolute;top:-8px;right:-3px;display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:var(--ow-space);color:var(--ow-starBright);box-shadow:0 0 0 3px var(--ow-bg)}
-.owner-card-symbol{color:var(--ow-inkFaint);margin-bottom:4px;flex:none}
-.owner-content-card>strong{font-size:17px;line-height:1.4;font-weight:600;overflow-wrap:anywhere}
-.owner-content-card>span:not(.owner-card-add){font-size:12px;line-height:1.5;color:var(--ow-inkMuted)}
-.owner-prompt-card.is-filled{align-items:flex-start;justify-content:flex-start;text-align:left}
-.owner-content-card>span.owner-card-eyebrow{font-size:12px;line-height:1.5;color:var(--ow-accentEnd)}
-.owner-content-card>span.owner-card-edit{color:var(--ow-accent)}
-body:has(.app-shell) .owner-prompt-card p.owner-prompt-answer{font-size:15px;line-height:1.65;color:var(--ow-ink);white-space:pre-wrap;overflow-wrap:anywhere;margin:0 0 12px}
-.owner-card-edit{display:inline-flex;align-items:center;gap:6px;margin-top:auto}
-.profile-hobby-cards{display:flex;gap:12px;max-width:100%;min-width:0;padding:14px 6px 9px 0;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:thin;scrollbar-color:var(--ow-line) transparent}
-.profile-hobby-card{position:relative;display:flex;flex:0 0 clamp(144px,46%,208px);flex-direction:column;align-items:flex-start;gap:7px;min-width:0;height:208px;margin:0;padding:18px 14px 14px;border-radius:26px;background:var(--ow-surface);color:var(--ow-ink);text-align:left;overflow:hidden;scroll-snap-align:start}
-.profile-hobby-card-category{display:flex;align-items:center;gap:6px;width:100%;min-height:20px;font-size:12px;line-height:1.5;color:var(--ow-accentEnd)}
-.profile-hobby-card-category>svg{flex:none;color:var(--ow-accentEnd)}
-.profile-hobby-card-title{font-size:17px;font-weight:600;line-height:1.4}
-.profile-hobby-card-names{font-size:14px;line-height:1.5;color:var(--ow-inkMuted)}
-.profile-hobby-card-title,.profile-hobby-card-names,.profile-hobby-card-category>span{display:block;width:100%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.profile-hobby-card-emojis{display:flex;gap:4px;width:100%;overflow:hidden;margin-top:2px;font-size:32px;line-height:1.25}
-.profile-hobby-card-photos{display:grid;flex:none;width:100%;height:84px;grid-auto-rows:minmax(0,1fr);gap:3px;margin-top:2px;overflow:hidden;border-radius:10px}
-.profile-hobby-card-photos img{display:block;width:100%;height:100%;min-width:0;min-height:0;object-fit:cover}
-.profile-hobby-card.owner-interest-card{overflow:visible}
-.profile-hobby-card.owner-hobby-add{background:var(--ow-upload);align-items:center;justify-content:center;padding:30px 12px 22px;text-align:center;overflow:visible}
-.owner-hobby-add .owner-card-symbol,.owner-hobby-add .owner-card-add{color:var(--ow-accent)}
-.profile-hobby-card:focus-visible,.profile-hobby-cards:focus-visible{outline:2px solid var(--ow-focus);outline-offset:-3px}
+.photo-wall :is(button,.photo-wall-primary,.photo-wall-secondary):focus-visible{outline:2px solid var(--ow-focus);outline-offset:-2px}
+.profile-hobby-heading{justify-content:space-between}
+.profile-hobby-cards{position:relative;display:flex;gap:12px;width:100%;min-width:0;margin:10px 0;overflow-x:auto;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:none}
+.profile-hobby-card{flex:0 0 100%;min-width:0;box-sizing:border-box;align-self:flex-start;padding:8px 8px 12px;border-radius:20px;background:var(--ow-surface);color:var(--ow-ink);scroll-snap-align:start}
+.profile-hobby-media{position:relative;width:100%;aspect-ratio:1.88;overflow:hidden;border-radius:15px;background:var(--ow-upload)}
+.profile-hobby-card-photos{position:absolute;inset:0;height:100%;overflow-y:auto;overflow-x:hidden;scroll-snap-type:y mandatory;scrollbar-width:none}
+.profile-hobby-cards::-webkit-scrollbar,.profile-hobby-card-photos::-webkit-scrollbar{display:none}
+.profile-hobby-card-photos img{display:block;width:100%;height:100%;object-fit:cover;scroll-snap-align:start;scroll-snap-stop:always}
+.profile-hobby-photo-position{position:absolute;right:8px;top:50%;transform:translateY(-50%);display:grid;gap:6px;padding:6px 4px;border-radius:14px;background:rgb(18 17 18 / .68);pointer-events:none}
+.profile-hobby-photo-position>span{width:5px;height:5px;border:1px solid var(--ow-ink);border-radius:50%;background:var(--ow-ink)}
+.profile-hobby-photo-position[data-dense=true]{display:flex;flex-direction:column;gap:0;max-height:88%;box-sizing:border-box}
+.profile-hobby-photo-position[data-dense=true]>span{min-height:0;box-sizing:border-box}
+.profile-hobby-photo-position>[data-active=true]{background:var(--ow-accent);border-color:var(--ow-accent);transform:scale(1.25)}
+.profile-hobby-card-emojis{display:flex;align-items:center;justify-content:center;gap:8px;font-size:34px}
+.profile-hobby-card-copy{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;margin:9px 2px 0}
+.profile-hobby-card-tags{display:flex;flex-wrap:wrap;gap:6px;max-width:100%;min-width:0;margin:0;padding:0;list-style:none}
+.profile-hobby-card-tags>li{max-width:100%;min-width:0;overflow-wrap:anywhere;padding:3px 10px;border-radius:999px;background:var(--ow-raised);color:var(--ow-accent);font-size:12px;line-height:1.5}
+body:has(.app-shell) .profile-hobby-card .profile-hobby-card-intro{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;flex:1 1 8ch;min-width:0;overflow:hidden;overflow-wrap:anywhere;white-space:normal;margin:0;color:var(--ow-ink);font-size:14px;line-height:1.5}
+.profile-hobby-card-edit,.profile-hobby-add{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:40px;color:var(--ow-accent)}
+.profile-hobby-card-edit{min-width:40px;margin-right:-8px}
+.profile-hobby-add{padding:4px 10px;font-size:13px}
+.profile-hobby-add.owner-interest-card{margin-top:8px;border-radius:20px;background:var(--ow-upload)}
+:is(.profile-hobby-card-edit,.profile-hobby-add,.profile-hobby-cards,.profile-hobby-card-photos):focus-visible{outline:2px solid var(--ow-focus);outline-offset:-3px}
 body:has(.app-shell) .owner-profile-page .profile-management{margin:0;padding:0;border-top:1px solid var(--ow-line)}
-@media(max-width:360px){.owner-identity{gap:12px}.owner-avatar-stack{width:60px;height:78px}.owner-content-card{min-height:174px;padding:28px 12px 18px}.photo-wall-grid{gap:7px}}
-@media(prefers-reduced-motion:no-preference){.owner-content-card,.owner-toolbar button{transition:background-color .16s ease}.owner-content-card:hover{background:var(--ow-raised)}}
+@media(max-width:360px){.owner-identity{gap:12px}.owner-avatar-stack{width:60px;height:78px}.photo-wall-grid{gap:7px}}
+@media(prefers-reduced-motion:no-preference){.owner-toolbar button{transition:background-color .16s ease}}
 
-.card-photo-editor-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.card-photo-editor-grid>article{min-width:0;background:var(--ow-raised);border-radius:16px;overflow:hidden}
-.card-photo-editor-grid .cover{width:100%;height:150px;object-fit:cover}
-.photo-wall-photo-actions{display:flex;justify-content:space-around}
-.profile-card-editor .photo-wall-field{display:grid;gap:6px;font-size:13px;color:var(--ow-inkMuted)}
-.card-photo-editor-grid .photo-wall-field{padding:10px 8px 0}
-.photo-wall-field textarea{width:100%;min-width:0;resize:vertical}
-.photo-wall-field-heading{display:flex;align-items:center;justify-content:space-between;gap:6px}
-.photo-wall-field-heading label{min-width:0;overflow-wrap:anywhere}
-.photo-wall-feature-toggle{display:inline-flex;align-items:center;justify-content:center;flex:none;gap:4px;min-height:34px;padding:4px 8px;border:1px solid var(--ow-line);border-radius:20px;color:var(--ow-inkMuted);font-size:12px}
-.photo-wall-feature-toggle[aria-pressed="true"]{border-color:var(--ow-accent);color:var(--ow-accent)}
+body:has(.app-shell) .modal.profile-gallery-editor{background:var(--ow-bg)}
+body:has(.app-shell) .profile-gallery-editor .photo-wall-field{display:grid;gap:8px;color:var(--ow-accentEnd);font-size:13px}
+.profile-gallery-editor .profile-card-editor{min-width:0}
+.profile-gallery-editor .photo-wall-field textarea{width:100%;min-width:0;border:1px solid var(--ow-controlOutline);background:var(--ow-raised);color:var(--ow-ink)}
+.profile-gallery-editor .photo-wall-field textarea::placeholder{color:var(--ow-inkMuted);opacity:1}
+.card-photo-editor-grid{position:relative;display:grid;grid-auto-flow:column;grid-auto-columns:clamp(144px,46%,208px);gap:12px;min-width:0;max-width:100%;padding-bottom:7px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:thin;scrollbar-color:var(--ow-controlOutline) transparent}
+.card-photo-editor-grid>article{min-width:0;padding:8px;border:1px solid var(--ow-line);border-radius:16px;background:var(--ow-surface);scroll-snap-align:start}
+.card-photo-editor-grid .cover{display:block;width:100%;height:clamp(104px,34vw,144px);border-radius:10px;object-fit:cover}
+.card-photo-editor-grid .photo-wall-caption-editor{padding-top:8px}
+.card-photo-editor-grid .photo-wall-caption-editor textarea{height:72px;min-height:72px;padding:9px;resize:none;font-size:16px;line-height:1.4}
+.photo-wall-feature-toggle{display:inline-flex;align-items:center;justify-content:center;justify-self:start;gap:4px;max-width:100%;min-height:34px;padding:4px 8px;border:1px solid var(--ow-line);border-radius:18px;background:var(--ow-upload);color:var(--ow-accentEnd);font-size:12px}
+.photo-wall-feature-toggle svg{flex:none}
+.photo-wall-feature-toggle[aria-pressed="true"]{border-color:var(--ow-accent);background:var(--ow-accent);color:var(--ow-accentInk)}
 .photo-wall-feature-toggle[aria-pressed="true"] svg{fill:currentColor}
-.photo-wall-feature-toggle:focus-visible{outline:2px solid var(--ow-focus);outline-offset:2px}
-@media(max-width:460px){.card-photo-editor-grid{grid-template-columns:minmax(0,1fr)}}
-.card-prompt-editor-row{position:relative;display:flex;flex-direction:column;gap:12px;padding:16px;background:var(--ow-raised);border-radius:16px}
-.card-prompt-editor-row>label:first-child{padding-right:32px}
-.card-prompt-editor-row>.icon-button{position:absolute;top:8px;right:8px;color:var(--ow-nope)}
+.photo-wall-photo-actions{display:flex;justify-content:space-between;gap:4px;margin-top:8px}
+.profile-gallery-editor .photo-wall-photo-actions .icon-button{flex:1;min-width:0;min-height:40px;padding:5px;border-radius:10px;background:var(--ow-raised);color:var(--ow-accentEnd)}
+.profile-gallery-editor .photo-wall-photo-actions .icon-button:last-child{color:var(--ow-danger)}
+.profile-gallery-editor .photo-wall-photo-actions .icon-button:disabled{color:var(--ow-inkFaint)}
+.profile-gallery-editor .file-button{border-color:var(--ow-line);background:var(--ow-upload);color:var(--ow-photoMat)!important}
+.profile-gallery-editor .file-button svg{color:var(--ow-accent)}
+.profile-gallery-editor :is(.card-photo-editor-grid,button,textarea):focus-visible{outline:2px solid var(--ow-focus);outline-offset:-2px}
 
 .profile-detail-items{display:flex;flex-direction:column;gap:2px}
 .profile-detail-items>button{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:68px;padding:12px;background:var(--ow-raised);border-radius:14px;text-align:left}
@@ -141,11 +151,128 @@ body:has(.app-shell) .service-cities-search input{min-width:0;flex:1;border:0;ba
 
 .service-cities-search input::-webkit-search-cancel-button{appearance:none;-webkit-appearance:none}
 
-.owner-about-grid .owner-prompt-answer{display:-webkit-box;-webkit-line-clamp:7;-webkit-box-orient:vertical;overflow:hidden}
-.owner-caption-card.is-filled{align-items:flex-start;justify-content:flex-start;text-align:left;padding:10px 10px 18px;gap:10px}
-.owner-caption-card>.cover{width:100%;height:125px;object-fit:cover;border-radius:19px}
-body:has(.app-shell) .owner-caption-card>p{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px;line-height:1.55;margin:0 6px;color:var(--ow-ink)}
-.owner-caption-card.is-filled>span:not(.owner-card-add){margin-inline:6px}
+.owner-about-heading {
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+.owner-about-controls {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.owner-about-controls .icon-button, .owner-about .owner-about-edit {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--ow-space);
+  color: var(--ow-accent);
+}
+.owner-about-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 44px;
+  margin-left: 4px;
+  color: var(--ow-accent);
+  font-size: 13px;
+  white-space: nowrap;
+}
+.owner-about-track {
+  --about-gap: 12px;
+  position: relative;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: calc((100% - var(--about-gap)) / 2);
+  gap: var(--about-gap);
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 6px;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ow-line) transparent;
+}
+.owner-about-track.is-dragging {
+  scroll-snap-type: none;
+  cursor: grabbing;
+  user-select: none;
+}
+.owner-about-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: clamp(242px, 65vw, 288px);
+  padding: 0;
+  overflow: hidden;
+  border-radius: 16px;
+  background: var(--ow-surface);
+  color: var(--ow-ink);
+  text-align: left;
+  scroll-snap-align: start;
+}
+.owner-about-image {
+  position: relative;
+  display: block;
+  flex: 0 0 47%;
+  width: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--ow-upload);
+}
+.owner-about-image > .cover {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+  object-fit: cover;
+}
+:is(.owner-about-photo, .owner-about-card.is-image-only) .owner-about-image { flex: 1; }
+.owner-about-copy {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 7px;
+  min-height: 0;
+  padding: 10px 12px 14px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ow-line) transparent;
+}
+.owner-about-bio .owner-about-copy { padding-top: 49px; }
+.owner-about-label {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ow-accentEnd);
+  overflow-wrap: anywhere;
+}
+.owner-about-rule {
+  flex: none;
+  width: 26px;
+  height: 1px;
+  background: var(--ow-accentEnd);
+}
+body:has(.app-shell) .owner-about-copy p {
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+  color: var(--ow-ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.owner-about .owner-about-edit {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+.owner-about :is(button,.owner-about-track,.owner-about-copy):focus-visible {
+  outline: 2px solid var(--ow-focus);
+  outline-offset: -2px;
+}
 .profile-photo-story{margin:0;display:flex;flex-direction:column;gap:14px}
 .profile-photo-story>.cover{width:100%;max-height:420px;object-fit:cover;border-radius:16px}
 .profile-photo-story>figcaption{font-size:16px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere}
@@ -185,7 +312,7 @@ body:has(.app-shell) .profile-caption-upload:hover{background:color-mix(in srgb,
 body:has(.app-shell) .profile-caption-upload:focus-within{outline:2px solid var(--ow-focus);outline-offset:3px}
 body:has(.app-shell) .profile-caption-upload[aria-disabled=true]{opacity:1;cursor:wait}
 .profile-caption-label{display:block}
-body:has(.app-shell) .profile-about-editor-body>select{width:100%;max-width:100%;background:var(--ow-surface);color:var(--ow-ink);border:1px solid var(--ow-controlOutline);margin-bottom:14px;padding:12px;font-size:15px}
+body:has(.app-shell) .profile-caption-title{width:100%;max-width:100%;background:var(--ow-surface);color:var(--ow-ink);border:1px solid var(--ow-controlOutline);margin-bottom:14px;padding:12px;font-size:15px}
 body:has(.app-shell) .profile-about-editor-body>.button.ghost{margin-top:16px;color:var(--ow-danger)}
 
 
@@ -257,11 +384,28 @@ body:has(.app-shell) .profile-hobbies-sheet button:focus-visible,body:has(.app-s
 .profile-hobby-more{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:44px;padding:12px 0;margin-top:14px;color:var(--ow-accentEnd);font-size:13px}
 .profile-hobby-more>span{flex:1;height:1px;background:var(--ow-line)}
 .profile-hobbies-scroll>.error-box{margin:0 0 20px}
-.profile-hobby-image-editor{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:8px 12px;margin:0 0 16px;padding:12px 14px;border-radius:16px;background:var(--ow-surface);color:var(--ow-ink);font-size:14px}
-.profile-hobby-image-editor select{width:100%;min-width:0;padding:8px;border:1px solid var(--ow-controlOutline);border-radius:10px;background:var(--ow-raised);color:var(--ow-ink)}
-.profile-hobby-image-actions{display:flex;align-items:center;flex-wrap:wrap;grid-column:1 / -1;gap:6px}
-.profile-hobby-image-actions button{display:inline-flex;align-items:center;gap:5px;min-height:40px;padding:5px 10px;border-radius:20px;background:var(--ow-raised);color:var(--ow-accent)}
+.profile-hobby-image-editor{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin:0 0 16px;padding:13px 14px;border:1px solid var(--ow-line);border-radius:16px;background:var(--ow-surface);color:var(--ow-ink);font-size:14px}
+body:has(.app-shell) .profile-hobby-image-heading{margin:0;font-size:14px;font-weight:600;color:var(--ow-accentEnd);letter-spacing:0}
+.profile-hobby-image-choices{position:relative;display:flex;gap:6px;min-width:0;padding:4px;overflow-x:auto;overscroll-behavior-x:contain;border-radius:14px;background:var(--ow-bg);scrollbar-width:thin;scrollbar-color:var(--ow-controlOutline) transparent}
+.profile-hobby-image-choices button{display:inline-flex;flex:0 0 auto;align-items:center;gap:5px;max-width:100%;min-height:44px;padding:6px 13px;border-radius:10px;background:var(--ow-raised);color:var(--ow-inkMuted)}
+.profile-hobby-image-choices button>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.profile-hobby-image-choices svg{flex:none}
+.profile-hobby-image-choices button[aria-pressed="true"]{background:var(--ow-accent);color:var(--ow-accentInk)}
+.profile-hobby-image-choices button[aria-pressed="true"]:hover:not(:disabled){background:var(--ow-accentHover)}
+body:has(.app-shell) .profile-hobby-image-choices button:focus-visible{outline-offset:-2px;outline-color:var(--ow-focus)}
+body:has(.app-shell) .profile-hobby-image-choices button[aria-pressed="true"]:focus-visible{outline-color:var(--ow-accentInk)}
+.profile-hobby-image-actions{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+.profile-hobby-image-actions button{display:inline-flex;align-items:center;gap:5px;min-height:40px;padding:5px 10px;border-radius:10px;background:var(--ow-raised);color:var(--ow-photoMat)}
+.profile-hobby-image-actions .profile-hobby-image-upload{background:var(--ow-upload);color:var(--ow-accent)}
+.profile-hobby-image-actions .profile-hobby-image-remove{color:var(--ow-danger)}
 .profile-hobby-image-actions img{flex:none;width:58px;height:42px;border-radius:7px;object-fit:cover}
+.profile-hobby-image-list{display:grid;gap:6px;list-style:none;padding:0;margin:0}
+.profile-hobby-image-list>li{padding:6px;border:1px solid var(--ow-line);border-radius:12px;background:var(--ow-bg)}
+.profile-hobby-image-count{padding:3px 7px;border-radius:6px;background:var(--ow-raised);color:var(--ow-inkMuted);font-size:12px;font-variant-numeric:tabular-nums}
+.profile-hobby-intro-field{display:grid;gap:6px;color:var(--ow-accentEnd)}
+.profile-hobby-intro-field textarea{width:100%;box-sizing:border-box;resize:vertical;background:var(--ow-raised);color:var(--ow-ink)}
+
+
 body:has(.app-shell) .profile-hobbies-sheet .error-box{background:color-mix(in srgb,var(--ow-danger) 16%,var(--ow-surface));color:var(--ow-danger)}
 body:has(.app-shell) .profile-hobbies-sheet .empty{color:var(--ow-ink)}
 body:has(.app-shell) .profile-hobbies-sheet .empty p{color:var(--ow-inkMuted)}

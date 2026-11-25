@@ -48,17 +48,53 @@ const tapCountryTwice=async(name,lat,lng)=>{
 try{
  await page.goto('http://127.0.0.1:5187/globe/index.html');
  await page.waitForFunction(()=>window.__events.some(e=>e.event==='rendererReady'));
+ await page.mouse.click(10,10);
+ await page.waitForFunction(()=>window.__events.some(e=>e.event==='cameraChanged'));
+ const initialAltitude=await page.evaluate(()=>window.__events.find(e=>e.event==='cameraChanged').data.altitude);
+ const waitForOverview=()=>page.waitForFunction(altitude=>window.__events.some(
+  e=>e.event==='cameraChanged'&&Math.abs(e.data.altitude-altitude)<.01
+ ),initialAltitude);
  // New Zealand anchors inland on the North Island: an archipelago's centroid often
  // falls in open water at 1:110m resolution.
  for(const [name,lat,lng]of [['Germany',51,10],['Indonesia',-7.6,110.2],['New Zealand',-38.4,176.0]]){
   const selection=await tapCountryTwice(name,lat,lng);
   countries.push({name,lat,lng,geoId:selection.geoId,selected:true,tap:true,twoStep:true});
  }
- // Camera manipulation requires focusing again even when the country stays highlighted.
+ // Compare rendered frames after the camera settles, with background twinkles hidden.
+ await page.addStyleTag({content:'#twinkle{visibility:hidden}'});
+ const canvas=page.locator('#globe canvas');
+ const firstFocus={lat:-38.4,lng:176,altitude:2.8};
+ await page.mouse.click(10,10);
+ await page.evaluate(()=>window.__events=[]);
+ await tapGlobe(195,422,firstFocus);
+ await page.waitForFunction(()=>window.__events.some(e=>e.event==='cameraChanged'&&Math.abs(e.data.altitude-1.1)<.02));
+ const locked=await canvas.screenshot();
+ await page.waitForTimeout(500);
+ assert(locked.equals(await canvas.screenshot()),'the first country tap stops rotation after focusing');
  await page.mouse.move(195,422);await page.mouse.down();await page.mouse.move(260,440,{steps:5});await page.mouse.up();
+ assert(locked.equals(await canvas.screenshot()),'dragging while locked leaves the country in place');
+ await page.evaluate(()=>window.__events=[]);
+ await page.mouse.click(10,10);
+ await waitForOverview();
+ const unlocked=await canvas.screenshot();
+ await page.waitForTimeout(500);
+ assert(!unlocked.equals(await canvas.screenshot()),'clicking the surrounding sky restores the original size and then resumes autorotation');
  await tapCountryTwice('New Zealand',-38.4,176.0);
- await page.locator('#globe canvas').dispatchEvent('wheel',{deltaY:80,bubbles:true});
+ await page.evaluate(()=>window.__events=[]);
+ await tapGlobe(195,422,{lat:0,lng:-140,altitude:2.8});
+ await waitForOverview();
+ const ocean=await canvas.screenshot();
+ await page.waitForTimeout(500);
+ assert(!ocean.equals(await canvas.screenshot()),'clicking the ocean restores the original size and resumes autorotation');
+ await page.emulateMedia({reducedMotion:'reduce'});
  await tapCountryTwice('New Zealand',-38.4,176.0);
+ await page.evaluate(()=>window.__events=[]);
+ await command('clearCountryFocus',{});
+ await waitForOverview();
+ const reducedOverview=await canvas.screenshot();
+ await page.waitForTimeout(250);
+ assert(reducedOverview.equals(await canvas.screenshot()),'reduced motion returns to the overview while keeping it still');
+ await page.emulateMedia({reducedMotion:'no-preference'});
  for(const [name,lat,lng] of [['Russia',66,179]]){
   await page.evaluate(()=>window.__events=[]);
   await command('focusPlace',{place:{id:`probe-${name.toLowerCase().replace(/ /g,'-')}`,kind:'country',name:{zh:name,en:name},lat,lng}});
@@ -87,6 +123,6 @@ try{
   await page.screenshot({path:resolve(output,`earth-ready-${viewport.width}.png`)});
  }
  assert.deepEqual(errors,[]);assert.deepEqual(external,[]);
- const report={countries,twoStepCountrySelection:true,dragAndZoomResetCountryFocus:true,focusCompletesBeforeFreeze:true,inactiveGlobeIgnoresTouch:true,externalRequests:external,errors,device:false};
+ const report={countries,twoStepCountrySelection:true,countryLocksUntilAnotherClick:true,overviewSizeRestoredOnUnlock:true,focusCompletesBeforeFreeze:true,inactiveGlobeIgnoresTouch:true,externalRequests:external,errors,device:false};
  await writeFile(resolve(output,'globe-report.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report));
 }catch(error){await page.screenshot({path:resolve(output,'globe-test-failure.png')}).catch(()=>{});console.error(JSON.stringify({errors,external,countries,events:await page.evaluate(()=>window.__events).catch(()=>null),url:page.url()}));throw error;}finally{await browser.close();await server.httpServer.close();}
