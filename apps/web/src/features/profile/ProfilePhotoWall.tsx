@@ -56,7 +56,7 @@ export function ProfilePhotoWall({layout, photos, onOpenPhoto, onEdit}: {
     tabIndex={secondary.length > 1 ? 0 : undefined} aria-label={t('普通照片','Other photos')}>
     {secondary.map(photoCard)}
    </div>}
-  </div> : <button type="button" className="photo-wall-upload" onClick={() => onEdit()}>
+  </div> : <button type="button" className="photo-wall-upload profile-empty-action" onClick={() => onEdit()}>
    <ImagePlus size={24} aria-hidden="true" />{t('添加照片', 'Add photos')}
   </button>}
  </section>;

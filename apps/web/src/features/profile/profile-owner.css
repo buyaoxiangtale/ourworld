@@ -73,7 +73,9 @@ body:has(.app-shell) .photo-wall-header h2{font-size:26px;font-weight:650;line-h
 .photo-wall-grid.is-aligned .photo-wall-image{height:100%;min-height:0}
 .photo-wall-grid.is-aligned .photo-wall-image .cover{height:100%;min-height:0;max-height:none}
 .photo-wall-slogan svg{color:var(--ow-accentEnd)}
-.photo-wall-upload{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:126px;border:1px dashed var(--ow-controlOutline);border-radius:12px;color:var(--ow-photoMat);background:var(--ow-upload)}
+.profile-empty-action{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:126px;border:1px dashed var(--ow-controlOutline);border-radius:12px;color:var(--ow-photoMat);background:var(--ow-upload)}
+.profile-empty-action svg{flex:none;color:var(--ow-accent)}
+.profile-empty-action:focus-visible{outline:2px solid var(--ow-focus);outline-offset:-2px}
 .photo-wall :is(button,.photo-wall-primary,.photo-wall-secondary):focus-visible{outline:2px solid var(--ow-focus);outline-offset:-2px}
 .profile-hobby-heading{justify-content:space-between}
 .profile-hobby-cards{position:relative;display:flex;gap:12px;width:100%;min-width:0;margin:10px 0;overflow-x:auto;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:none}
@@ -95,7 +97,7 @@ body:has(.app-shell) .profile-hobby-card .profile-hobby-card-intro{display:-webk
 .profile-hobby-card-edit,.profile-hobby-add{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:40px;color:var(--ow-accent)}
 .profile-hobby-card-edit{min-width:40px;margin-right:-8px}
 .profile-hobby-add{padding:4px 10px;font-size:13px}
-.profile-hobby-add.owner-interest-card{margin-top:8px;border-radius:20px;background:var(--ow-upload)}
+.profile-hobby-empty{width:calc(100% - 12px);margin:10px 6px 0}
 :is(.profile-hobby-card-edit,.profile-hobby-add,.profile-hobby-cards,.profile-hobby-card-photos):focus-visible{outline:2px solid var(--ow-focus);outline-offset:-3px}
 body:has(.app-shell) .owner-profile-page .profile-management{margin:0;padding:0;border-top:1px solid var(--ow-line)}
 @media(max-width:360px){.owner-identity{gap:12px}.owner-avatar{width:66px;border-radius:16px}.photo-wall-grid{gap:7px}}
@@ -332,7 +334,6 @@ body:has(.app-shell) .profile-hobbies-sheet .empty p{color:var(--ow-inkMuted)}
 .profile-photo-dots>button[aria-current=true]>span{width:17px;background:var(--ow-accent)}
 
 body:has(.app-shell) :is(.profile-about-save,.profile-hobbies-save):hover:not(:disabled){background:var(--ow-accentHover)}
-.photo-wall-upload svg{color:var(--ow-accent)}
 .profile-about-text-field:has(textarea:focus-visible),.profile-hobbies-search:has(input:focus-visible){
  outline:2px solid var(--ow-focus);outline-offset:3px
 }

@@ -204,9 +204,27 @@ try{
    await dialog.waitFor({state:'hidden'});
    await arts.locator('.profile-hobby-card-emojis').waitFor();
    check(await arts.locator('img').count()===0,'removing all photos restores the default Emoji');
-   user.tags=[];await page.reload();await page.locator('.bottom-nav button[data-tab="profile"]').click();await page.locator('.owner-name').waitFor();dialog=await open();
+   user.tags=[];await page.reload();await page.locator('.bottom-nav button[data-tab="profile"]').click();await page.locator('.owner-name').waitFor();
+   const emptyHobbies=page.getByRole('button',{name:'新增爱好',exact:true});
+   check(await emptyHobbies.evaluate(button=>{
+    const photos=document.querySelector('.photo-wall-upload');
+    const a=button.getBoundingClientRect(),b=photos.getBoundingClientRect();
+    const hobbiesStyle=getComputedStyle(button),photoStyle=getComputedStyle(photos);
+    return Math.abs(a.width-b.width)<1&&Math.abs(a.height-b.height)<1&&Math.abs(a.left-b.left)<1&&
+     hobbiesStyle.borderTopStyle==='dashed'&&hobbiesStyle.backgroundColor===photoStyle.backgroundColor;
+   }),'empty hobbies and footprints use the same full-width dashed card');
+   await emptyHobbies.press('Enter');
+   dialog=page.getByRole('dialog',{name:'我的爱好',exact:true});
+   await dialog.waitFor();
    check(await dialog.locator('.profile-hobby-pills>button').first().evaluate(element=>getComputedStyle(element).backgroundColor!==getComputedStyle(element.closest('.profile-hobby-category')).backgroundColor),'hobby chips have a visible background distinct from their category');
-   await page.screenshot({path:resolve(out,'hobbies-empty.png'),animations:'disabled'});await dialog.getByRole('button',{name:'取消',exact:true}).click();
+   await page.screenshot({path:resolve(out,'hobbies-empty.png'),animations:'disabled'});
+   await dialog.getByRole('searchbox').fill('摄影');
+   await dialog.getByRole('checkbox',{name:'摄影',exact:true}).click();
+   await dialog.getByRole('button',{name:'保存爱好',exact:true}).click();
+   await dialog.waitFor({state:'hidden'});
+   await page.locator('.profile-hobby-card').waitFor();
+   check(await page.locator('.profile-hobby-empty').count()===0&&await emptyHobbies.count()===1,
+    'saving the first hobby replaces the empty card with the compact add control');
    user.tags=Array.from({length:12},(_,index)=>`原有爱好 ${index+1}`);await page.reload();await page.locator('.bottom-nav button[data-tab="profile"]').click();await page.locator('.owner-name').waitFor();dialog=await open();
    check(await dialog.getByLabel('已选爱好数量',{exact:true}).innerText()==='12/10'&&await dialog.getByRole('button',{name:'保存爱好',exact:true}).isDisabled(),`legacy profiles with more than ten hobbies are preserved and can be reduced explicitly`);
    await dialog.locator('[role=checkbox][aria-checked=true]').first().click();await dialog.locator('[role=checkbox][aria-checked=true]').first().click();check(await dialog.getByRole('button',{name:'保存爱好',exact:true}).isEnabled(),'legacy selections can be reduced to the new limit without truncation');await dialog.getByRole('button',{name:'取消',exact:true}).click();

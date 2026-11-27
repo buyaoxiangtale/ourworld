@@ -66,8 +66,8 @@ export function ProfileHobbyCards({tags,layout,onEdit,headingId}:{tags:string[];
     </article>;
    })}
   </div>}
-  {onEdit&&<button type="button" className={`profile-hobby-add owner-hobby-add${groups.length?'':' owner-interest-card'}`} onClick={onEdit}>
-   {groups.length?<Plus size={16}/>:<Heart size={19}/>} {t('新增爱好','Add hobbies')}
+  {onEdit&&<button type="button" className={groups.length?'profile-hobby-add owner-hobby-add':'profile-empty-action profile-hobby-empty owner-hobby-add owner-interest-card'} onClick={onEdit}>
+   {groups.length?<Plus size={16} aria-hidden="true"/>:<Heart size={24} aria-hidden="true"/>} {t('新增爱好','Add hobbies')}
   </button>}
  </>;
 }
