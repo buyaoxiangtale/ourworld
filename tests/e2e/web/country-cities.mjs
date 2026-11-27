@@ -23,7 +23,11 @@ try{
     if(url.searchParams.has('parentId')){cityRequests++;if(fail){fail=false;return route.fulfill({status:503,json:{message:'城市暂时无法加载'}});}return route.fulfill({json:{items:mode==='empty'?[]:mode==='single'?cities.slice(0,1):cities}});}
     return route.fulfill({json:{items:url.searchParams.get('kind')==='country'?[country]:cities}});
    }
-   if(path.startsWith('/api/v1/places/'))return route.fulfill({json:[country,...cities].find(place=>path.endsWith('/'+place.id))||country});
+   if(path.startsWith('/api/v1/places/')){
+    const place=[country,...cities].find(place=>path.endsWith('/'+place.id))||country;
+    const description=place.id==='city-lyon'?{...place.description,zh:(place.description.zh+'\n\n').repeat(24)}:place.description;
+    return route.fulfill({json:{...place,description}});
+   }
    return route.fulfill({json:{items:[]}});
   });
   const page=await context.newPage();currentPage=page;page.on('pageerror',error=>errors.push(error.message));await page.goto(base);
@@ -38,6 +42,9 @@ try{
   const closeCards=async()=>{await cards().getByRole('button',{name:'返回国家信息',exact:true}).click();await page.locator('.country-cities-page').waitFor({state:'hidden'});await page.getByRole('dialog',{name:'法国',exact:true}).getByRole('button',{name:'Close',exact:true}).click();};
   await openCountry();const modal=page.getByRole('dialog',{name:'法国',exact:true}),modalBox=await modal.boundingBox();
   check(await modal.evaluate(el=>el.classList.contains('modal'))&&modalBox.y>0,`${width}: country information is a centered modal`);
+  check(await page.locator('.home-search').isHidden(),`${width}: the home search outline is hidden behind country information`);
+  check(await modal.locator('.modal-footer').getByRole('button').count()===1,`${width}: country information has one footer action`);
+  check(await modal.getByRole('button',{name:'切换语言'}).count()===0,`${width}: country information uses the interface language`);
   check(await modal.locator('.place-detail-description>p').count()===2&&await modal.locator('.place-result').count()===0,`${width}: modal shows country paragraphs without a city list`);
   check(cityRequests===0,`${width}: cities load only after entering the browser`);
   await modal.getByRole('button',{name:'浏览城市',exact:true}).click();await cards().waitFor();await cards().locator('.country-city-card').first().waitFor();
@@ -50,13 +57,38 @@ try{
   await cards().locator('.country-city-track').focus();await page.keyboard.press('ArrowRight');await position(3);
   check(await cards().getByRole('button',{name:'下一座城市',exact:true}).isDisabled(),`${width}: keyboard navigation reaches the last card without wrapping`);
   await page.keyboard.press('ArrowLeft');await position(2);
+  const browserLayout=()=>page.locator('.country-city-track').evaluate(track=>{
+   const card=track.querySelector('.is-active');
+   return {track:track.getBoundingClientRect().toJSON(),card:card.getBoundingClientRect().toJSON(),left:track.scrollLeft};
+  });
+  await page.locator('.country-city-card.is-active').evaluate(card=>Promise.all(card.getAnimations().map(animation=>animation.finished)));
+  const beforeDetails=await browserLayout();
   await cards().locator('.country-city-card.is-active').getByRole('button',{name:'查看城市',exact:true}).click();
   const city=page.getByRole('dialog',{name:'里昂',exact:true});await city.waitFor();check(await city.getByRole('button',{name:'找当地人',exact:true}).isVisible(),`${width}: viewing a card opens the existing city details`);
+  assert.deepEqual(await browserLayout(),beforeDetails,`${width}: the carousel keeps its layout behind city details`);
+  check(await city.getByRole('button',{name:'切换语言'}).count()===0,`${width}: city information uses the interface language`);
   await page.screenshot({path:resolve(out,`city-details-${width}.png`),animations:'disabled'});
   const cityBounds=await city.boundingBox(),appBounds=await page.locator('.mobile-app').boundingBox();
   check(Math.abs(cityBounds.y-appBounds.y)<3&&cityBounds.height>=appBounds.height-4,`${width}: city details fill the complete app viewport`);
+  check(await city.evaluate(el=>el.closest('.city-detail-layer').parentElement.classList.contains('mobile-app')),`${width}: city details are outside the carousel clipping container`);
+  if(width===390){
+   const description=city.locator('.place-detail-description');
+   await description.locator('p').nth(23).waitFor({state:'attached'});
+   check(await description.evaluate(el=>el.scrollHeight>el.clientHeight),`${width}: long city descriptions scroll inside their region`);
+   const actions=await city.locator('.city-actions').boundingBox();
+   check(actions.y+actions.height<=cityBounds.y+cityBounds.height,`${width}: city actions fit on the first screen`);
+   const descriptionBounds=await description.boundingBox();
+   check(actions.y-descriptionBounds.y-descriptionBounds.height<=16,`${width}: the city actions follow the description`);
+   check(await city.locator('.city-actions>.button').evaluateAll(buttons=>buttons.every(button=>{
+    const {x,y,width,height}=button.getBoundingClientRect();
+    return button.contains(document.elementFromPoint(x+width/2,y+height-2));
+   })),`${width}: both city actions are fully exposed for tapping`);
+   await description.evaluate(el=>{el.scrollTop=el.scrollHeight;});
+   assert.deepEqual(await city.locator('.city-actions').boundingBox(),actions,`${width}: scrolling the description leaves actions in place`);
+  }
   check(await page.locator('.bottom-nav').isHidden(),`${width}: city details use the navigation area too`);
-  await city.getByRole('button',{name:'返回城市卡片',exact:true}).click();await city.waitFor({state:'hidden'});await position(2);
+  await city.getByRole('button',{name:'返回城市列表',exact:true}).click();await city.waitFor({state:'hidden'});await position(2);
+  assert.deepEqual(await browserLayout(),beforeDetails,`${width}: returning keeps the same carousel frame and scroll position`);
   check(await page.locator('.bottom-nav').isVisible(),`${width}: returning from full-screen details restores navigation`);
   check(await cards().isVisible(),`${width}: returning from city details keeps the browser position`);
   await cards().getByRole('button',{name:'上一座城市',exact:true}).click();await position(1);

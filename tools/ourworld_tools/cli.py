@@ -113,15 +113,15 @@ def parser() -> argparse.ArgumentParser:
         "prepare": "生成设计令牌、API 文档及三端地球资源",
         "check": "运行类型检查、单元测试和 Python 工具检查",
         "browsers": "安装浏览器测试使用的 Chromium",
-        "logs": "查看前端自动部署日志",
-        "watch": "启动或更新前端自动部署服务",
+        "logs": "查看网关和 API 日志",
+        "watch": "启动本地前端热更新预览",
     }.items():
         commands.add_parser(name, help=help_text)
     dev = commands.add_parser("dev", help="启动本地开发进程")
     dev.add_argument("app", choices=["web", "api", "worker"])
     tests = commands.add_parser("test", help="运行指定测试组")
     tests.add_argument("suite", choices=["unit", "tools", "web", "integration"])
-    tests.add_argument("name", nargs="?", help="web 脚本名，或 api/catalog/recovery/frontend-watch")
+    tests.add_argument("name", nargs="?", help="web 脚本名，或 api/catalog/recovery/frontend-release")
     tests.add_argument(
         "--execute", action="store_true", help="执行 recovery 套件的实际本地故障注入"
     )
@@ -158,19 +158,10 @@ def main(argv: list[str] | None = None) -> None:
         elif args.command == "browsers":
             node("node_modules/playwright/cli.js", "install", "chromium", env=browser_env())
         elif args.command == "logs":
-            run("docker", "compose", "logs", "-f", "--tail=80", "frontend-watch")
+            run("docker", "compose", "logs", "-f", "--tail=80", "gateway", "api")
         elif args.command == "watch":
-            run(
-                "docker",
-                "compose",
-                "up",
-                "-d",
-                "--build",
-                "--no-deps",
-                "--wait",
-                "frontend-watch",
-                "gateway",
-            )
+            run("npm", "run", "prepare:assets")
+            run("npm", "run", "frontend:watch")
         elif args.command == "clean":
             clean(args.dry_run)
         elif args.command == "check":
@@ -203,8 +194,8 @@ def main(argv: list[str] | None = None) -> None:
                     )
             else:
                 name = args.name or "api"
-                if name not in ["api", "catalog", "recovery", "frontend-watch"]:
-                    raise SystemExit("集成测试应选择 api、catalog、recovery 或 frontend-watch。")
+                if name not in ["api", "catalog", "recovery", "frontend-release"]:
+                    raise SystemExit("集成测试应选择 api、catalog、recovery 或 frontend-release。")
                 extra = ["--execute"] if args.execute else []
                 run(
                     "node",

@@ -1,9 +1,10 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp,mkdir,readFile,writeFile,rm,readlink} from 'node:fs/promises';
+import {mkdtemp,mkdir,readFile,writeFile,rm,readlink,readdir,utimes} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {fingerprint,publishRelease,FrontendWatcher} from '../../scripts/dev/frontend-watch.mjs';
+import {pruneReleases} from '../../scripts/deploy/frontend-release.mjs';
 
 async function fixture(t){
  const root=await mkdtemp(join(tmpdir(),'ourworld-watch-test-'));t.after(()=>rm(root,{recursive:true,force:true}));
@@ -45,6 +46,23 @@ test('incomplete output cannot replace the working release',async t=>{
  await writeFile(join(dist,'index.html'),'<html><head><script type="module" src="/assets/missing.js"></script></head></html>');
  await assert.rejects(publishRelease(dist,releases,'200-bad'),/Missing build asset/);
  assert.equal(await readlink(join(releases,'current')),'releases/100-good');
+});
+
+test('release cleanup retains fresh legacy chunks and every current chunk',async t=>{
+ const {dist,releases}=await fixture(t);
+ for(let i=1;i<=6;i++){
+  await output(dist,`entry-${i}`);
+  if(i>1)await rm(join(dist,'assets',`entry-${i-1}.js`));
+  await publishRelease(dist,releases,`1000${i}`,'a'.repeat(40));
+ }
+ const old=new Date(Date.now()-2*86400000);
+ await utimes(join(releases,'shared/assets/entry-1.js'),old,old);
+ await utimes(join(releases,'shared/assets/entry-6.js'),old,old);
+ await pruneReleases(releases,'10006');
+ assert.equal((await readdir(join(releases,'releases'))).length,5);
+ await assert.rejects(readFile(join(releases,'shared/assets/entry-1.js')),{code:'ENOENT'});
+ assert.match(await readFile(join(releases,'shared/assets/entry-2.js'),'utf8'),/entry-2/);
+ assert.match(await readFile(join(releases,'shared/assets/entry-6.js'),'utf8'),/entry-6/);
 });
 
 test('saving invalid source keeps the working release and fixing it publishes again',async t=>{

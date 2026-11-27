@@ -1,6 +1,7 @@
+.pure-earth:has(.country-info-modal) > .home-search{visibility:hidden}
+.country-info-modal .modal-body{min-height:0}
 .country-info-modal .modal-footer{flex:none;padding:16px 24px 20px;border-top:1px solid var(--ow-line)}
 .country-info-modal .modal-footer>.button{width:100%;min-height:48px;justify-content:center;gap:12px}
-.country-dialog-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;color:var(--ow-inkMuted)}
 .country-dialog-cover{height:180px;border-radius:18px;overflow:hidden;background:var(--ow-raised)}
 .country-dialog-cover>.cover{width:100%;height:100%;min-height:0;object-fit:cover}
 .country-info-modal .country-dialog-description{margin:20px 0 0}
@@ -30,9 +31,7 @@ body:has(.app-shell) .country-city-card-content>p{font-size:14px;line-height:1.6
 .country-city-controls span{font-size:14px;font-variant-numeric:tabular-nums}
 body:has(.app-shell) .country-city-controls p{font-size:12px;line-height:1.5;margin:4px 0 0;color:var(--ow-inkMuted)}
 .city-detail-layer{position:absolute;inset:0;z-index:60}
-/* City details own the app viewport, including the navigation area. */
-.mobile-app:has(>.earth-panel:not([style*="none"]) .city-detail-layer)>.bottom-nav{display:none}
-.mobile-app:has(>.earth-panel:not([style*="none"]) .city-detail-layer)>.earth-panel{height:100%}
+.mobile-app:has(>.city-detail-layer)>.bottom-nav{display:none}
 .city-detail-layer>.sheet-backdrop{position:absolute;inset:0;padding:0;background:var(--ow-bg);backdrop-filter:none}
 body:has(.app-shell) .city-detail-layer .city-details-page{height:100%;max-height:100%;min-height:0;max-width:none;border-radius:0;box-shadow:none;background:var(--ow-bg)}
 .city-details-page>.sheet-handle{display:none}
@@ -41,17 +40,129 @@ body:has(.app-shell) .city-detail-layer .city-details-page{height:100%;max-heigh
 .city-details-page .place-detail-toolbar>button{min-height:44px;font-size:14px}
 .city-details-page .place-detail-cover{height:clamp(240px,42dvh,480px)}
 .city-details-page .place-detail-description>p{font-size:15px;line-height:1.85;color:var(--ow-inkMuted)}
+@media (max-width:800px){
+  .compact-city-details>.sheet-body{display:flex;overflow:hidden;padding-block-end:calc(14px + env(safe-area-inset-bottom,0px))}
+  .compact-city-details .place-details,.compact-city-details .place-detail-content{display:flex;flex-direction:column;flex:1;min-height:0;min-width:0}
+  .compact-city-details .place-detail-toolbar{flex:none;margin-bottom:8px}
+  .compact-city-details .place-detail-cover{flex:none;height:clamp(84px,23dvh,184px);margin-bottom:12px}
+  .compact-city-details .city-title-row{flex:none}
+  .compact-city-details .kind-city .city-title-row h2{margin-top:4px;font-size:26px}
+  .compact-city-details .place-secondary-name{margin-top:3px;font-size:15px}
+  .compact-city-details .place-detail-description{min-height:0;margin:12px 0;overflow:auto;overscroll-behavior-y:contain}
+  .compact-city-details .place-detail-description>p:last-child{margin-bottom:0}
+  .compact-city-details .city-actions{flex:none;margin-top:0}
+}
 @media(prefers-reduced-motion:no-preference){.country-cities-page{animation:countryCitiesIn .32s cubic-bezier(.22,.8,.2,1)}.country-city-card{transition:transform .2s ease,opacity .2s ease}}
 @keyframes countryCitiesIn{from{translate:0 100%}to{translate:0 0}}
 @media(max-height:650px){.country-cities-header{padding-block:6px}.country-city-card-content{padding:12px 16px}.country-city-card-content>p{-webkit-line-clamp:2}.country-city-controls{padding-bottom:8px}}
 
 /* The search sheet sits outside the clipped globe and follows the visible viewport. */
 .explore-search-layer{position:fixed;inset-inline:0;top:var(--search-viewport-top,0px);height:var(--search-viewport-height,100dvh);z-index:90;pointer-events:none}
-.explore-search-layer>.sheet-backdrop{position:absolute;inset:0 0 calc(72px + env(safe-area-inset-bottom,0px));pointer-events:auto}
+.explore-search-layer>.sheet-backdrop{position:absolute;inset:0 0 calc(72px + env(safe-area-inset-bottom,0px));overflow:clip;pointer-events:auto;backdrop-filter:none;animation:none}
+.explore-search-layer>.sheet-backdrop:has(>.explore-search-sheet[data-slide-exiting]){overflow:visible}
 .explore-search-layer[data-compact]>.sheet-backdrop{bottom:0}
-.explore-search-layer .explore-search-sheet{min-height:min(350px,100%);max-height:100%}
+.explore-search-layer .explore-search-sheet{min-height:min(350px,100%);max-height:100%;animation:none}
 .explore-search-layer[data-compact] .explore-search-sheet{height:100%}
+@media (prefers-reduced-motion: no-preference) {
+  .explore-search-layer > .sheet-backdrop {
+    animation: fade 220ms ease-out;
+  }
+  .explore-search-layer .explore-search-sheet {
+    --search-entry-offset: 24px;
+    animation: explore-search-enter 280ms cubic-bezier(.16, 1, .3, 1);
+  }
+  .explore-search-layer[data-compact] .explore-search-sheet {
+    --search-entry-offset: 0px;
+  }
+}
+@keyframes explore-search-enter {
+  from { transform: translateY(var(--search-entry-offset)); }
+  to { transform: translateY(0); }
+}
 .explore-search-sheet>.sheet-body{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden}
-.explore-search-sheet .search-sheet-input{flex:none}
-body:has(.app-shell) .explore-search-sheet .search-sheet-input input{flex:1;min-width:0;font-size:16px}
+.explore-search-sheet .search-sheet-input {
+  flex: none;
+  gap: 10px;
+  padding: 3px 4px 3px 15px;
+  border: 1px solid var(--ow-controlOutline);
+  border-radius: 999px;
+}
+.explore-search-sheet .search-sheet-input > svg {
+  flex: none;
+  color: var(--ow-inkMuted);
+}
+.explore-search-sheet .search-sheet-input:has(> input:focus),
+.explore-search-layer[data-exit-focus] .search-sheet-input {
+  border-color: var(--ow-accentEnd);
+}
+.explore-search-sheet .search-sheet-input:has(> input:focus) > svg,
+.explore-search-layer[data-exit-focus] .search-sheet-input > svg {
+  color: var(--ow-accent);
+}
+body:has(.app-shell) .explore-search-sheet .search-sheet-input > input {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 16px;
+  caret-color: var(--ow-accent);
+}
+body:has(.app-shell) .explore-search-sheet .search-sheet-input > input:focus {
+  outline: none;
+  box-shadow: none;
+}
+.explore-search-sheet .search-sheet-input > input::placeholder {
+  color: var(--ow-inkFaint);
+  opacity: 1;
+}
+.explore-search-sheet .search-sheet-input > .icon-button {
+  flex: none;
+  border-radius: 50%;
+  color: var(--ow-inkMuted);
+}
+.explore-search-sheet .search-sheet-input > .icon-button:is(:hover,:focus-visible) {
+  background: var(--ow-raised);
+  color: var(--ow-ink);
+}
 .explore-search-results{flex:1;min-height:0;overflow-y:auto;overscroll-behavior-y:contain}
+
+@media (max-width: 800px) {
+  html:has(body > .explore-search-layer) {
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+  body:has(> .explore-search-layer) .mobile-app {
+    height: 100dvh;
+  }
+  .explore-search-layer {
+    inset: 0;
+    height: auto;
+  }
+  .explore-search-layer > .sheet-backdrop {
+    bottom: 0;
+    background: transparent;
+  }
+  .explore-search-layer .bottom-sheet.explore-search-sheet {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    border-radius: 0;
+    background: transparent;
+    --search-entry-offset: 12px;
+  }
+  .explore-search-sheet > .sheet-handle {
+    display: none;
+  }
+  .explore-search-sheet > .sheet-body {
+    background: var(--ow-raised);
+    padding-block-start: calc(16px + max(env(safe-area-inset-top, 0px), var(--search-viewport-top, 0px)));
+  }
+  .explore-search-sheet .explore-search-results {
+    /* Keep results painted behind translucent system controls, with room to scroll clear of them. */
+    --search-keyboard-inset: max(0px, calc(100dvh - var(--search-viewport-top, 0px) - var(--search-viewport-height, 100dvh)));
+    padding-block-end: var(--search-keyboard-inset);
+    scroll-padding-block-end: var(--search-keyboard-inset);
+  }
+}

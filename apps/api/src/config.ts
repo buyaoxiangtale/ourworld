@@ -30,4 +30,5 @@ export function requireSecret(): string {
  return config.jwtSecret;
 }
 
+export function publicMediaUrl(id:string):string { return `${config.publicBase}/api/v1/media/${encodeURIComponent(id)}`; }
 export function randomToken(): string { return randomBytes(32).toString('base64url'); }

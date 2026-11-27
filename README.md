@@ -77,11 +77,12 @@ uv run --env-file .env ourworld dev worker
 
 开发 API 前需启动 PostgreSQL、Redis、存储和邮件服务。具体步骤、端口及数据库迁移见 [开发指南](docs/development.md)。
 
-Docker 网页由前端监听器构建和发布。保存前端、设计令牌或地球源码后会触发构建，失败时保留上一版。打开的页面会自动刷新，正在编辑的表单会延迟刷新。API 和 worker 更新走容器构建流程。
+本地可用 Vite 热更新。共享 Docker 环境从同一个 Git 提交构建前后端，数据库迁移和 API 就绪后才切换前端。打开的页面会自动检测新版本，正在编辑的表单会延迟刷新。
 
 ```sh
-uv run ourworld watch  # 启动或更新监听服务
-uv run ourworld logs   # 查看自动发布日志
+uv run ourworld watch              # 启动本地前端热更新
+uv run ourworld logs               # 查看网关和 API 日志
+./scripts/deploy/backend.sh yubs   # 发布指定分支的前后端
 ```
 
 ## 构建与测试

@@ -2,13 +2,10 @@
 /* Globe-screen accents come from the shared --ow-* night tokens. */
 .mobile-app.earth-mode{background:var(--ow-space)}
 .mobile-app .pure-earth,.mobile-app .pure-earth .earth-stage{background:var(--ow-space)}
-/* The search field and its button share one capsule. */
-.mobile-app .pure-earth .home-search{display:flex;align-items:center;gap:10px;padding:6px 6px 6px 16px;min-height:58px;border-radius:29px;background:var(--ow-space);color:var(--ow-inkMuted);box-shadow:0 2px 10px rgba(0,0,0,.45)}
+.mobile-app .pure-earth .home-search{display:flex;align-items:center;padding:6px 16px;min-height:58px;border-radius:29px;background:var(--ow-space);color:var(--ow-inkMuted);box-shadow:0 2px 10px rgba(0,0,0,.45)}
 .mobile-app .pure-earth .home-search .home-search-field{display:flex;align-items:center;gap:9px;flex:1;min-width:0;font-size:14px;color:var(--ow-inkMuted)}
 .mobile-app .pure-earth .home-search .home-search-field>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;color:var(--ow-inkMuted)}
 .mobile-app .pure-earth .home-search .home-search-field svg{flex:none;color:var(--ow-inkMuted)}
-.mobile-app .pure-earth .home-search .home-search-submit{display:grid;place-items:center;flex:none;width:46px;height:46px;border-radius:23px;background:var(--ow-accent);color:var(--ow-accentInk)}
-.mobile-app .pure-earth .home-search .home-search-submit svg{color:var(--ow-accentInk);width:20px;height:20px}
 /* Keep navigation floating over the star field in each destination. */
 .mobile-app .bottom-nav{display:flex;align-items:center;padding:12px 28px calc(12px + env(safe-area-inset-bottom,0px));background:transparent!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important}
 .mobile-app .bottom-nav>button{display:grid;place-items:center;border-radius:50%;background:transparent;transition:transform .18s ease,opacity .18s ease}

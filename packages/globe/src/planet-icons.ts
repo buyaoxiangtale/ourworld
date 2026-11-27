@@ -34,7 +34,7 @@ function colourTexture(canvas: HTMLCanvasElement) {
 async function earthMaterial(textures: URL) {
   const loader = new TextureLoader();
   const [image, bump] = await Promise.all([
-    loader.loadAsync(new URL('earth-day.jpg', textures).href),
+    loader.loadAsync(new URL('earth-day.jpg?v=4k', textures).href),
     loader.loadAsync(new URL('earth-topology.png', textures).href),
   ]);
   image.colorSpace = SRGBColorSpace;

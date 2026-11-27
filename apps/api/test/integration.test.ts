@@ -272,7 +272,9 @@ test('accepted trip amendments preserve history and require the other participan
 test('multi-city coverage remains random and fixed for the whole feed round',async()=>{
  await query("UPDATE users SET provider_status='approved',city_ids=$2 WHERE id=$1",[a,[cityA]]);
  await query("UPDATE users SET provider_status='approved',city_ids=$2 WHERE id=$1",[b,[cityA,cityB]]);
- await query("UPDATE users SET provider_status='approved',city_ids=$2 WHERE id=$1",[c,[cityB]]);
+ const saved=await request('PATCH','/me',tokenC,{cityIds:[cityB]});
+ assert.equal(saved.statusCode,200,saved.body);
+ assert.equal(saved.json().providerStatus,'none');
  const any=(await request('GET',`/cities/${cityA}/people-feed?cityIds=${cityB},${cityA}&coverage=any`,tokenAdmin)).json();assert.deepEqual(new Set(any.items.map((p:any)=>p.id)),new Set([a,b,c]));
  const all=(await request('GET',`/cities/${cityA}/people-feed?cityIds=${cityA},${cityB}&coverage=all`,tokenAdmin)).json();assert.deepEqual(all.items.map((p:any)=>p.id),[b]);
  const continued=await request('GET',`/cities/${cityA}/people-feed?feedId=${any.feedId}&cursor=0`,tokenAdmin);assert.equal(continued.statusCode,200,continued.body);assert.equal(continued.json().items.length,3);
@@ -280,6 +282,14 @@ test('multi-city coverage remains random and fixed for the whole feed round',asy
  assert.equal((await request('GET',`/cities/${cityA}/people-feed?feedId=${any.feedId}&cursor=0&coverage=all`,tokenAdmin)).statusCode,409);
  const reordered=await request('GET',`/cities/${cityA}/people-feed?feedId=${any.feedId}&cursor=0&cityIds=${cityA},${cityB}&coverage=any`,tokenAdmin);assert.equal(reordered.statusCode,200,reordered.body);
  const single=(await request('GET',`/cities/${cityA}/people-feed`,tokenAdmin)).json();assert.deepEqual(new Set(single.items.map((p:any)=>p.id)),new Set([a,b]));
+ const otherCity=await request('GET',`/cities/${cityB}/people-feed`,tokenAdmin);
+ assert.equal(otherCity.statusCode,200,otherCity.body);
+ assert.deepEqual(new Set(otherCity.json().items.map((p:any)=>p.id)),new Set([b,c]));
+ const removed=await request('PATCH','/me',tokenC,{cityIds:[]});
+ assert.equal(removed.statusCode,200,removed.body);
+ const refreshed=await request('GET',`/cities/${cityB}/people-feed?feedId=${otherCity.json().feedId}&cursor=0`,tokenAdmin);
+ assert.equal(refreshed.statusCode,200,refreshed.body);
+ assert.deepEqual(refreshed.json().items.map((p:any)=>p.id),[b]);
  await query('UPDATE users SET city_ids=$2 WHERE id=$1',[b,[cityB]]);
  assert.equal((await request('GET',`/cities/${cityA}/people-feed?feedId=${all.feedId}&cursor=0`,tokenAdmin)).json().items.length,0);
  assert.equal((await request('GET',`/cities/${cityA}/people-feed?coverage=rank`,tokenAdmin)).statusCode,400);

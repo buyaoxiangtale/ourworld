@@ -1,5 +1,6 @@
 import {mkdir,writeFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
+import {browseLocatedCity,openLocatedResult} from './search-location.mjs';
 process.env.PLAYWRIGHT_BROWSERS_PATH=resolve('.playwright-browsers');
 const {chromium}=await import('playwright');
 const base=process.env.OURWORLD_WEB_URL||'http://127.0.0.1:8188';
@@ -11,7 +12,7 @@ const context=await browser.newContext({viewport:{width:390,height:844},locale:'
 const page=await context.newPage();page.setDefaultTimeout(15000);
 page.on('pageerror',e=>errors.push(e.message));
 page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
-page.on('response',r=>{if(/\/globe\/textures\/earth-(day\.jpg|topology\.png)$/.test(r.url()))textures.set(new URL(r.url()).pathname,r.status());});
+page.on('response',r=>{const path=new URL(r.url()).pathname;if(/\/globe\/textures\/earth-(day\.jpg|topology\.png)$/.test(path))textures.set(path,r.status());});
 page.on('request',r=>{if(/^https?:/.test(r.url())&&new URL(r.url()).origin!==new URL(base).origin)external.push(r.url());});
 await page.addInitScript(()=>{window.__globeEvents=[];window.addEventListener('message',e=>{if(e.data?.bridgeVersion===1)window.__globeEvents.push(e.data);});});
 const command=async data=>{
@@ -98,19 +99,23 @@ try{
  assert(themeDifference.histogramDistance<.03,'switching the host theme preserves the rendered globe palette');
  await command({event:'setTheme',data:{theme:'dark'}});await resume();
 
- await page.locator('.home-search').click();await page.getByPlaceholder('搜索国家、城市、景点').fill('巴黎');
- await page.locator('.place-result').filter({hasText:'巴黎'}).first().click();
- await page.getByRole('button',{name:'找当地人',exact:true}).waitFor();checks.push('real search for Paris opens city details');
- await page.getByRole('button',{name:'返回地球',exact:true}).click();
  const countries=await (await context.request.get(`${base}/api/v1/places?kind=country`)).json();
  const france=countries.items.find(p=>p.name.en==='France');if(!france)throw new Error('France missing from real catalog');
+ await page.locator('.home-search').click();await page.getByPlaceholder('搜索国家、城市、景点').fill('巴黎');
+ await openLocatedResult(page,page.locator('.place-result').filter({hasText:'巴黎'}).first(),france);
+ assert(await page.getByRole('dialog',{name:'巴黎',exact:true}).count()===0,'search for Paris locates France');
+ await browseLocatedCity(page,'巴黎');
+ await page.getByRole('button',{name:'找当地人',exact:true}).waitFor();checks.push('Paris details open from the corresponding country');
+ await page.getByRole('button',{name:'返回城市列表',exact:true}).click();
+ await page.getByRole('button',{name:'返回国家信息',exact:true}).click();
+ await page.getByRole('dialog',{name:'法国',exact:true}).getByRole('button',{name:'Close',exact:true}).click();
  // Under software rendering every cross-context round-trip can cost seconds: the focus
  // tween stalls short of France and the spin hold can lapse before a CDP tap lands.
  // Snap the camera and dispatch the pointer tap inside one iframe task (zero round
  // trips), so the tap resolves against the settled camera like a real touch would.
  const canvas=page.frameLocator('.globe-frame').locator('#globe canvas').first(),box=await canvas.boundingBox();
  const tapFrance=()=>page.frameLocator('.globe-frame').locator('body').evaluate((_,point)=>{
-  window.OurworldGlobe.receive({bridgeVersion:1,event:'restoreCamera',data:{lat:46.6,lng:2.35,altitude:1.15}});
+  window.OurworldGlobe.receive({bridgeVersion:1,event:'restoreCamera',data:{lat:46.6,lng:2.35,altitude:2.8}});
   const target=document.querySelector('#globe canvas');
   // A synthetic pointer has no live pointer id, so the controls' capture call would
   // throw; neuter it for the duration of the tap only.
@@ -121,7 +126,7 @@ try{
  },{x:box.width/2+12,y:box.height/2+15});
  const beforeCountryTap=await page.evaluate(()=>window.__globeEvents.length);
  await tapFrance();
- await page.waitForFunction(start=>window.__globeEvents.slice(start).some(e=>e.event==='cameraChanged'&&Math.abs(e.data.altitude-1.1)<.02),beforeCountryTap);
+ await page.waitForFunction(start=>window.__globeEvents.slice(start).some(e=>e.event==='cameraChanged'&&e.data.altitude<2.7),beforeCountryTap);
  assert(await page.getByRole('dialog',{name:'法国',exact:true}).count()===0,'first country tap focuses France without opening its information');
  assert(await page.evaluate(start=>!window.__globeEvents.slice(start).some(e=>e.event==='placeSelected'),beforeCountryTap),'first country tap does not emit a selection through either click handler');
  await tapFrance();

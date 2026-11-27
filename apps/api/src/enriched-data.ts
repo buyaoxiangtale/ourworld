@@ -1,4 +1,5 @@
 import { COUNTRY_COPY } from './country-copy.js';
+import { CITY_COPY } from './city-copy.js';
 import type { ProfileLayout } from '@ourworld/contracts';
 
 const COUNTRY_META:[string,string,string,number,number,string[]][]=[
@@ -7,25 +8,25 @@ const COUNTRY_META:[string,string,string,number,number,string[]][]=[
 ];
 export const ENRICHED_COUNTRIES=COUNTRY_META.map(([slug,zh,en,lat,lng,aliases])=>({id:`country-${slug}`,slug,kind:'country' as const,name:{zh,en},country:en,lat,lng,aliases,image:`/api/v1/seed/country/${slug}.svg`,description:{zh:`${COUNTRY_COPY[slug].zh}\n\n配图为应用内原创地标插画，非实景照片。`,en:`${COUNTRY_COPY[slug].en}\n\nThe image is an original landmark illustration, not a photograph.`}}));
 
-const CITY_META:[string,string,string,string,number,number,string,string][]=[
- ['hong-kong','香港','Hong Kong','china',22.3193,114.1694,'维多利亚港、山间步道与热闹街区，共同构成香港的城市风景。可以从中环的街巷、九龙的市集与茶餐厅出发，在海滨散步中感受这座城市的日常节奏。','Hong Kong brings together Victoria Harbour, hillside trails and lively neighbourhoods. Explore Central’s lanes, Kowloon’s markets and local cafés, with time for a waterfront walk.'],
- ['berlin','柏林','Berlin','germany',52.52,13.405,'从博物馆岛、勃兰登堡门到街区画廊，柏林的历史与当代创作常在同一段散步里相遇。可以围绕建筑、设计或咖啡馆安排一条街区路线。','Berlin places museums, historic landmarks and contemporary creativity close together. Explore architecture, design and neighbourhood cafés at a walking pace.'],
- ['munich','慕尼黑','Munich','germany',48.137,11.576,'老城广场、城市博物馆与英式花园构成慕尼黑不同的生活切面。喜欢建筑和绿地的人，可以从市中心逐渐走向河岸与公园。','Munich pairs old-town squares and museums with generous green spaces. Combine an architectural walk with time beside the river or in a city park.'],
- ['seoul','首尔','Seoul','south-korea',37.5665,126.978,'首尔将宫殿、韩屋街区与现代设计放在同一座城市中。可以从庭院和小巷认识历史，再到街区书店与咖啡馆感受日常。','Seoul brings palaces, traditional houses and contemporary design together. Move between courtyards, small lanes, bookshops and neighbourhood cafés.'],
- ['busan','釜山','Busan','south-korea',35.1796,129.0756,'海岸、港口和依山而建的街区，让釜山拥有与首尔不同的城市节奏。海边散步、市场观察和街头摄影可以成为认识当地人的起点。','Busan offers a coastal rhythm shaped by its harbour, hillside neighbourhoods and beaches. Seafront walks, markets and photography provide different ways to meet the city.'],
- ['singapore','新加坡','Singapore','singapore',1.2897,103.8514,'滨海花园的城市景观之外，新加坡还有骑楼街区、公园和多元饮食日常。可以把建筑、绿地与街区餐桌放在同一条探索路线中。','Beyond the waterfront skyline, Singapore has shophouse districts, parks and varied food traditions. Combine architecture, green spaces and neighbourhood food conversations.'],
- ['auckland','奥克兰','Auckland','new-zealand',-36.8485,174.7633,'奥克兰的港湾、火山地形与城市街区相互交织。喜欢海风和城市生活的人，可以从海滨步道、社区餐馆与公共绿地开始。','Auckland connects harbour views, volcanic landforms and urban neighbourhoods. Start with waterfront paths, community food spots and public green spaces.'],
- ['queenstown','皇后镇','Queenstown','new-zealand',-45.0312,168.6626,'湖泊与山地构成皇后镇鲜明的背景。除了活动安排，也可以放慢节奏，围绕湖岸风景、摄影与小镇生活认识这个地方。','Queenstown sits among lakes and mountains. Alongside organised activities, leave room for lakeside scenery, photography and the everyday life of the town.'],
- ['rio-de-janeiro','里约热内卢','Rio de Janeiro','brazil',-22.9068,-43.1729,'山峰、海湾与绵长海滩构成里约鲜明的城市轮廓。想认识当地生活，可以从海边步道、音乐与街区文化聊起，而不只停留在地标合影。','Rio has a distinctive outline of mountains, bays and beaches. Waterfront walks, music and neighbourhood culture offer more than a landmark photograph.'],
- ['sao-paulo','圣保罗','São Paulo','brazil',-23.5505,-46.6333,'圣保罗的美术馆、街头艺术与多元餐桌，适合用文化和街区视角慢慢探索。可以把一间展馆与周边的小店、公园或咖啡馆连接起来。','São Paulo rewards a neighbourhood approach to museums, street art and varied food traditions. Connect an exhibition with nearby shops, parks or cafés.'],
- ['cairo','开罗','Cairo','egypt',30.0444,31.2357,'开罗把尼罗河沿岸的城市生活与深厚历史连接在一起。博物馆、历史街区与周边古迹，适合围绕感兴趣的主题分别了解。','Cairo connects life along the Nile with layers of history. Museums, historic districts and nearby ancient sites offer distinct themes to explore.'],
- ['luxor','卢克索','Luxor','egypt',25.6872,32.6396,'卢克索的神庙、古代遗址与尼罗河景观，适合从历史脉络和建筑细节切入。与当地人交流时，可以先说明自己更关注故事、摄影还是河岸生活。','Luxor brings temples, ancient sites and the Nile into focus. Share whether your interest lies in historical stories, architectural details, photography or riverside life.'],
- ['cape-town','开普敦','Cape Town','south-africa',-33.9249,18.4241,'桌山、海岸与色彩鲜明的街区，让开普敦拥有丰富的城市景观。建筑摄影、海滨散步和社区文化可以成为不同的探索主题。','Cape Town combines Table Mountain, the coast and colourful neighbourhoods. Choose an architectural, waterfront or community-culture approach to exploring.'],
- ['johannesburg','约翰内斯堡','Johannesburg','south-africa',-26.2041,28.0473,'约翰内斯堡适合从博物馆、历史叙事与当代艺术认识城市。不同街区的创意空间和公共文化场所，提供了理解城市变化的窗口。','Johannesburg can be explored through museums, historical narratives and contemporary art. Creative spaces and public cultural places offer a view into its changing neighbourhoods.'],
- ['lisbon','里斯本','Lisbon','portugal',38.7223,-9.1393,'山坡街道、瓷砖立面与河口风景，让里斯本适合边走边看。可以围绕阿尔法玛的街巷、贝伦的建筑和街区咖啡馆安排不同的半日主题。','Lisbon invites slow exploration of hillside streets, tiled façades and estuary views. Alfama lanes, Belém architecture and neighbourhood cafés make distinct walking themes.'],
- ['porto','波尔图','Porto','portugal',41.1579,-8.6291,'杜罗河、桥梁与层层展开的街道，是波尔图鲜明的城市线索。建筑与街头摄影之外，也可以关注沿河社区和日常小店。','Porto is shaped by the Douro, its bridges and layered streets. Beyond architecture and photography, look at riverside neighbourhoods and everyday local shops.']
+const CITY_META:[string,string,string,string,number,number][]=[
+ ['hong-kong','香港','Hong Kong','china',22.3193,114.1694],
+ ['berlin','柏林','Berlin','germany',52.52,13.405],
+ ['munich','慕尼黑','Munich','germany',48.137,11.576],
+ ['seoul','首尔','Seoul','south-korea',37.5665,126.978],
+ ['busan','釜山','Busan','south-korea',35.1796,129.0756],
+ ['singapore','新加坡','Singapore','singapore',1.2897,103.8514],
+ ['auckland','奥克兰','Auckland','new-zealand',-36.8485,174.7633],
+ ['queenstown','皇后镇','Queenstown','new-zealand',-45.0312,168.6626],
+ ['rio-de-janeiro','里约热内卢','Rio de Janeiro','brazil',-22.9068,-43.1729],
+ ['sao-paulo','圣保罗','São Paulo','brazil',-23.5505,-46.6333],
+ ['cairo','开罗','Cairo','egypt',30.0444,31.2357],
+ ['luxor','卢克索','Luxor','egypt',25.6872,32.6396],
+ ['cape-town','开普敦','Cape Town','south-africa',-33.9249,18.4241],
+ ['johannesburg','约翰内斯堡','Johannesburg','south-africa',-26.2041,28.0473],
+ ['lisbon','里斯本','Lisbon','portugal',38.7223,-9.1393],
+ ['porto','波尔图','Porto','portugal',41.1579,-8.6291]
 ];
-export const EXTRA_CITIES=CITY_META.map(([slug,zh,en,countrySlug,lat,lng,descriptionZh,descriptionEn])=>({id:`city-${slug}`,kind:'city' as const,parentId:`country-${countrySlug}`,country:ENRICHED_COUNTRIES.find(c=>c.slug===countrySlug)!.country,name:{zh,en},lat,lng,description:{zh:descriptionZh,en:descriptionEn},image:slug==='hong-kong'?'/api/v1/seed/city/hong-kong.jpg':`/api/v1/seed/country/${countrySlug}.svg`,aliases:slug==='hong-kong'?['Hongkong','HK','香港特别行政区','香港特別行政區','Xianggang']:slug==='sao-paulo'?['Sao Paulo']:slug==='rio-de-janeiro'?['Rio','里约']:[]}));
+export const EXTRA_CITIES=CITY_META.map(([slug,zh,en,countrySlug,lat,lng])=>({id:`city-${slug}`,kind:'city' as const,parentId:`country-${countrySlug}`,country:ENRICHED_COUNTRIES.find(c=>c.slug===countrySlug)!.country,name:{zh,en},lat,lng,description:CITY_COPY[`city-${slug}`],image:slug==='hong-kong'?'/api/v1/seed/city/hong-kong.jpg':`/api/v1/seed/country/${countrySlug}.svg`,aliases:slug==='hong-kong'?['Hongkong','HK','香港特别行政区','香港特別行政區','Xianggang']:slug==='sao-paulo'?['Sao Paulo']:slug==='rio-de-janeiro'?['Rio','里约']:[]}));
 
 export interface DemoProfile {
  id:string;email:string;name:string;kind:'guide'|'traveler'|'agency';countrySlug:string;cityIds:string[];tags:string[];quote:string;bio:string;experience:string;theme:ProfileLayout['theme'];

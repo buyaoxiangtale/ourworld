@@ -5,17 +5,28 @@ import type {Place} from '@ourworld/contracts';
 import {api} from '../../api';
 import {useApp} from '../../context';
 import {errorMessage} from '../../hooks';
+import {useSlideExiting} from '../../SlidePresence';
 import {Button,Cover,Empty,ErrorBox,IconButton,Loading,Sheet} from '../../ui';
 
 type DestinationPage={items:Place[];nextOffset?:number|null};
 type SearchResult={offset:number;attempt:number;error:string};
 const pageSize=24;
 
-export function ExploreSearch({country,onClose,onChoose}:{country?:Place;onClose:()=>void;onChoose:(place:Place)=>void}){
+export function ExploreSearch({onClose,onChoose}:{onClose:()=>void;onChoose:(place:Place)=>void}){
  const {locale,t}=useApp();
  const viewportLayer=useRef<HTMLDivElement>(null);
+ const exiting=useSlideExiting();
  useLayoutEffect(()=>{
   const layer=viewportLayer.current;
+  if(exiting){
+   // Let the keyboard close during the slide while keeping the last layout and focus styling.
+   const focused=document.activeElement;
+   if(focused instanceof HTMLInputElement&&layer?.contains(focused)){
+    layer.setAttribute('data-exit-focus','');
+    focused.blur();
+   }
+   return;
+  }
   const viewport=window.visualViewport;
   if(!layer||!viewport)return;
   const sync=()=>{
@@ -32,9 +43,8 @@ export function ExploreSearch({country,onClose,onChoose}:{country?:Place;onClose
    viewport.removeEventListener('scroll',sync);
    window.removeEventListener('resize',sync);
   };
- },[]);
+ },[exiting]);
  const [query,setQuery]=useState('');
- const [local,setLocal]=useState(!!country);
  const [offset,setOffset]=useState(0);
  const [attempt,setAttempt]=useState(0);
  const [result,setResult]=useState<SearchResult|null>(null);
@@ -42,15 +52,14 @@ export function ExploreSearch({country,onClose,onChoose}:{country?:Place;onClose
  const [nextOffset,setNextOffset]=useState<number|null>(null);
  const pending=result?.offset!==offset||result.attempt!==attempt;
  const error=pending?'':result.error;
- const parentId=local?country?.id:undefined;
  const searchLabel=t('搜索国家、城市、景点','Search a country, city or landmark');
  const reset=()=>{setItems([]);setNextOffset(null);setOffset(0);setResult(null);};
  const retry=()=>setAttempt(value=>value+1);
  useEffect(()=>{
+  if(exiting)return;
   const controller=new AbortController();
   const timer=window.setTimeout(async()=>{
    const params=new URLSearchParams({q:query,limit:String(pageSize),offset:String(offset)});
-   if(parentId){params.set('kind','city');params.set('parentId',parentId);}
    try{
     const page=await api<DestinationPage>(`/places?${params}`,{
      signal:AbortSignal.any([controller.signal,AbortSignal.timeout(20000)])
@@ -64,9 +73,15 @@ export function ExploreSearch({country,onClose,onChoose}:{country?:Place;onClose
    }
   },offset===0?250:0);
   return()=>{controller.abort();window.clearTimeout(timer);};
- },[query,parentId,offset,attempt]);
+ },[query,offset,attempt,exiting]);
 
- return createPortal(<div ref={viewportLayer} className="explore-search-layer"><Sheet className="explore-search-sheet" label={t('探索地点','Explore places')} onClose={onClose}>
+ return createPortal(<div ref={viewportLayer} className="explore-search-layer" onMouseDown={event=>{
+  const target=event.target;
+  const focused=document.activeElement;
+  // Let the exit effect release focus after it has captured the closing layout.
+  if(focused instanceof HTMLInputElement&&event.currentTarget.contains(focused)&&target instanceof Element&&
+   (target.matches('.sheet-backdrop')||target.closest('.sheet-handle,.explore-search-close')))event.preventDefault();
+ }}><Sheet className="explore-search-sheet" label={t('探索地点','Explore places')} onClose={onClose}>
   <form className="search-sheet-input" onSubmit={event=>{
    event.preventDefault();
    if(query.trim()&&!pending&&!error&&items[0])onChoose(items[0]);
@@ -74,13 +89,9 @@ export function ExploreSearch({country,onClose,onChoose}:{country?:Place;onClose
    <Search size={20} aria-hidden="true"/>
    <input autoFocus type="search" enterKeyHint="search" aria-label={searchLabel} placeholder={searchLabel} value={query}
     onChange={event=>{reset();setQuery(event.target.value);}}/>
-   <IconButton type="button" label={t('关闭','Close')} onClick={onClose}><X size={18}/></IconButton>
+   <IconButton type="button" className="explore-search-close" label={t('关闭','Close')} onClick={onClose}><X size={18}/></IconButton>
   </form>
   <div className="explore-search-results">
-  {country&&<div className="place-search-scopes">
-   <button type="button" className={local?'active':''} aria-pressed={local} onClick={()=>{if(!local){reset();setLocal(true);}}}>{country.name[locale]}</button>
-   <button type="button" className={local?'':'active'} aria-pressed={!local} onClick={()=>{if(local){reset();setLocal(false);}}}>{t('全部目的地','All destinations')}</button>
-  </div>}
   <div className="section-heading">
    <span className="eyebrow">{query.trim()?t('搜索结果','SEARCH RESULTS'):t('探索地点','EXPLORE PLACES')}</span>
    {!pending&&!error&&<span role="status">{items.length}</span>}

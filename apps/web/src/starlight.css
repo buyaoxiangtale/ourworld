@@ -83,22 +83,12 @@ body:has(.app-shell) :is(.modal, .bottom-sheet) {
 .mobile-app .pure-earth .home-search {
   width: calc(100% - 2 * var(--ow-spacing-gutter));
   min-height: var(--ow-spacing-searchHeight);
-  padding: 4px 5px 4px var(--ow-spacing-gutter);
+  padding: 4px var(--ow-spacing-gutter);
   border: 1px solid var(--ow-controlOutline) !important;
   border-radius: calc(var(--ow-radii-control) * 2);
   background: var(--ow-surface);
   box-shadow: 0 4px 18px color-mix(in srgb, var(--ow-accentInk) 66%, transparent);
 }
-.mobile-app .pure-earth .home-search .home-search-submit {
-  display: grid;
-  place-items: center;
-  width: var(--ow-spacing-searchButton);
-  height: var(--ow-spacing-searchButton);
-  border-radius: 50%;
-  background: var(--ow-raised);
-  color: var(--ow-ink);
-}
-.mobile-app .pure-earth .home-search .home-search-submit svg { color: inherit; }
 .pure-earth .earth-stage { inset: 0; }
 .mobile-app .bottom-nav > button.active,
 .mobile-app.earth-mode .bottom-nav > button.active { color: var(--ow-accent); }

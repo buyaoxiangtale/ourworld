@@ -6,7 +6,7 @@ import {useApp} from '../../context';
 import {errorMessage,useLoad} from '../../hooks';
 import {Button,Cover,ErrorBox,IconButton,Loading,Modal} from '../../ui';
 import type {PhotoWallEditTarget} from './ProfilePhotoWall';
-import {isPhotoCaption,photoWallPhotoKey,profileGalleryPhotos,readPhotoWall,writePhotoWall} from './profile-content';
+import {isPhotoGallery,photoWallPhotoKey,profileGalleryPhotos,readPhotoWall,resolveMainPhotos,writePhotoWall} from './profile-content';
 
 // getRandomValues also works on the current public HTTP origin.
 const newBlockId=()=>Array.from(crypto.getRandomValues(new Uint8Array(16)),byte=>byte.toString(16).padStart(2,'0')).join('');
@@ -17,7 +17,7 @@ export function ProfileCardsEditor({photoWallEditTarget,onClose,onPublished}:{ph
  const [draft,setDraft]=useState<ProfileDraft>();const [photos,setPhotos]=useState<string[]>([]);
  const [slogan,setSlogan]=useState('');
  const [captions,setCaptions]=useState<ReadonlyMap<string,string>>(new Map());
- const [featuredPhoto,setFeaturedPhoto]=useState<string>();
+ const [featuredPhotos,setFeaturedPhotos]=useState<ReadonlySet<string>>(new Set());
  const focusedTarget=useRef(false);
  const [busy,setBusy]=useState(false);const [uploading,setUploading]=useState(false);const [error,setError]=useState('');
  useEffect(()=>{
@@ -27,17 +27,14 @@ export function ProfileCardsEditor({photoWallEditTarget,onClose,onPublished}:{ph
   const wall=readPhotoWall(load.data.layout);
   setSlogan(wall.slogan);
   setCaptions(wall.captions);
-  setFeaturedPhoto(wall.featuredPhoto);
+  setFeaturedPhotos(wall.featuredPhotos);
  },[load.data]);
  useEffect(()=>{
   if(!draft||!photoWallEditTarget||focusedTarget.current)return;
-  const photoIndex=photoWallEditTarget==='slogan'?-1:photos.findIndex(
-   url=>photoWallPhotoKey(url)===photoWallPhotoKey(photoWallEditTarget.photo)
-  );
-  const field=document.getElementById(`${editorId}-${photoIndex<0?'slogan':`caption-${photoIndex}`}`);
+  const field=document.getElementById(`${editorId}-slogan`);
   field?.focus();
   focusedTarget.current=!!field;
- },[draft,editorId,photoWallEditTarget,photos]);
+ },[draft,editorId,photoWallEditTarget]);
  const uploadPhotos=async(files:File[])=>{
   if(!files.length)return;
   setError('');
@@ -47,9 +44,14 @@ export function ProfileCardsEditor({photoWallEditTarget,onClose,onPublished}:{ph
   }
   setUploading(true);
   try{
+   let firstPhoto=photos.length===0;
    for(const file of files){
     const result=await upload(file);
     setPhotos(items=>[...items,result.url]);
+    if(firstPhoto){
+     setFeaturedPhotos(new Set([photoWallPhotoKey(result.url)]));
+     firstPhoto=false;
+    }
    }
   }catch(e){setError(errorMessage(e));}finally{setUploading(false);}
  };
@@ -57,17 +59,17 @@ export function ProfileCardsEditor({photoWallEditTarget,onClose,onPublished}:{ph
   if(!draft||busy||uploading)return;setBusy(true);setError('');
   try{
    const current=draft.layout;
-   const matchesSection=(block:ProfileBlock)=>block.type==='gallery'&&!isPhotoCaption(block);
+   const matchesSection=isPhotoGallery;
    const originals=current.blocks.filter(matchesSection);
    const makeBlock=(original?:ProfileBlock):ProfileBlock=>({
     ...original,id:original?.id||newBlockId(),type:'gallery',span:original?.span||2,size:original?.size||'compact'
    });
    const replacement:ProfileBlock[]=[];
    const text=slogan.trim();
-   const featured=photos.some(url=>photoWallPhotoKey(url)===featuredPhoto)?featuredPhoto:undefined;
+   const mainPhotos=resolveMainPhotos(photos,featuredPhotos);
    for(let start=0;start<photos.length||start===0&&text;start+=galleryRefLimit){
     const refs=photos.slice(start,start+galleryRefLimit);
-    const content=writePhotoWall(start===0?text:'',refs,captions,start===0?featured:undefined);
+    const content=writePhotoWall(start===0?text:'',refs,captions,mainPhotos);
     if(content&&content.length>10000){
      setError(t('照片介绍的总字数过长，请缩短后再保存。','The captions are too long in total. Shorten them before saving.'));
      return;
@@ -110,7 +112,8 @@ export function ProfileCardsEditor({photoWallEditTarget,onClose,onPublished}:{ph
       const captionId=`${editorId}-caption-${i}`;
       const captionLabel=t(`照片 ${i+1} 的介绍`,`Caption for photo ${i+1}`);
       const key=photoWallPhotoKey(url);
-      const isFeatured=featuredPhoto===key;
+      const isFeatured=featuredPhotos.has(key);
+      const isOnlyMain=isFeatured&&featuredPhotos.size===1;
       return <article key={url}>
        <Cover src={url} alt={t(`照片 ${i+1}`,`Photo ${i+1}`)}/>
        <div className="photo-wall-field photo-wall-caption-editor">
@@ -120,18 +123,23 @@ export function ProfileCardsEditor({photoWallEditTarget,onClose,onPublished}:{ph
           const value=event.target.value;
           setCaptions(items=>new Map(items).set(key,value));
          }}/>
-        {photos.length>=4&&<button type="button" className="photo-wall-feature-toggle" aria-pressed={isFeatured}
-         disabled={busy||uploading} onClick={()=>setFeaturedPhoto(key)}>
+        <button type="button" className="photo-wall-feature-toggle" aria-pressed={isFeatured}
+         disabled={busy||uploading||isOnlyMain} onClick={()=>setFeaturedPhotos(items=>{
+          const next=new Set(items);
+          if(next.has(key))next.delete(key);else next.add(key);
+          return next;
+         })}>
          <Star size={13} aria-hidden="true" />
          {isFeatured?t('主照片','Main photo'):t('设为主照片','Set as main photo')}
-        </button>}
+        </button>
        </div>
        <div className="photo-wall-photo-actions">
         <IconButton type="button" label={t('前移照片','Move photo earlier')} disabled={i===0||busy||uploading} onClick={()=>setPhotos(items=>{const next=[...items];[next[i-1],next[i]]=[next[i],next[i-1]];return next;})}><ArrowLeft size={16}/></IconButton>
         <IconButton type="button" label={t('后移照片','Move photo later')} disabled={i===photos.length-1||busy||uploading} onClick={()=>setPhotos(items=>{const next=[...items];[next[i+1],next[i]]=[next[i],next[i+1]];return next;})}><ArrowRight size={16}/></IconButton>
         <IconButton type="button" label={t(`删除照片 ${i+1}`,`Remove photo ${i+1}`)} disabled={busy||uploading} onClick={()=>{
-         setPhotos(items=>items.filter((_,j)=>j!==i));
-         if(isFeatured)setFeaturedPhoto(undefined);
+         const remaining=photos.filter((_,j)=>j!==i);
+         setPhotos(remaining);
+         setFeaturedPhotos(items=>resolveMainPhotos(remaining,items));
         }}><Trash2 size={16}/></IconButton>
        </div>
       </article>;

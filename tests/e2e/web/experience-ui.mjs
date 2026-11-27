@@ -3,6 +3,7 @@ import {resolve,dirname} from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {existsSync} from 'node:fs';
 import assert from 'node:assert/strict';
+import {browseLocatedCity,openLocatedResult} from './search-location.mjs';
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'../../..');
 process.env.PLAYWRIGHT_BROWSERS_PATH=resolve(root,'.playwright-browsers');
 const {chromium}=await import('playwright');
@@ -68,7 +69,7 @@ try{
   await page.screenshot({animations:'disabled',path:resolve(output,`earth-${viewport.width}.png`)});
   await inspect(page,'earth',viewport.width);
   if(viewport.width===390){for(const [name,lat,lng]of [['africa',8,18],['americas',18,-90],['pacific',5,-170],['europe',47,10]]){await page.locator('.globe-frame').evaluate((el,pov)=>el.contentWindow.OurworldGlobe.receive({bridgeVersion:1,event:'restoreCamera',data:pov}),{lat,lng,altitude:2.8});await page.screenshot({animations:'disabled',path:resolve(output,`earth-${name}.png`)});}}
-  await page.locator('.home-search').click();await page.getByPlaceholder('搜索国家、城市、景点').fill('巴黎');await page.locator('.place-result').filter({hasText:'巴黎'}).first().click();await page.getByRole('button',{name:'找当地人',exact:true}).click();
+  await page.locator('.home-search').click();await page.getByPlaceholder('搜索国家、城市、景点').fill('巴黎');await openLocatedResult(page,page.locator('.place-result').filter({hasText:'巴黎'}).first(),country);await browseLocatedCity(page,'巴黎');await page.getByRole('button',{name:'找当地人',exact:true}).click();
   await page.locator('.deck-front .person-photo-name h2').waitFor();await page.locator('.deck-front .cover').evaluate(el=>el.decode());
   assert.equal(await page.locator('.person-card').count(),3);assert.equal(await page.locator('.person-photo-name h2').innerText(),'Claire');
   assert.equal(await page.locator('.people-overlay').evaluate(el=>getComputedStyle(el).backgroundColor),'rgba(0, 0, 0, 0.14)');

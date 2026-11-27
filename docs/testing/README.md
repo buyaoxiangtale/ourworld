@@ -43,11 +43,11 @@ uv run ourworld test web globe-boundaries
 ```sh
 uv run ourworld test integration api
 uv run ourworld test integration catalog
-uv run ourworld test integration frontend-watch
+uv run ourworld test integration frontend-release
 uv run ourworld test integration recovery
 ```
 
-API 验收会使用种子账户创建测试数据；恢复验收默认只生成计划，追加 `--execute` 后才实际中断并恢复本地服务；监听器验收会短暂写入专用探针和错误源码，验证失败构建保留上一版本。应在允许这些操作的测试环境执行。测试读取 `.env`，不会在输出中列出密钥。
+API 验收会使用种子账户创建测试数据；恢复验收默认只生成计划，追加 `--execute` 后才实际中断并恢复本地服务；发布验收以只读方式核对前端、API 和 worker 的提交及静态资源。应在允许这些操作的测试环境执行。测试读取 `.env`，不会在输出中列出密钥。
 
 ## 原生与压测
 

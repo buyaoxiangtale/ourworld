@@ -2,7 +2,7 @@ import { Redis } from 'ioredis';
 import { Queue } from 'bullmq';
 import { S3Client, HeadBucketCommand, CreateBucketCommand, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { createHmac, timingSafeEqual, randomUUID } from 'node:crypto';
-import { config, requireSecret } from './config.js';
+import { config, publicMediaUrl, requireSecret } from './config.js';
 import { assert } from './security.js';
 import { one, query, type Row } from './db.js';
 
@@ -28,7 +28,7 @@ export async function limit(key:string,max:number,seconds:number):Promise<void> 
 }
 
 export function mediaUrl(id:string,purpose='public'):string {
- const base=`${config.publicBase}/api/v1/media/${encodeURIComponent(id)}`;
+ const base=publicMediaUrl(id);
  if(purpose==='public') return base;
  const expires=Math.floor(Date.now()/1000)+900;
  const sig=createHmac('sha256',requireSecret()).update(`${id}:${expires}`).digest('base64url');

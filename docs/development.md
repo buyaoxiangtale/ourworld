@@ -63,20 +63,15 @@ uv run ourworld media portraits --manifest /path/to/source-records.json
 
 照片来源和许可随素材保存。人像处理需要明确提供源记录，不依赖某个旧测试目录。
 
-## 前端发布
-
-自动部署的输入和产物边界由 `scripts/dev/frontend-watch.mjs` 定义。源代码在只读挂载中，依赖与构建位于独立工作目录，发布资源位于 Docker 卷。
+## 本地前端预览
 
 ```sh
 uv run ourworld watch
-uv run docker compose exec frontend-watch cat /srv/frontend/watch-status.json
 ```
 
-调整 Dockerfile、入口路径或依赖安装逻辑后，重新运行 `watch` 更新监听容器。普通网页源代码修改由常驻监听器处理。
+Vite 在 5173 热更新，共享 Web 入口 8188 从 Docker 发布卷提供网页。
 
-当前 Web 入口使用 8188。开发服务器的 `frontend-watch` 从挂载的工作区源码构建 Web 和离线地球，成功后切换发布目录。`/frontend-version.json` 返回发布版本和构建时间，版本值包含源码指纹。它可以包含工作区改动。
-
-## 后端发布
+## 前后端发布
 
 在运行 Ourworld Compose 项目的主机上，从仓库根目录执行：
 
@@ -84,10 +79,10 @@ uv run docker compose exec frontend-watch cat /srv/frontend/watch-status.json
 ./scripts/deploy/backend.sh yubs
 ```
 
-省略分支名时使用当前检出分支。脚本通过 Git 提交构建镜像，保留旧镜像用于回滚，使用新镜像执行数据库迁移，再更新两个 API 实例和 worker。迁移失败时，运行中的实例继续服务。迁移成功但新服务就绪失败时，脚本尝试恢复旧镜像，已经完成的数据库迁移会保留。该入口用于有现成数据库和网关的环境，首次初始化使用上面的完整容器流程。
+省略分支名时使用当前检出分支。脚本从该分支同一个 Git 提交构建两个镜像，停止旧的前端监听容器，再执行数据库迁移。两个 API 实例与 worker 使用新版镜像、且经网关验证 API 就绪后，脚本才原子切换前端目录。迁移失败时，原版本继续服务。API 就绪或前端切换失败时，脚本保留原前端并尝试恢复旧后端，已经完成的数据库迁移会保留。此入口适用于已有数据库和网关的共享环境，首次初始化使用上面的完整容器流程。
 
 ## 部署后验证与清理
 
-- 发布 API 或 worker 后，检查 `/api/v1/ready`。前端发布通过 `/frontend-version.json` 确认生效版本，并核对首页与静态资源能否加载。部署地点搜索变更后，可用 `/api/v1/places?q=lon&limit=1` 检查伦敦优先排序。
+- 发布后检查 `/api/v1/ready`，并确认 `/frontend-version.json` 的 `revision` 与 API 和 worker 镜像的 Git 提交一致。部署地点搜索变更后，可用 `/api/v1/places?q=lon&limit=1` 检查伦敦优先排序。
 - 容器、镜像和数据卷需在同一部署主机和 Compose 项目下清点。清理旧镜像时，按镜像 ID 核对运行中及已停止的容器引用，并保留需要用于回滚的版本。不要通过全局 prune 清理同机项目。
 - 当前 PostgreSQL 服务使用 `postgres-data` 卷，文件存储和 Redis 也各有持久卷。只有确认用途、消费者和备份的旧库或旧卷才适合删除。停服务命令保留这些卷。仓库的 `apps/api/migrations/` 是新库初始化和旧库升级所需的迁移链。

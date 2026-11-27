@@ -20,8 +20,10 @@ try {
   run(docker, ['build', '--target', 'api', '--tag', 'ourworld-api:local', '.']);
   console.log('Building the web app…');
   run(docker, ['build', '--target', 'web', '--tag', 'ourworld-web:local', '.']);
-  console.log('Building the frontend auto-deployment watcher…');
-  run(docker, ['build', '--target', 'frontend-watch', '--tag', 'ourworld-frontend-watch:local', '.']);
+  run(docker, ['build', '--target', 'frontend-release', '--tag', 'ourworld-frontend-release:local', '.']);
+  const legacy = execFileSync(docker, ['ps', '-q', '--filter', 'label=com.docker.compose.project=ourworld',
+    '--filter', 'label=com.docker.compose.service=frontend-watch'], {cwd:root,encoding:'utf8'}).trim();
+  if (legacy) run(docker, ['stop', ...legacy.split(/\s+/)]);
   run(docker, ['compose', 'up', '-d', '--no-build', '--pull', 'never', '--scale', 'api=2']);
   // Resolve the current API container addresses after an image update.
   run(docker, ['compose', 'restart', 'gateway']);
@@ -38,6 +40,7 @@ try {
     await new Promise(resolve => setTimeout(resolve, 2000));
   }
   if (!ready) throw new Error('Gateway not ready. Inspect: docker compose logs --tail=80 api worker gateway');
+  run(docker, ['compose', 'run', '--rm', '--no-deps', '-T', 'frontend-release', '--local']);
   console.log(`Ourworld ready: ${local}\nAdmin: ${local}/admin\nMail: http://127.0.0.1:8025`);
 } catch (error) {
   console.error(error.message);

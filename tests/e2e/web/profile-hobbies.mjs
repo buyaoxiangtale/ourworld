@@ -83,7 +83,6 @@ try{
   check(user.tags.length===10&&Object.keys(patches.at(-1)).join(',')==='tags'&&user.name==='爱好测试'&&user.bio==='喜欢散步和摄影。',`${width}: hobby save updates only tags and refreshes the profile`);
   await page.getByRole('button',{name:'编辑个人简介',exact:true}).click();const bio=page.getByRole('dialog',{name:'编辑个人简介',exact:true});await bio.waitFor();await waitForEntrance(bio);
   check(await bio.getByRole('textbox',{name:'个人简介',exact:true}).inputValue()===user.bio,`${width}: biography retains its text inside the animated sheet`);await bio.getByRole('button',{name:'取消',exact:true}).click();
-  await page.locator('.owner-about-add').click();const story=page.getByRole('dialog',{name:'新增卡片',exact:true});await story.waitFor();await waitForEntrance(story);await story.getByRole('button',{name:'取消',exact:true}).click();
   await page.emulateMedia({reducedMotion:'reduce'});dialog=await open();
   check(await dialog.evaluate(element=>getComputedStyle(element).animationName)==='none',`${width}: reduced-motion preference disables the slide animation`);await dialog.getByRole('button',{name:'取消',exact:true}).click();
   user.tags=['政治','平等','社会性发展','咖啡','摄影 Photography','旧爱好'];await page.reload();await page.locator('.bottom-nav button[data-tab="profile"]').click();await page.locator('.owner-name').waitFor();

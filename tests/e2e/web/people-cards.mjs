@@ -2,6 +2,7 @@ import {readFile,mkdir,writeFile} from 'node:fs/promises';
 import {resolve,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import assert from 'node:assert/strict';
+import {browseLocatedCity,openLocatedFixture} from './search-location.mjs';
 import {preview} from 'vite';
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'../../..');
 process.env.PLAYWRIGHT_BROWSERS_PATH=resolve(root,'.playwright-browsers');
@@ -48,7 +49,7 @@ try{
   const page=await context.newPage();page.setDefaultTimeout(15000);page.on('pageerror',e=>errors.push(e.message));
   await page.goto(base,{waitUntil:'domcontentloaded'});
   await page.evaluate(()=>document.fonts.ready);
-  await page.locator('.home-search').click();await page.getByPlaceholder('搜索国家、城市、景点').fill('巴黎');await page.locator('.place-result').filter({hasText:'巴黎'}).first().click();
+  await page.locator('.home-search').click();await page.getByPlaceholder('搜索国家、城市、景点').fill('巴黎');await openLocatedFixture(page,page.locator('.place-result').filter({hasText:'巴黎'}).first(),country);await browseLocatedCity(page,'巴黎');
   await page.getByRole('button',{name:'收藏城市',exact:true}).click();
   await page.getByRole('button',{name:'取消收藏',exact:true}).click();
   await page.getByRole('button',{name:'收藏城市',exact:true}).waitFor();
@@ -82,7 +83,7 @@ try{
    await page.locator('.bottom-nav [data-tab="profile"]').click();await page.getByRole('button',{name:'设置',exact:true}).click();await page.screenshot({path:resolve(output,'settings-390.png'),animations:'disabled'});
    await page.getByRole('dialog').getByLabel('界面语言').selectOption('en');await page.getByRole('dialog').getByRole('button',{name:'Close',exact:true}).click();
    await page.getByRole('button',{name:'Edit personal details',exact:true}).click();await page.getByRole('dialog').last().getByRole('textbox').first().waitFor();await page.screenshot({path:resolve(output,'editor-390.png'),animations:'disabled'});
-   await page.reload({waitUntil:'domcontentloaded'});missingPhoto=true;await page.locator('.home-search').click();await page.locator('.search-sheet-input input').fill('Paris');await page.locator('.place-result').first().click();await page.getByRole('button',{name:'Meet the locals',exact:true}).click();
+   await page.reload({waitUntil:'domcontentloaded'});missingPhoto=true;await page.locator('.home-search').click();await page.locator('.search-sheet-input input').fill('Paris');await openLocatedFixture(page,page.locator('.place-result').first(),country);await browseLocatedCity(page,'Paris');await page.getByRole('button',{name:'Meet the locals',exact:true}).click();
    await page.locator('.person-photo>.no-image').waitFor();await page.screenshot({path:resolve(output,'photo-failure-390.png'),animations:'disabled'});
    // The fixture feed is exhausted after the long-name card; run the enlarged-text
    // layout check on the card that is on screen (photo-failure state is captured above).

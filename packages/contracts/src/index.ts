@@ -5,7 +5,9 @@ export type PriceUnit = 'hour'|'half-day'|'day'|'experience';
 export interface PriceRange { min: number; max: number; currency: Currency; unit: PriceUnit }
 export const EDUCATION_LEVELS = ['high-school','vocational','associate','bachelor','master','doctorate','other'] as const;
 export type EducationLevel = typeof EDUCATION_LEVELS[number];
-export interface User { id: string; email?: string; name: string; avatar: string; bio: string; verified: boolean; providerStatus: 'none'|'pending'|'approved'|'rejected'; role: 'user'|'admin'; accountType: 'individual'|'agency'; priceRange?: PriceRange; experienceYears?: number; languages?: string[]; school?: string; educationLevel?: EducationLevel; tags: string[]; cityIds: string[]; quote?: string; socialLinks?: {label:string;url:string}[] }
+export const DEFAULT_BIO_BACKGROUND_OPACITY = 40;
+export interface BioBackground {fileId: string; image: string; opacity: number}
+export interface User { id: string; email?: string; name: string; avatar: string; bio: string; bioBackground?: BioBackground; verified: boolean; providerStatus: 'none'|'pending'|'approved'|'rejected'; role: 'user'|'admin'; accountType: 'individual'|'agency'; priceRange?: PriceRange; experienceYears?: number; languages?: string[]; school?: string; educationLevel?: EducationLevel; tags: string[]; cityIds: string[]; quote?: string; socialLinks?: {label:string;url:string}[] }
 export interface Place { id: string; kind: 'country'|'city'|'attraction'; parentId?: string; country: string; name: Localized; lat: number; lng: number; description: Localized; image: string; aliases?: string[] }
 export interface Person extends User { quote: string; rating?: number }
 export interface Page<T> { items: T[]; nextCursor: string|null }
@@ -22,7 +24,7 @@ export interface Trip { id:string; conversationId:string; creatorId:string; peer
 export interface LayoutJob { id:string; status:'queued'|'running'|'validating'|'ready'|'failed'|'cancelled'; baseRevision:number; layout?:ProfileLayout; error?:string }
 export interface RealtimeEvent { event:string; data:Record<string,unknown> }
 export interface GlobeCommand { bridgeVersion:1; event:'focusPlace'|'clearCountryFocus'|'setMarkers'|'restoreCamera'|'setTheme'|'setActive'; data:Record<string,unknown> }
-export interface GlobeEvent { bridgeVersion:1; event:'rendererReady'|'placeSelected'|'cameraChanged'|'rendererError'; data:Record<string,unknown> }
+export interface GlobeEvent { bridgeVersion:1; event:'rendererReady'|'placeSelected'|'cameraChanged'|'streetMapRequested'|'rendererError'; data:Record<string,unknown> }
 export const BLOCK_TYPES: BlockType[] = ['intro','prompts','gallery','experiences','skills','cities','packages','posts','reviews','social'];
 export const PROFILE_THEMES = ['ocean','forest','nocturne'] as const;
 export const CURRENCIES: Currency[] = ['USD','CNY','EUR','GBP','JPY'];

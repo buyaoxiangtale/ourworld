@@ -5,6 +5,7 @@ import { DEFAULT_LAYOUT } from '@ourworld/contracts';
 import { migrate } from './migrate.js';
 import { normalizeSeedMedia } from './seed-media.js';
 import { LOAD_DEMO_NAMES } from './demo-copy.js';
+import { CITY_COPY } from './city-copy.js';
 import { enrichSeed } from './enrich-seed.js';
 import { migrateSeedPhotography } from './photography.js';
 
@@ -31,7 +32,7 @@ export async function seed():Promise<void>{
   for(const [id,[zh,en,lat,lng]]of Object.entries(countries))await c.query("INSERT INTO places(id,kind,country,name,lat,lng,description,aliases) VALUES($1,'country',$2,$3,$4,$5,$6,$7) ON CONFLICT(id) DO NOTHING",[`country-${id}`,en,JSON.stringify({zh,en}),lat,lng,JSON.stringify({zh:`从${zh}开始探索世界`,en:`Explore ${en} with local people`}),id==='usa'?['美国','US','USA','America']:id==='uk'?['英国','UK','Britain']:[]]);
   for(const [id,zh,en,country,lat,lng]of CITIES){
    const cityId=`city-${id}`,image=`/api/v1/seed/city/${id}.svg`;
-   await c.query("INSERT INTO places(id,kind,parent_id,country,name,lat,lng,description,image,aliases) VALUES($1,'city',$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT(id) DO NOTHING",[cityId,`country-${country}`,countries[country][1],JSON.stringify({zh,en}),lat,lng,JSON.stringify({zh:`走进${zh}的街巷，与当地人分享一段慢下来的旅程。`,en:`Discover the quieter corners of ${en}, through the eyes of someone who calls it home.`}),image,id==='paris'?['巴黎市','city of light']:id==='tokyo'?['东京市','東京']:[]]);
+   await c.query("INSERT INTO places(id,kind,parent_id,country,name,lat,lng,description,image,aliases) VALUES($1,'city',$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT(id) DO NOTHING",[cityId,`country-${country}`,countries[country][1],JSON.stringify({zh,en}),lat,lng,JSON.stringify(CITY_COPY[cityId]),image,id==='paris'?['巴黎市','city of light']:id==='tokyo'?['东京市','東京']:[]]);
    for(let i=0;i<4;i++){const labels=[['老城漫步','Old Town Walk'],['当地市集','Local Market'],['河畔日落','Riverside Sunset'],['城市博物馆','City Museum']];let attractionZh=`${zh} · ${labels[i][0]}`,attractionEn=`${en} · ${labels[i][1]}`;
     const attractionId=id==='paris'&&i===0?'attraction-eiffel-tower':id==='beijing'&&i===0?'attraction-great-wall':`attraction-${id}-${i}`;
     let attractionLat=lat+(i-1)*0.015,attractionLng=lng+(i-1)*0.015;

@@ -9,7 +9,7 @@ COPY packages/globe/package.json packages/globe/package.json
 RUN --mount=type=cache,id=ourworld-backend-npm,target=/root/.npm \
     npm ci --workspace @ourworld/api --workspace @ourworld/contracts --prefer-offline --no-audit --no-fund
 COPY . .
-RUN npm run build -w @ourworld/contracts && npm run build -w @ourworld/api
+RUN chmod a+r apps/api/migrations/*.sql && npm run build -w @ourworld/contracts && npm run build -w @ourworld/api
 RUN --mount=type=cache,id=ourworld-backend-npm,target=/root/.npm \
     npm prune --omit=dev --workspace @ourworld/api --workspace @ourworld/contracts --prefer-offline --no-audit --no-fund
 

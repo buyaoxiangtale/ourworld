@@ -1,4 +1,4 @@
-import { EDUCATION_LEVELS } from '@ourworld/contracts';
+import { DEFAULT_BIO_BACKGROUND_OPACITY, EDUCATION_LEVELS } from '@ourworld/contracts';
 import {photographicLayout,upgradeSeedPhoto} from './photography.js';
 import { randomUUID, randomInt } from 'node:crypto';
 import { z } from 'zod';
@@ -15,6 +15,7 @@ const text=(max=1000)=>z.string().trim().min(1).max(max);
 const ids=z.array(text(100)).max(50);
 const url=z.string().max(2000).refine(x=>!x||/^https?:\/\//.test(x),'Use an HTTP(S) URL');
 const iso=z.string().datetime({offset:true});
+const bioBackground=z.object({fileId:z.string().uuid(),opacity:z.number().int().min(0).max(100).default(DEFAULT_BIO_BACKGROUND_OPACITY)}).strict();
 const priceRange=z.object({min:z.number().min(0).max(1000000),max:z.number().min(0).max(1000000),currency:z.enum(['USD','CNY','EUR','GBP','JPY']),unit:z.enum(['hour','half-day','day','experience'])}).strict().refine(v=>v.max>=v.min,'The upper rate cannot be below the lower rate');
 export class AppService {
  async authenticate(token:string):Promise<Row> {
@@ -72,7 +73,7 @@ export class AppService {
  }
  async logout(input:unknown):Promise<any> { const b=parse(z.object({refreshToken:text(300)}),input);await transaction(async c=>{const r=(await c.query('UPDATE sessions SET revoked=true WHERE refresh_hash=$1 RETURNING id,user_id',[sha256(b.refreshToken)])).rows[0];if(r)await emit(c,[r.user_id],'session.revoked',{sessionId:r.id});});return {ok:true}; }
  async editMe(actor:Row,input:unknown):Promise<any> {
-  const b=parse(z.object({name:text(80).optional(),bio:z.string().max(5000).optional(),tags:z.array(text(40)).max(20).optional(),cityIds:ids.optional(),quote:z.string().max(100).optional(),avatar:url.optional(),socialLinks:z.array(z.object({label:text(50),url:url.refine(Boolean)})).max(10).optional(),accountType:z.enum(['individual','agency']).optional(),priceRange:priceRange.nullable().optional(),experienceYears:z.number().int().min(0).max(90).nullable().optional(),languages:z.array(text(30)).max(12).optional(),school:z.string().trim().max(120).nullable().optional(),educationLevel:z.enum(EDUCATION_LEVELS).nullable().optional()}).strict(),input);
+  const b=parse(z.object({name:text(80).optional(),bio:z.string().max(5000).optional(),bioBackground:bioBackground.nullable().optional(),tags:z.array(text(40)).max(20).optional(),cityIds:ids.optional(),quote:z.string().max(100).optional(),avatar:url.optional(),socialLinks:z.array(z.object({label:text(50),url:url.refine(Boolean)})).max(10).optional(),accountType:z.enum(['individual','agency']).optional(),priceRange:priceRange.nullable().optional(),experienceYears:z.number().int().min(0).max(90).nullable().optional(),languages:z.array(text(30)).max(12).optional(),school:z.string().trim().max(120).nullable().optional(),educationLevel:z.enum(EDUCATION_LEVELS).nullable().optional()}).strict(),input);
   if(b.cityIds) await this.validCities(b.cityIds);
   // Switching to an agency account restarts service review: agencies must hold the
   // dedicated agency certification before they re-enter the people feed.
@@ -82,7 +83,11 @@ export class AppService {
   // The type switch and the voiding of pending verifications commit together, so a
   // concurrent approval decision can never restore the previous type's access.
   const u=await transaction(async c=>{
-   const row=(await c.query(`UPDATE users SET name=$2,bio=$3,tags=$4,city_ids=$5,quote=$6,avatar=$7,social_links=$8,account_type=$9,price_range=$10,experience_years=$11,languages=$12,school=$13,education_level=$14${becomesAgency||leavesAgency?",provider_status='none'":''} WHERE id=$1 RETURNING *`,[actor.id,current.name,current.bio,JSON.stringify(current.tags),current.cityIds,current.quote,current.avatar,JSON.stringify(current.socialLinks),current.accountType,current.priceRange?JSON.stringify(current.priceRange):null,current.experienceYears??null,current.languages,current.school||null,current.educationLevel])).rows[0];
+   if(b.bioBackground){
+    const image=await c.query("SELECT 1 FROM files WHERE id=$1 AND user_id=$2 AND purpose='public' AND mime IN ('image/jpeg','image/png','image/webp')",[b.bioBackground.fileId,actor.id]);
+    assert(image.rowCount,400,'INVALID_FILE','Choose one of your uploaded images');
+   }
+   const row=(await c.query(`UPDATE users SET name=$2,bio=$3,tags=$4,city_ids=$5,quote=$6,avatar=$7,social_links=$8,account_type=$9,price_range=$10,experience_years=$11,languages=$12,school=$13,education_level=$14,bio_background=CASE WHEN $15 THEN $16::jsonb ELSE bio_background END${becomesAgency||leavesAgency?",provider_status='none'":''} WHERE id=$1 RETURNING *`,[actor.id,current.name,current.bio,JSON.stringify(current.tags),current.cityIds,current.quote,current.avatar,JSON.stringify(current.socialLinks),current.accountType,current.priceRange?JSON.stringify(current.priceRange):null,current.experienceYears??null,current.languages,current.school||null,current.educationLevel,b.bioBackground!==undefined,b.bioBackground?JSON.stringify(b.bioBackground):null])).rows[0];
    // Either direction of an account-type switch restarts service review, so any
    // pending application from the previous type must stop being approvable.
    if(becomesAgency||leavesAgency)await c.query("UPDATE verifications SET status='rejected',reason='Superseded by an account type change' WHERE user_id=$1 AND status='pending'",[actor.id]);
@@ -148,7 +153,7 @@ export class AppService {
   }
   else {
    const citiesCondition=coverage==='all'?'u.city_ids @> $1::text[]':'u.city_ids && $1::text[]';
-   const found=await query(`SELECT u.id FROM users u WHERE u.active AND u.provider_status='approved' AND ${citiesCondition} AND u.id<>$2 AND NOT EXISTS(SELECT 1 FROM blocks b WHERE (b.user_id=$2 AND b.blocked_id=u.id) OR (b.blocked_id=$2 AND b.user_id=u.id))`,[cityIds,owner]);
+   const found=await query(`SELECT u.id FROM users u WHERE u.active AND ${citiesCondition} AND u.id<>$2 AND NOT EXISTS(SELECT 1 FROM blocks b WHERE (b.user_id=$2 AND b.blocked_id=u.id) OR (b.blocked_id=$2 AND b.user_id=u.id))`,[cityIds,owner]);
    list=found.map(x=>x.id);for(let i=list.length-1;i>0;i--){const j=randomInt(i+1);[list[i],list[j]]=[list[j],list[i]];}feedId=randomUUID();await redis.set(`feed:${owner}:${cityId}:${feedId}`,JSON.stringify({ids:list,cityIds,coverage}),'EX',7200);
   }
   let offset=q.cursor?Number(q.cursor):0;assert(Number.isSafeInteger(offset)&&offset>=0&&offset<=list.length,400,'INVALID_CURSOR','Invalid card cursor');
@@ -156,7 +161,7 @@ export class AppService {
   while(items.length<10&&offset<list.length) {
    const batch=list.slice(offset,offset+10);offset+=batch.length;
    const citiesCondition=coverage==='all'?'u.city_ids @> $2::text[]':'u.city_ids && $2::text[]';
-   const rows=await query(`SELECT u.*, (SELECT round(avg(r.rating),1)::float FROM reviews r WHERE r.target_id=u.id AND r.hidden=false) AS rating FROM users u WHERE u.id=ANY($1::text[]) AND u.active AND u.provider_status='approved' AND ${citiesCondition} AND NOT EXISTS(SELECT 1 FROM blocks b WHERE (b.user_id=$3 AND b.blocked_id=u.id) OR (b.blocked_id=$3 AND b.user_id=u.id))`,[batch,cityIds,owner]);
+   const rows=await query(`SELECT u.*, (SELECT round(avg(r.rating),1)::float FROM reviews r WHERE r.target_id=u.id AND r.hidden=false) AS rating FROM users u WHERE u.id=ANY($1::text[]) AND u.active AND ${citiesCondition} AND NOT EXISTS(SELECT 1 FROM blocks b WHERE (b.user_id=$3 AND b.blocked_id=u.id) OR (b.blocked_id=$3 AND b.user_id=u.id))`,[batch,cityIds,owner]);
    const byId=new Map(rows.map(x=>[x.id,x]));for(const id of batch){const u=byId.get(id);if(u)items.push({...shapes.user(u),rating:u.rating||undefined});}
   }
   return {feedId,items,nextCursor:offset<list.length?String(offset):null,exhausted:offset>=list.length};

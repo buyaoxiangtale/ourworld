@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {mkdir,writeFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {chromium} from 'playwright';
+import {browseLocatedCity,openLocatedFixture} from './search-location.mjs';
 
 const base=process.env.OURWORLD_WEB_URL||'http://127.0.0.1:8188',out=resolve('artifacts/slide-exit');await mkdir(out,{recursive:true});
 const browser=await chromium.launch({headless:true,args:['--no-proxy-server','--disable-gpu']});
@@ -24,6 +25,7 @@ try{
    else if(path==='/me'){if(method==='PATCH'){if(failBio){failBio=false;return route.fulfill({status:503,json:{message:'暂时无法保存'}});}const patch=route.request().postDataJSON();writes.push(patch);Object.assign(user,patch);}json=user;}
    else if(path==='/profile/draft'){if(method==='PUT'){layout=route.request().postDataJSON().layout;revision++;}json={revision,publishedRevision:1,layout};}
    else if(path==='/places')json={items:url.searchParams.get('kind')==='country'?[country]:[city]};
+   else if(path===`/places/${country.id}`)json=country;
    else if(path===`/places/${city.id}`)json=city;
    else if(path==='/packages')json={items:packages};
    else if(path.endsWith('/people-feed'))json={feedId:'fixture',items:[user],nextCursor:null};
@@ -55,9 +57,6 @@ try{
   await exit(target,()=>target.getByRole('button',{name:'保存',exact:true}).click(),'bio save');check(user.bio==='更新后的个人简介',`${width}: saved bio survives the exit`);
   await page.locator('.owner-interest-card').first().click();target=dialog('我的爱好');await exit(target,()=>target.getByRole('button',{name:'取消',exact:true}).click(),'hobbies cancel');
   await page.locator('.owner-interest-card').first().click();target=dialog('我的爱好');await exit(target,()=>target.getByRole('button',{name:'保存爱好',exact:true}).click(),'hobbies save');
-  await page.getByRole('button',{name:'编辑卡片 1',exact:true}).click();target=dialog('编辑卡片');await target.getByRole('textbox',{name:'照片配文',exact:true}).fill('修改后的照片故事');await exit(target,()=>target.getByRole('button',{name:'保存',exact:true}).click(),'photo story save');
-  await page.getByRole('button',{name:'编辑卡片 1',exact:true}).click();target=dialog('编辑卡片');await exit(target,()=>target.getByRole('button',{name:'移除卡片',exact:true}).click(),'photo story remove');
-  await page.locator('.owner-about-add').click();target=dialog('新增卡片');await exit(target,()=>target.getByRole('button',{name:'取消',exact:true}).click(),'new story cancel');
   for(const [trigger,title,save] of [['编辑 服务城市','服务城市','保存所选城市（1）'],['编辑 语言','服务语言','保存所选语言（1）']]){
    await page.getByRole('button',{name:trigger,exact:true}).click();target=dialog(title);await exit(target,()=>target.getByRole('button',{name:'返回',exact:true}).click(),`${title} back`);
    await page.getByRole('button',{name:trigger,exact:true}).click();target=dialog(title);await target.getByRole('button',{name:save,exact:true}).waitFor();await exit(target,()=>target.getByRole('button',{name:save,exact:true}).click(),`${title} save`);
@@ -70,8 +69,8 @@ try{
   check(await target.getAttribute('data-previous-editor')===null&&await target.getByRole('textbox',{name:'个人简介',exact:true}).inputValue()===user.bio,`${width}: reopening during exit starts a fresh editor without cancelled input`);await exit(target,()=>target.getByRole('button',{name:'取消',exact:true}).click(),'reopened editor cancel');
   await page.emulateMedia({reducedMotion:'reduce'});target=await openBio();await target.getByRole('button',{name:'取消',exact:true}).click();await target.waitFor({state:'hidden'});check(await page.locator('[data-slide-exiting]').count()===0,`${width}: reduced motion closes immediately without leaving an overlay`);await page.emulateMedia({reducedMotion:'no-preference'});
   await page.getByRole('button',{name:'地球',exact:true}).click();await page.getByRole('button',{name:'搜索国家、城市、景点',exact:true}).click();target=dialog('探索地点');await exit(target,()=>target.getByRole('button',{name:'关闭',exact:true}).click(),'map search close');
-  await page.getByRole('button',{name:'搜索国家、城市、景点',exact:true}).click();await dialog('探索地点').locator('.place-result').first().click();target=dialog('巴黎');await exit(target,()=>target.getByRole('button',{name:'返回地球',exact:true}).click(),'city sheet close');
-  await page.getByRole('button',{name:'搜索国家、城市、景点',exact:true}).click();await dialog('探索地点').locator('.place-result').first().click();await dialog('巴黎').getByRole('button',{name:'找当地人',exact:true}).click();await page.getByRole('button',{name:'查看主页',exact:true}).click();target=dialog('个人主页');await exit(target,()=>target.getByRole('button',{name:'返回',exact:true}).click(),'public profile back');
+  await page.getByRole('button',{name:'搜索国家、城市、景点',exact:true}).click();await openLocatedFixture(page,dialog('探索地点').locator('.place-result').first(),country);await browseLocatedCity(page,'巴黎');target=dialog('巴黎');await exit(target,()=>target.getByRole('button',{name:'返回城市列表',exact:true}).click(),'city sheet close');
+  await dialog('浏览城市').getByRole('button',{name:'查看城市',exact:true}).click();await dialog('巴黎').getByRole('button',{name:'找当地人',exact:true}).click();await page.getByRole('button',{name:'查看主页',exact:true}).click();target=dialog('个人主页');await exit(target,()=>target.getByRole('button',{name:'返回',exact:true}).click(),'public profile back');
   check(writes.length>=4,`${width}: successful edits submit their data`);await context.close();
  }
  check(errors.length===0,`no browser errors: ${errors.join('; ')}`);await writeFile(resolve(out,'report.json'),JSON.stringify({passed:true,checks,samples},null,2));console.log(`slide-exit: ${checks.length} checks passed`);

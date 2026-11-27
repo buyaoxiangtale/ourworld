@@ -4,16 +4,16 @@
 
 底栏微缩地球由同一组影像与地形纹理生成哑光陶瓷效果。底栏四套旋转帧为本项目渲染产物，独立于主地球的真实影像。更改材质时按 [地球包说明](../../packages/globe/README.md) 重新生成。
 
-核验及下载日期：2026-11-02；2026-11-04 重新编码并瘦身。纹理从 NASA 官方域名下载，可随 Web、Android 与 iOS 静态包离线使用；未使用 Apple 地图瓦片、第三方图床或生成式地表图。它是合成资料，不表示实时地表。
+纹理从 NASA 官方域名下载，可随 Web、Android 与 iOS 静态包离线使用。2026-11-26 重新核验并编码了日间影像。
 
 文件位于 `packages/globe/public/textures/`，署名页位于 `packages/globe/public/credits.html`。构建应完整复制 public 内容，原生 WebView 保持相对路径 `textures/…`。详细来源、源文件与成品 SHA256、处理工具版本已随资源保存在 [asset-manifest.json](../../packages/globe/public/textures/asset-manifest.json)。
 
 | 本地文件 | 内容与年代 | 打包尺寸 | 字节数 |
 | --- | --- | --- | ---: |
-| `earth-day.jpg` | Blue Marble Next Generation，2004 年 7 月月合成，含地形阴影 | 2048 × 1024 RGB JPEG（baseline） | 213,354 |
+| `earth-day.jpg` | Blue Marble Next Generation，2004 年 7 月月合成，含地形阴影 | 4096 × 2048 RGB JPEG（baseline） | 728,752 |
 | `earth-topology.png` | GEBCO_08 地形/海床灰度，用作凹凸贴图 | 2048 × 1024 灰度内容、RGB 容器 PNG | 522,717 |
 
-纹理总计 **736,071 字节（约 719 KiB）**。压缩包体积不同于解码后的 GPU 内存：2048 × 1024 解码后约 8MB 显存（含 mipmap），移动端解码也快于原先的 4096 × 2048 渐进式 JPEG。
+两张纹理合计 **1,251,469 字节（约 1.19 MiB）**。主地球画布按设备像素比和视口面积选取分辨率，高密度屏幕最高使用 2 倍比例。
 
 **官方来源和原作者**
 
@@ -31,15 +31,15 @@
 
 日间图保留 2:1 等距经纬展开，左至右约为西经 180° 至东经 180°，上至下为北极至南极；没有镜像、裁剪、绘制或添加虚构地表。处理使用 sharp 0.35.5 / libvips 8.18.7。
 
-- 日间图：2026-11-04 由此前 4096 × 2048 渐进式版本以 Lanczos3 重采样至 2048 × 1024，JPEG quality 84、baseline（非渐进式）编码，4:2:0 色度。baseline 编码避免移动端对渐进式 JPEG 的慢速解码。
+- 日间图：2026-11-26 直接从 5400 × 2700 原图用 Lanczos3 重采样至 4096 × 2048，JPEG quality 84、baseline 编码，4:2:0 色度。
 
 日间图按 sRGB 颜色资料处理。开发者应延续现有球体 UV 约定，并检查城市标记与纹理经纬位置一致。
 
 **成品 SHA256**
 
 ```text
-a61a1cc907a856f835856b4ee9fd4a5ece2a35807bfd96ef36b23f0d613d5cd0  earth-day.jpg
+709cc719196b945f0cf850444b59fb009503555206f6aed1d2896dded2cb7939  earth-day.jpg
 579cce501068380ef719eed093b3c77ea772c927d9ad43b22797654027aadc8f  earth-topology.png
 ```
 
-源文件 SHA256 和源分辨率见 `asset-manifest.json`。2026-11-04 已重新解码核对 hash、尺寸、字节数与 2:1 比例；此前对四张纹理的逐张核验记录（含云图 RGBA 通道检查）保留在 git 历史中。
+源文件 SHA256 和源分辨率见 `asset-manifest.json`。2026-11-26 已重新核对日间图的源文件 SHA256、成品哈希、尺寸和字节数。

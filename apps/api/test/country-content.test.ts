@@ -4,12 +4,23 @@ import { createHash } from 'node:crypto';
 import Fastify from 'fastify';
 import type { PoolClient } from 'pg';
 import { COUNTRY_COPY } from '../src/country-copy.js';
+import { CITY_COPY } from '../src/city-copy.js';
 import { COUNTRY_ART_IDS,countryArtwork } from '../src/country-illustrations.js';
 import { ENRICHED_COUNTRIES,EXTRA_CITIES,DEMO_PROFILES,demoLayout } from '../src/enriched-data.js';
 import { BASE_CITY_IDS } from '../src/seed.js';
 import { countryEnrichmentPatch,applyEnrichedSeed } from '../src/enrich-seed.js';
 import { registerSeedAssets,renderSeedPng } from '../src/seed-assets.js';
 import { BLOCK_TYPES } from '@ourworld/contracts';
+
+test('every city has distinct and substantive Chinese and English descriptions',()=>{
+ const expected=new Set([...BASE_CITY_IDS,...EXTRA_CITIES.map(city=>city.id)]);
+ assert.deepEqual(new Set(Object.keys(CITY_COPY)),expected);
+ for(const locale of ['zh','en'] as const){
+  const descriptions=Object.values(CITY_COPY).map(copy=>copy[locale]);
+  assert(descriptions.every(description=>description.trim().length>35));
+  assert.equal(new Set(descriptions).size,expected.size);
+ }
+});
 
 test('18 country descriptions and landmark illustrations match the catalog without generic templates',()=>{
  assert.equal(ENRICHED_COUNTRIES.length,18);assert.deepEqual(new Set(ENRICHED_COUNTRIES.map(c=>c.slug)),new Set(Object.keys(COUNTRY_COPY)));assert.deepEqual(new Set(COUNTRY_ART_IDS),new Set(Object.keys(COUNTRY_COPY)));

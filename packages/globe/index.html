@@ -12,6 +12,10 @@ canvas{display:block}
 @media (prefers-reduced-motion:reduce){#twinkle i{animation:none;opacity:.5}}
 html.globe-idle #twinkle i{animation-play-state:paused}
 #globe{position:relative;z-index:1}
+.city-marker-anchor{width:0;height:0;pointer-events:none}
+.city-marker{position:absolute;top:0;left:0;transform:translate(-50%,-3px);border:0;padding:0 3px 6px;background:transparent;color:#f2f0e4;text-shadow:0 1px 2px #121112,0 0 4px #121112;font:600 12px/1.25 system-ui,sans-serif;white-space:nowrap;cursor:pointer;pointer-events:auto}
+.city-marker::before{display:block;width:6px;height:6px;margin:0 auto 5px;border-radius:50%;background:#e5db87;box-shadow:0 0 0 2px #121112;content:""}
+.city-marker:focus-visible{outline:1px solid #e5db87;border-radius:6px}
 #fallback{display:none;position:fixed;inset:0;color:var(--ow-inkMuted);text-align:center;padding:35vh 15px 0;box-sizing:border-box;background:var(--ow-space);z-index:11}
 #boot{position:fixed;inset:0;display:flex;flex-direction:column;gap:14px;align-items:center;justify-content:center;background:color-mix(in srgb, var(--ow-space) 42%, transparent);color:var(--ow-inkMuted);z-index:10;transition:opacity .4s}
 #boot.done{opacity:0;pointer-events:none;visibility:hidden}

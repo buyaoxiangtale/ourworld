@@ -1,8 +1,5 @@
-// 1:110m keeps country plates visually identical at globe scale while cutting polygon
-// vertices by ~80%: faster ConicPolygonGeometry builds, fewer raycast triangles on drag
-// and a ~600KB smaller bundle. Revisit only if per-country coastline detail is requested.
 import source from 'world-atlas/countries-110m.json';
-import { feature } from 'topojson-client';
+import { feature, mesh } from 'topojson-client';
 import type { FeatureCollection, Geometry } from 'geojson';
 
 interface AtlasGeometry {
@@ -19,8 +16,6 @@ interface AtlasTopology {
   transform?: unknown;
   bbox?: unknown;
 }
-
-const topology = source as unknown as AtlasTopology;
 
 /**
  * Natural Earth ships Taiwan as a country of its own, which makes it a separate hit
@@ -41,47 +36,55 @@ const polygons = (geometry: AtlasGeometry): number[][][] =>
   geometry.type === 'Polygon' ? [geometry.arcs as number[][]] : (geometry.arcs as number[][][]);
 
 const arcIds = (geometry: AtlasGeometry) =>
-  polygons(geometry).flatMap(polygon => polygon.flatMap(ring => ring.map(Math.abs)));
+  polygons(geometry).flatMap(polygon => polygon.flatMap(ring => ring.map(arc=>arc<0?~arc:arc)));
 
 const matches = (geometry: AtlasGeometry, [id, name]: [string, string]) =>
   String(geometry.id ?? '') === id || geometry.properties?.name === name;
 
-const geometries = topology.objects.countries.geometries;
-const removed = new Set<AtlasGeometry>();
-const replacements = new Map<AtlasGeometry, AtlasGeometry>();
+export function mergeTerritories(source:unknown):AtlasTopology {
+  const topology=source as AtlasTopology;
+  const geometries = topology.objects.countries.geometries;
+  const removed = new Set<AtlasGeometry>();
+  const replacements = new Map<AtlasGeometry, AtlasGeometry>();
 
-for (const { into, from } of MERGES) {
-  const target = geometries.find(geometry => matches(geometry, into));
-  const sourceGeometry = geometries.find(geometry => matches(geometry, from));
-  if (!target || !sourceGeometry) {
-    console.warn(`[globe] territory merge skipped: ${from.join(' / ')} -> ${into.join(' / ')}`);
-    continue;
+  for (const { into, from } of MERGES) {
+    const target = geometries.find(geometry => matches(geometry, into));
+    const sourceGeometry = geometries.find(geometry => matches(geometry, from));
+    if (!target || !sourceGeometry) {
+      console.warn(`[globe] territory merge skipped: ${from.join(' / ')} -> ${into.join(' / ')}`);
+      continue;
+    }
+    const targetArcs = new Set(arcIds(target));
+    const shared = arcIds(sourceGeometry).filter(id => targetArcs.has(id));
+    if (shared.length) console.warn(`[globe] territory merge shares arcs, border may double-draw: ${shared.join(',')}`);
+    removed.add(sourceGeometry);
+    replacements.set(target, {
+      ...target,
+      type: 'MultiPolygon',
+      arcs: [...polygons(target), ...polygons(sourceGeometry)],
+    });
   }
-  const targetArcs = new Set(arcIds(target));
-  const shared = arcIds(sourceGeometry).filter(id => targetArcs.has(id));
-  if (shared.length) console.warn(`[globe] territory merge shares arcs, border may double-draw: ${shared.join(',')}`);
-  removed.add(sourceGeometry);
-  replacements.set(target, {
-    ...target,
-    type: 'MultiPolygon',
-    arcs: [...polygons(target), ...polygons(sourceGeometry)],
-  });
+
+  return {
+    ...topology,
+    objects: {
+      ...topology.objects,
+      countries: {
+        ...topology.objects.countries,
+        geometries: geometries.filter(geometry => !removed.has(geometry)).map(geometry => replacements.get(geometry) ?? geometry),
+      },
+    },
+  };
 }
 
-const merged: AtlasTopology = {
-  ...topology,
-  objects: {
-    ...topology.objects,
-    countries: {
-      ...topology.objects.countries,
-      geometries: geometries.filter(geometry => !removed.has(geometry)).map(geometry => replacements.get(geometry) ?? geometry),
-    },
-  },
-};
+export const atlas = mergeTerritories(source);
 
-export const atlas = merged;
-
-export const countries = feature(
-  merged as never,
-  merged.objects.countries as never,
+export const atlasCountries = (topology:AtlasTopology) => feature(
+  topology as never,
+  topology.objects.countries as never,
 ) as unknown as FeatureCollection<Geometry>;
+
+export const atlasOutlines = (topology:AtlasTopology) =>
+  mesh(topology as never,topology.objects.countries as never);
+
+export const countries = atlasCountries(atlas);

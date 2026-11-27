@@ -1,5 +1,5 @@
 import Globe from 'globe.gl';
-import { geoCentroid, geoContains, geoDistance } from 'd3-geo';
+import { geoArea, geoCentroid, geoContains } from 'd3-geo';
 import { DoubleSide, MeshBasicMaterial, NoToneMapping, SRGBColorSpace, type PerspectiveCamera } from 'three';
 import { createEarthAppearance } from './earth-material';
 import { theme } from './theme';
@@ -11,12 +11,11 @@ declare global { interface Window { OurworldGlobe:{receive:(command:GlobeCommand
 
 const host=document.getElementById('globe')!;
 let places:Place[]=[];
-let favorites=new Set<string>();
 let active=true;
 let untouched=true;
 let cameraTimer:number|undefined;
-// Markers sit above the country plates so the cobalt layer never hides a city pin.
-const cityMarkerAltitude=.02;
+// The search pin sits above the highlighted country plate.
+const countryMarkerAltitude=.02;
 const emit=(event:GlobeEvent['event'],data:Record<string,unknown>)=>{
   const message:GlobeEvent={bridgeVersion:1,event,data};
   if(window.parent!==window) window.parent.postMessage(message,window.location.origin==='null'?'*':window.location.origin);
@@ -74,30 +73,56 @@ async function mount(){
   document.body.style.background=theme.space;
   document.getElementById('fallback')!.style.background=theme.space;
   const appearance=createEarthAppearance();
+  let locatedPlace:Place|undefined;
+  let cityLabelLocale:'zh'|'en'='en';
+  let streetMapEnabled=false;
+  let gestureAltitude:number|undefined;
   const globe=new Globe(host,{animateIn:false})
     .backgroundColor('rgba(0,0,0,0)')
     .enablePointerInteraction(false)
-    .globeImageUrl(new URL('textures/earth-day.jpg',document.baseURI).href)
+    .globeImageUrl(new URL('textures/earth-day.jpg?v=4k',document.baseURI).href)
     .bumpImageUrl(new URL('textures/earth-topology.png',document.baseURI).href)
     .showAtmosphere(true).atmosphereColor(theme.atmosphere).atmosphereAltitude(.22)
     .globeCurvatureResolution(1.8)
-    .pointsMerge(false).pointAltitude(cityMarkerAltitude).pointRadius((d:object)=>favorites.has((d as Place).id)?.62:.28)
-    .pointColor((d:object)=>favorites.has((d as Place).id)?theme.accent:theme.inkMuted)
+    .pointsMerge(false).pointAltitude(countryMarkerAltitude).pointRadius(.85).pointColor(theme.accent)
     .pointLat((d:object)=>(d as Place).lat).pointLng((d:object)=>(d as Place).lng)
-    .pointLabel((d:object)=>{const p=d as Place;return p.name.en||p.name.zh;});
+    .pointLabel((d:object)=>{const p=d as Place;return p.name.en||p.name.zh;})
+    .htmlAltitude(countryMarkerAltitude).htmlTransitionDuration(0)
+    .htmlElement((d:object)=>{
+      const city=d as Place;
+      const anchor=document.createElement('div');
+      anchor.className='city-marker-anchor';
+      const button=document.createElement('button');
+      button.type='button';
+      button.className='city-marker';
+      button.textContent=city.name[cityLabelLocale]||city.name.en;
+      button.addEventListener('pointerdown',event=>event.stopPropagation());
+      button.addEventListener('click',()=>{
+        const place=places.find(place=>place.id===city.id);
+        if(active&&place)emit('placeSelected',{place});
+      });
+      anchor.append(button);
+      return anchor;
+    });
   // Country plates: the translucent cobalt layer from the reference design. Selection
   // lifts the plate instead of drawing an outline, so the hit area, the fill and the
   // side wall all change together.
   const BASE_ALTITUDE=.004, SELECTED_ALTITUDE=.014;
   let selectedCountryId:string|undefined;
   let focusedCountryId:string|undefined;
-  let returningToOverview=false;
+  let focusedCatalogCountryId:string|undefined;
+  let focusedLocalPlace=false;
+  let focusTimer:number|undefined;
+  let pendingFocus:{lat:number;lng:number;altitude:number}|undefined;
+  let mapDetail:ReturnType<typeof import('./map-detail').createMapDetail>|undefined;
+  let loadingMapDetail=false;
+  let showingMapDetail=false;
   const isSelected=(d:object)=>selectedCountryId!==undefined&&String((d as Feature).id??'')===selectedCountryId;
   const paintCountries=()=>globe.polygonsData(countries.features)
-    .polygonAltitude((d:object)=>isSelected(d)?SELECTED_ALTITUDE:BASE_ALTITUDE)
+    .polygonAltitude((d:object)=>isSelected(d)&&!showingMapDetail?SELECTED_ALTITUDE:BASE_ALTITUDE)
     .polygonCapMaterial((d:object)=>isSelected(d)?plateCap.selected:plateCap.base)
     .polygonSideColor((d:object)=>isSelected(d)?plateSide.selected:plateSide.base)
-    .polygonStrokeColor((d:object)=>isSelected(d)?plateStroke.selected:plateStroke.base)
+    .polygonStrokeColor((d:object)=>showingMapDetail?null:isSelected(d)?plateStroke.selected:plateStroke.base)
     .polygonsTransitionDuration(0);
   paintCountries();
   const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -114,9 +139,9 @@ async function mount(){
   host.addEventListener('pointerenter',event=>{hoverPointer=event.pointerType!=='touch';syncHover();});
   host.addEventListener('pointerleave',()=>{hoverPointer=false;syncHover();});
   const syncAnimation=()=>{
-    controls.enableRotate=focusedCountryId===undefined&&!returningToOverview;
-    controls.enableDamping=controls.enableRotate;
-    controls.autoRotate=controls.enableRotate&&!reducedMotion.matches;
+    const locked=focusedCountryId!==undefined||focusedLocalPlace;
+    controls.enableDamping=!locked;
+    controls.autoRotate=!locked&&!pendingFocus&&!reducedMotion.matches;
     syncHover();
     if(active&&!document.hidden&&!contextLost)globe.resumeAnimation();
     else globe.pauseAnimation();
@@ -130,6 +155,7 @@ async function mount(){
     const polygon=countries.features.find(p=>geoId?String(p.id)===geoId:country&&(clean(String(p.properties?.name||''))===clean(country.name.en)||(country.aliases||[]).some(a=>clean(a)===clean(String(p.properties?.name||'')))));
     selectedCountryId=polygon&&polygon.id!=null?String(polygon.id):undefined;
     paintCountries();
+    return polygon;
   };
   const configureRenderer=()=>{
     globe.renderer().toneMapping=NoToneMapping;
@@ -158,87 +184,144 @@ async function mount(){
   // The initial view frames the whole planet with breathing room for the starfield,
   // matching the reference presentation instead of an edge-to-edge zoom.
   let lastWidth=0,lastHeight=0;
-  const overviewAltitude=(width:number,height:number)=>{
+  const framedAltitude=(width:number,height:number,diameterRatio:number)=>{
     const fov=(globe.camera() as PerspectiveCamera).fov||50;
-    const angle=Math.atan((Math.min(width,height)*.75/height)*Math.tan(fov*Math.PI/360));
+    const angle=Math.atan((Math.min(width,height)*diameterRatio/height)*Math.tan(fov*Math.PI/360));
     return Math.min(1/Math.sin(angle),controls.maxDistance/globe.getGlobeRadius())-1;
+  };
+  const overviewAltitude=(width:number,height:number)=>framedAltitude(width,height,.75);
+  const updateMapDetail=(altitude:number)=>{
+    if(!lastWidth||!lastHeight)return;
+    const overview=overviewAltitude(lastWidth,lastHeight);
+    // Apparent diameter changes with both zoom and viewport size. Use a small
+    // gap between the two thresholds so a slow pinch doesn't flicker.
+    const magnification=Math.sqrt(overview*(2+overview)/(altitude*(2+altitude)));
+    const near=magnification>=(showingMapDetail?1.17:1.27);
+    if(near&&!mapDetail&&!loadingMapDetail){
+      loadingMapDetail=true;
+      void import('./map-detail').then(({createMapDetail})=>{
+        mapDetail=createMapDetail(globe.getGlobeRadius()*1.007);
+        mapDetail.outlines.visible=false;
+        globe.scene().add(mapDetail.outlines);
+        updateMapDetail(globe.pointOfView().altitude);
+      }).catch(()=>{ /* Keep the coarse map if the optional detail layer fails to load. */ });
+    }
+    const show=near&&!!mapDetail;
+    if(show===showingMapDetail)return;
+    showingMapDetail=show;
+    if(mapDetail)mapDetail.outlines.visible=show;
+    plateCap.selected.opacity=show ? .27 : .45;
+    paintCountries();
+    repaint();
+  };
+  globe.onZoom(({altitude})=>updateMapDetail(altitude));
+  const countryAltitude=(polygon?:Feature<Geometry>)=>{
+    // Use the equivalent angular radius so split territories and the date line
+    // don't make a country appear wider than it is.
+    const radius=polygon?Math.sqrt(geoArea(polygon)/Math.PI):.18;
+    const diameterRatio=String(polygon?.id)==='156'?1:.90+.65*Math.max(0,1-radius/.26);
+    return framedAltitude(lastWidth,lastHeight,diameterRatio*1.14);
   };
   const resize=()=>{
     const width=host.clientWidth,height=host.clientHeight;
     if(width<=0||height<=0)return;
     // Keep high-density screens sharp while limiting the number of pixels shaded on every frame.
-    const pixelRatio=Math.min(window.devicePixelRatio||1,1.5,Math.max(1,Math.sqrt(750_000/(width*height))));
+    const pixelRatio=Math.min(window.devicePixelRatio||1,2,Math.max(1,Math.sqrt(1_300_000/(width*height))));
     const renderer=globe.renderer();
     if(renderer.getPixelRatio()!==pixelRatio)renderer.setPixelRatio(pixelRatio);
     if(width!==lastWidth||height!==lastHeight){
       lastWidth=width;lastHeight=height;
       globe.width(width).height(height);paintStars();
       if(untouched)setCameraPose({lat:22,lng:85,altitude:overviewAltitude(width,height)});
+      updateMapDetail(globe.pointOfView().altitude);
     }
     repaint();
   };
   window.addEventListener('resize',()=>{resize();syncAnimation();});resize();
   new ResizeObserver(()=>{resize();syncAnimation();}).observe(host);
-  let focusTimer:number|undefined;
-  let pendingFocus:{lat:number;lng:number;altitude:number}|undefined;
   const finishFocus=()=>{
     if(!pendingFocus)return;
     clearTimeout(focusTimer);setCameraPose(pendingFocus);pendingFocus=undefined;
-    if(returningToOverview){
-      returningToOverview=false;
-      syncAnimation();
-    }
+    syncAnimation();
     if(!contextLost)globe.renderer().render(globe.scene(),globe.camera());
     emit('cameraChanged',{...globe.pointOfView()});
   };
-  const focusCamera=(pov:{lat:number;lng:number;altitude:number},overview=false)=>{
-    clearTimeout(focusTimer);pendingFocus=pov;returningToOverview=overview;
+  const cancelFocus=()=>{
+    if(!pendingFocus)return;
+    clearTimeout(focusTimer);
+    pendingFocus=undefined;
+    setCameraPose(globe.pointOfView());
+    syncAnimation();
+  };
+  const focusCamera=(pov:{lat:number;lng:number;altitude:number})=>{
+    clearTimeout(focusTimer);pendingFocus=pov;
     syncAnimation();
     if(!active||reducedMotion.matches){finishFocus();return;}
-    const duration=overview?500:850;
+    const duration=850;
     globe.pointOfView(pov,duration);
     focusTimer=window.setTimeout(finishFocus,duration+30);
   };
+  const setLocatedPlace=(place?:Place)=>{
+    if(!place&&!locatedPlace)return;
+    locatedPlace=place;
+    // The renderer attaches mesh references to its point records. Keep those off bridge payloads.
+    globe.pointsData(place?[{...place}]:[]);
+  };
+  const updateCityMarkers=()=>{
+    const polygon=countries.features.find(feature=>countryKey(feature)===focusedCountryId);
+    const name=clean(String(polygon?.properties?.name||''));
+    const countryId=focusedCatalogCountryId||(name?places.find(p=>p.kind==='country'&&
+      [p.name.en,...(p.aliases||[])].some(alias=>clean(alias)===name))?.id:undefined);
+    // Copy records so the renderer's object references never enter bridge payloads.
+    globe.htmlElementsData(countryId?places.filter(p=>p.kind==='city'&&p.parentId===countryId).map(p=>({...p})):[]);
+  };
   const clearCountryFocus=()=>{
-    if(focusedCountryId===undefined)return;
-    const pov=globe.pointOfView();
-    if(pendingFocus)setCameraPose(pov);
+    if(focusedCountryId===undefined&&!focusedLocalPlace)return;
+    cancelFocus();
     focusedCountryId=undefined;
+    focusedCatalogCountryId=undefined;
+    focusedLocalPlace=false;
+    setLocatedPlace();
+    updateCityMarkers();
     highlight();
-    focusCamera({...pov,altitude:overviewAltitude(lastWidth,lastHeight)},true);
+    syncAnimation();
+    emit('cameraChanged',{...globe.pointOfView()});
   };
-  const selectCity=(place:Place)=>{
-    untouched=false;
-    focusedCountryId=undefined;
-    highlight(place);
-    focusCamera({lat:place.lat,lng:place.lng,altitude:.65});
-    emit('placeSelected',{place});
-  };
+  const countryKey=(polygon:Feature<Geometry>)=>String(polygon.id??polygon.properties?.name??'');
   const chooseCountry=(polygon:Feature<Geometry>)=>{
     const name=String(polygon.properties?.name||'');
     const known=places.find(p=>p.kind==='country'&&(clean(p.name.en)===clean(name)||(p.aliases||[]).some(a=>clean(a)===clean(name))));
     const [lng,lat]=geoCentroid(polygon);
-    const countryId=String(polygon.id??name);
+    const countryId=countryKey(polygon);
     const alreadyFocused=focusedCountryId===countryId;
+    const locatedCountry=alreadyFocused&&locatedPlace?.kind==='country'?locatedPlace:undefined;
+    setLocatedPlace();
     focusedCountryId=countryId;
+    focusedCatalogCountryId=known?.id;
+    focusedLocalPlace=false;
     highlight(known,String(polygon.id??''));
+    const target={lat:known?.lat??lat,lng:known?.lng??lng,altitude:countryAltitude(polygon)};
     // A land tap first brings that country into view. Only another tap on the
     // same country opens details; changing countries starts with a fresh focus.
-    if(!alreadyFocused){focusCamera({lat:known?.lat??lat,lng:known?.lng??lng,altitude:1.1});return;}
-    // A second tap may interrupt the tween through OrbitControls' start event.
+    if(!alreadyFocused){updateCityMarkers();focusCamera(target);return;}
     // Settle on the target before opening the sheet, including rapid repeat taps.
-    focusCamera({lat:known?.lat??lat,lng:known?.lng??lng,altitude:1.1});finishFocus();
-    if(known)emit('placeSelected',{place:known});
+    focusCamera(target);finishFocus();
+    if(locatedCountry||known)emit('placeSelected',{place:locatedCountry||known});
     else emit('placeSelected',{geoId:String(polygon.id??''),geoName:name,lat,lng});
   };
   // A rotating camera can outpace the library's cached hover hit. Resolve each
   // stationary tap from the visible camera in the pointer event itself.
   let tap:{id:number;x:number;y:number}|null=null;
   const pointers=new Set<number>();
-  host.addEventListener('pointerdown',event=>{if(!active)return;pointers.add(event.pointerId);tap=pointers.size===1?{id:event.pointerId,x:event.clientX,y:event.clientY}:null;},{capture:true});
+  host.addEventListener('pointerdown',event=>{
+    if(!active||(event.target as Element).closest('.city-marker'))return;
+    pointers.add(event.pointerId);
+    tap=pointers.size===1?{id:event.pointerId,x:event.clientX,y:event.clientY}:null;
+    if(pointers.size>1)cancelFocus();
+  },{capture:true});
   host.addEventListener('pointermove',event=>{
     if(!hoverPointer&&event.pointerType!=='touch'){hoverPointer=true;syncHover();}
-    if(tap&&Math.hypot(event.clientX-tap.x,event.clientY-tap.y)>7)tap=null;
+    if(tap&&Math.hypot(event.clientX-tap.x,event.clientY-tap.y)>7){tap=null;cancelFocus();}
   },{capture:true});
   host.addEventListener('pointercancel',event=>{pointers.delete(event.pointerId);tap=null;},{capture:true});
   host.addEventListener('pointerup',event=>{
@@ -248,36 +331,64 @@ async function mount(){
     const x=event.clientX-rect.left,y=event.clientY-rect.top;
     const coords=globe.toGlobeCoords(x,y);
     if(!coords){clearCountryFocus();return;}
-    let closestCity:Place|undefined;
-    let distance=11;
-    for(const place of places){
-      if(place.kind!=='city'||geoDistance([place.lng,place.lat],[coords.lng,coords.lat])>=.12)continue;
-      const point=globe.getScreenCoords(place.lat,place.lng,cityMarkerAltitude);
-      const candidate=Math.hypot(point.x-x,point.y-y);
-      if(candidate<distance){closestCity=place;distance=candidate;}
+    // Only a location already selected in search has an actionable marker.
+    if(locatedPlace){
+      const marker=globe.getScreenCoords(locatedPlace.lat,locatedPlace.lng,countryMarkerAltitude);
+      if(Math.hypot(marker.x-x,marker.y-y)<16){
+        finishFocus();
+        emit('placeSelected',{place:locatedPlace});
+        return;
+      }
     }
-    if(closestCity){selectCity(closestCity);return;}
-    const polygon=countries.features.find(feature=>geoContains(feature,[coords.lng,coords.lat]));
+    const features=showingMapDetail&&mapDetail?mapDetail.countries.features:countries.features;
+    const polygon=features.find(feature=>geoContains(feature,[coords.lng,coords.lat]));
     if(polygon){untouched=false;chooseCountry(polygon);}
     else clearCountryFocus();
   },{capture:true});
-  controls.addEventListener('start',()=>{untouched=false;if(controls.enableRotate){clearTimeout(focusTimer);pendingFocus=undefined;}syncAnimation();});
-  controls.addEventListener('end',()=>{syncAnimation();clearTimeout(cameraTimer);cameraTimer=window.setTimeout(()=>{emit('cameraChanged',{...globe.pointOfView()});},400);});
-  const update=()=>globe.pointsData(places.filter(p=>p.kind==='city'));
+  host.addEventListener('wheel',()=>{if(active)cancelFocus();},{capture:true,passive:true});
+  controls.addEventListener('start',()=>{
+    untouched=false;
+    gestureAltitude=globe.pointOfView().altitude;
+    syncAnimation();
+  });
+  controls.addEventListener('end',()=>{
+    const startAltitude=gestureAltitude;
+    gestureAltitude=undefined;
+    syncAnimation();
+    clearTimeout(cameraTimer);
+    cameraTimer=window.setTimeout(()=>{
+      if(pendingFocus)return;
+      const pose=globe.pointOfView();
+      emit('cameraChanged',{...pose});
+      if(active&&streetMapEnabled&&startAltitude!==undefined&&pose.altitude<=.38&&pose.altitude<startAltitude-.005)
+        emit('streetMapRequested',{lat:pose.lat,lng:pose.lng});
+    },400);
+  });
   const receive=(command:GlobeCommand)=>{
     if(!command||command.bridgeVersion!==1||!command.data)return;
     const d=command.data;
     if(command.event==='setMarkers'){
       if(Array.isArray(d.places))places=(d.places as Place[]).filter(p=>p&&typeof p.id==='string'&&Number.isFinite(p.lat)&&Number.isFinite(p.lng));
-      if(Array.isArray(d.favoriteIds))favorites=new Set((d.favoriteIds as unknown[]).filter((id):id is string=>typeof id==='string'));
-      update();
+      if(d.locale==='zh'||d.locale==='en')cityLabelLocale=d.locale;
+      streetMapEnabled=d.streetMap===true;
+      updateCityMarkers();
       syncAnimation();
     }
     if(command.event==='focusPlace'){
-      const p=d.place as Place|undefined;if(p&&Number.isFinite(p.lat)&&Number.isFinite(p.lng)){untouched=false;highlight(p);focusedCountryId=p.kind==='country'?(selectedCountryId??p.id):undefined;focusCamera({lat:p.lat,lng:p.lng,altitude:p.kind==='country'?1.15:.65});}
+      const p=d.place as Place|undefined;
+      if(p&&Number.isFinite(p.lat)&&Number.isFinite(p.lng)){
+        untouched=false;
+        const polygon=highlight(p);
+        focusedCountryId=p.kind==='country'?(polygon?countryKey(polygon):p.id):undefined;
+        focusedCatalogCountryId=p.kind==='country'?p.id:undefined;
+        focusedLocalPlace=p.kind!=='country';
+        setLocatedPlace(d.locateOnly===true&&p.kind==='country'?p:undefined);
+        updateCityMarkers();
+        focusCamera({lat:p.lat,lng:p.lng,altitude:p.kind==='country'?countryAltitude(polygon):.65});
+      }
     }
     if(command.event==='clearCountryFocus')clearCountryFocus();
-    if(command.event==='restoreCamera'&&Number.isFinite(d.lat)&&Number.isFinite(d.lng)&&Number.isFinite(d.altitude)){untouched=false;clearTimeout(focusTimer);pendingFocus=undefined;returningToOverview=false;syncAnimation();setCameraPose({lat:Number(d.lat),lng:Number(d.lng),altitude:Number(d.altitude)});
+    if(command.event==='restoreCamera'&&Number.isFinite(d.lat)&&Number.isFinite(d.lng)&&Number.isFinite(d.altitude)){untouched=false;clearTimeout(focusTimer);pendingFocus=undefined;syncAnimation();setCameraPose({lat:Number(d.lat),lng:Number(d.lng),altitude:Number(d.altitude)});
      // A restored view must land immediately, even while the animation loop is
      // paused, so hit-testing and the visible frame both use the settled camera.
      if(!contextLost)globe.renderer().render(globe.scene(),globe.camera());}

@@ -8,15 +8,8 @@ COPY packages/globe/package.json packages/globe/package.json
 RUN npm ci --no-audit --no-fund
 COPY . .
 
-FROM source AS frontend-watch
-ENV NODE_ENV=production
-ENV FRONTEND_SOURCE_ROOT=/source
-ENV FRONTEND_WORK_ROOT=/app
-ENV FRONTEND_RELEASE_ROOT=/srv/frontend
-CMD ["node", "scripts/dev/frontend-watch.mjs"]
-
 FROM source AS api-build
-RUN npm run build -w @ourworld/contracts && npm run build -w @ourworld/api
+RUN chmod a+r apps/api/migrations/*.sql && npm run build -w @ourworld/contracts && npm run build -w @ourworld/api
 RUN npm prune --omit=dev --no-audit --no-fund
 
 FROM node:24-bookworm-slim AS api
@@ -32,6 +25,12 @@ CMD ["node", "apps/api/dist/main.js"]
 
 FROM source AS web-build
 RUN node scripts/generate/sync-design.mjs --web-only && node scripts/generate/generate-openapi.mjs && npm run build -w @ourworld/contracts && npm run build -w @ourworld/globe && node scripts/generate/sync-globe.mjs --web-only && npm run build -w @ourworld/web
+
+FROM node:24-bookworm-slim AS frontend-release
+WORKDIR /app
+COPY --from=web-build /app/apps/web/dist ./dist
+COPY scripts/deploy/frontend-release.mjs ./
+ENTRYPOINT ["node", "/app/frontend-release.mjs"]
 
 FROM nginx:1.28-alpine AS web
 COPY infra/nginx/default.conf /etc/nginx/conf.d/default.conf

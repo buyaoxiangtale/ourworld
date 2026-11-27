@@ -1,8 +1,10 @@
 import {createHash,randomUUID} from 'node:crypto';
 import {spawn} from 'node:child_process';
-import {cp,mkdir,readFile,readdir,rename,rm,stat,symlink,writeFile} from 'node:fs/promises';
-import {dirname,isAbsolute,join,relative,resolve} from 'node:path';
+import {cp,mkdir,readFile,readdir,rename,rm,stat,writeFile} from 'node:fs/promises';
+import {dirname,isAbsolute,join,resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {pruneReleases,publishRelease} from '../deploy/frontend-release.mjs';
+export {publishRelease};
 
 export const INPUTS=[
  'apps/web/src','apps/web/public','apps/web/index.html','apps/web/package.json','apps/web/tsconfig.json','apps/web/vite.config.ts',
@@ -69,45 +71,7 @@ export async function buildFrontend(sourceRoot,workRoot){
  return join(workRoot,'apps/web/dist');
 }
 
-export async function publishRelease(dist,releaseRoot,version){
- if(!/^[A-Za-z0-9-]+$/.test(version))throw new Error('Invalid frontend version');
- const html=await readFile(join(dist,'index.html'),'utf8');
- if(!html.includes('</head>'))throw new Error('Frontend output has no head element');
- const assets=[...html.matchAll(/(?:src|href)=["'](\/assets\/[^"']+)["']/g)].map(match=>match[1]);
- if(!assets.some(path=>path.endsWith('.js')))throw new Error('Frontend output has no module entry');
- for(const path of assets){if(path.includes('..')||!await exists(join(dist,path)))throw new Error(`Missing build asset: ${path}`);}
- const releases=join(releaseRoot,'releases');await mkdir(releases,{recursive:true});
- const stage=join(releases,`.staging-${randomUUID()}`),target=join(releases,version);
- try{
-  await cp(dist,stage,{recursive:true});
-  const metadata={version,builtAt:new Date().toISOString()};
-  await writeFile(join(stage,'frontend-version.json'),JSON.stringify(metadata)+'\n');
-  const meta=`<meta name="ourworld-frontend-version" content="${version}">`;
-  await writeFile(join(stage,'index.html'),html.replace('</head>',`${meta}</head>`));
-  // Old documents may still request their original content-hashed modules after a switch.
-  for(const path of ['assets','globe/assets'])if(await exists(join(stage,path))){
-   const shared=join(releaseRoot,'shared',path);await mkdir(shared,{recursive:true});await cp(join(stage,path),shared,{recursive:true,force:false,errorOnExist:false});
-  }
-  await rename(stage,target);
-  const next=join(releaseRoot,`.current-${randomUUID()}`);
-  await symlink(relative(releaseRoot,target),next);
-  await rename(next,join(releaseRoot,'current'));
-  return metadata;
- }catch(error){await rm(stage,{force:true,recursive:true});throw error;}
-}
 
-async function pruneReleases(releaseRoot,current){
- const directory=join(releaseRoot,'releases');
- const releases=(await readdir(directory,{withFileTypes:true})).filter(e=>e.isDirectory()&&!e.name.startsWith('.')).map(e=>e.name).sort().reverse();
- for(const name of releases.slice(5))if(name!==current)await rm(join(directory,name),{recursive:true,force:true});
- // Keep hashed assets for at least a day, and always retain the current build's files.
- for(const path of ['assets','globe/assets']){
-  const shared=join(releaseRoot,'shared',path);if(!await exists(shared))continue;
-  for(const file of await filesUnder(shared,['.'])){
-   if(file.info.mtimeMs<Date.now()-86400000&&!await exists(join(releaseRoot,'current',path,file.path)))await rm(join(shared,file.path));
-  }
- }
-}
 
 export class FrontendWatcher {
  constructor({sourceRoot,workRoot,releaseRoot,pollMs=1000,debounceMs=1200,build=buildFrontend,onEvent=log}){

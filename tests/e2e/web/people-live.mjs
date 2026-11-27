@@ -2,6 +2,7 @@ import {mkdir,writeFile} from 'node:fs/promises';
 import {resolve,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import assert from 'node:assert/strict';
+import {openLocatedResult} from './search-location.mjs';
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'../../..');
 process.loadEnvFile(resolve(root,'.env'));
 process.env.PLAYWRIGHT_BROWSERS_PATH=resolve(root,'.playwright-browsers');
@@ -15,7 +16,9 @@ const page=await context.newPage();page.setDefaultTimeout(20000);const checks=[]
 page.on('pageerror',error=>errors.push(error.message));
 try{
  await page.goto(base,{waitUntil:'domcontentloaded'});await page.locator('.home-search').waitFor();await page.evaluate(()=>document.fonts.ready);
- await page.locator('.home-search').click();await page.getByPlaceholder('搜索国家、城市、景点').fill('法国');await page.locator('.place-result').filter({hasText:'法国'}).first().click();
+ const france=(await (await page.request.get(base+'/api/v1/places?q=France&kind=country')).json()).items.find(place=>place.name.en==='France');
+ assert(france);
+ await page.locator('.home-search').click();await page.getByPlaceholder('搜索国家、城市、景点').fill('法国');await openLocatedResult(page,page.locator('.place-result').filter({hasText:'法国'}).first(),france);
  const country=page.locator('.country-info-modal');await country.waitFor();await country.locator('.country-dialog-cover .cover').evaluate(img=>img.decode());assert((await country.locator('.country-dialog-cover .cover').getAttribute('src')).endsWith('.jpg'));await page.screenshot({path:resolve(out,'live-country.png'),animations:'disabled'});checks.push('live country photograph');
  await country.getByRole('button',{name:'浏览城市',exact:true}).click();await page.locator('.country-city-card.is-active').getByRole('button',{name:'查看城市',exact:true}).click();await page.getByRole('button',{name:'找当地人',exact:true}).click();await page.locator('.person-card.deck-front').waitFor();await page.locator('.person-photo>.cover').evaluate(img=>img.decode());assert((await page.locator('.person-photo>.cover').getAttribute('src')).endsWith('.jpg'));checks.push('live random feed returns photographic profiles');
  const first=await page.locator('.person-photo-name h2').innerText();const box=await page.locator('.person-card.deck-front').boundingBox();await page.mouse.move(box.x+box.width*.6,box.y+100);await page.mouse.down();await page.mouse.move(box.x+box.width*.2,box.y+100,{steps:10});await page.mouse.up();await page.waitForFunction(name=>document.querySelector('.person-photo-name h2')?.textContent!==name,first);checks.push('live left swipe advances');

@@ -1,0 +1,46 @@
+.street-map-page {
+  position: absolute;
+  inset: 0;
+  z-index: 180;
+  display: flex;
+  flex-direction: column;
+  background: var(--ow-bg);
+  color: var(--ow-ink);
+}
+.street-map-header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  min-height: 52px;
+  padding: env(safe-area-inset-top, 0px) 16px 0;
+  background: var(--ow-surface);
+}
+.street-map-header button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  color: var(--ow-accent);
+}
+.street-map-header h2 {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 16px;
+}
+.street-map-body { position: relative; flex: 1; min-height: 0; }
+.street-map-body > .street-map-canvas { position: absolute; inset: 0; }
+.street-map-status {
+  position: absolute;
+  inset: 16px 64px auto 16px;
+  z-index: 1001;
+  width: fit-content;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--ow-raised);
+  color: var(--ow-ink);
+}
+.street-map-status button { margin-inline-start: 8px; color: var(--ow-accent); }

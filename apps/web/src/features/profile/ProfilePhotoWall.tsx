@@ -4,7 +4,7 @@ import {useApp} from '../../context';
 import {Cover} from '../../ui';
 import {photoWallPhotoKey, readPhotoWall} from './profile-content';
 
-export type PhotoWallEditTarget = 'slogan' | {photo: string};
+export type PhotoWallEditTarget = 'slogan';
 
 export function ProfilePhotoWall({layout, photos, onOpenPhoto, onEdit}: {
  layout: ProfileLayout | null;
@@ -13,29 +13,25 @@ export function ProfilePhotoWall({layout, photos, onOpenPhoto, onEdit}: {
  onEdit: (target?: PhotoWallEditTarget) => void;
 }) {
  const {t} = useApp();
- const {slogan, captions, featuredPhoto} = readPhotoWall(layout);
- const featuredIndex = Math.max(0, photos.findIndex(url => photoWallPhotoKey(url) === featuredPhoto));
- const featured = {url: photos[featuredIndex], index: featuredIndex};
- const otherPhotos = photos.map((url, index) => ({url, index})).filter(photo => photo.index !== featuredIndex);
- const count = photos.length;
- const splitColumns = count === 4 || count === 6;
- const compactPhotos = [featured, ...otherPhotos];
- if (count === 3 || count === 5) [compactPhotos[0], compactPhotos[1]] = [compactPhotos[1], compactPhotos[0]];
+ const {slogan, captions, featuredPhotos} = readPhotoWall(layout);
+ const primary: {url: string; index: number}[] = [];
+ const secondary: typeof primary = [];
+ photos.forEach((url, index) => {
+  const column = featuredPhotos.has(photoWallPhotoKey(url)) ? primary : secondary;
+  column.push({url, index});
+ });
 
  const photoCard = ({url, index}: {url: string; index: number}) => {
-  const caption = captions.get(photoWallPhotoKey(url));
+  const caption = captions.get(photoWallPhotoKey(url))?.trim();
   return <figure className="photo-wall-card" key={`${url}-${index}`}>
    <button type="button" className="photo-wall-image" onClick={() => onOpenPhoto(index)}
-    aria-label={t(`查看第 ${index + 1} 张照片`, `View photo ${index + 1}`)}>
+    aria-label={t(`查看第 ${index + 1} 张照片`, `View photo ${index + 1}`)} title={caption}>
     <Cover src={url} alt="" />
+    {caption && <span className="photo-wall-caption">
+     <span className="photo-wall-quote" aria-hidden="true">“</span>
+     <span className="photo-wall-caption-text">{caption}</span>
+    </span>}
    </button>
-   <figcaption>
-    <button type="button" className={caption ? 'photo-wall-caption' : 'photo-wall-caption is-empty'}
-     onClick={() => onEdit({photo: url})} title={caption}
-     aria-label={t(`编辑第 ${index + 1} 张照片的介绍`, `Edit caption for photo ${index + 1}`)}>
-     <span>{caption || t('添加介绍', 'Add a caption')}</span><Pencil size={12} aria-hidden="true" />
-    </button>
-   </figcaption>
   </figure>;
  };
 
@@ -51,27 +47,15 @@ export function ProfilePhotoWall({layout, photos, onOpenPhoto, onEdit}: {
    <span>{slogan || t('用一句话介绍你的照片墙', 'Introduce your photo wall in one line')}</span>
    <Pencil size={14} aria-hidden="true" />
   </button>
-  {count ? <div className={`photo-wall-grid photo-wall-grid-${Math.min(count, 7)}`}>
-   {splitColumns ? <>
-    <div key={featured.url} className="photo-wall-column photo-wall-primary" role="region"
-     tabIndex={0} aria-label={t('大图浏览','Large photo gallery')}>
-     {compactPhotos.map(photoCard)}
-    </div>
-    <div className="photo-wall-column photo-wall-secondary" role="region"
-     tabIndex={0} aria-label={t('次图浏览','Secondary photos')}>
-     {otherPhotos.map(photoCard)}
-    </div>
-   </> : count >= 2 && count <= 5 ? compactPhotos.map(photoCard) : <>
-    <div className="photo-wall-feature">{photoCard(featured)}</div>
-    {count >= 7 && <>
-     <div className="photo-wall-column photo-wall-left">
-      {otherPhotos.filter((_, index) => index % 2 === 0).map(photoCard)}
-     </div>
-     <div className="photo-wall-column photo-wall-right">
-      {otherPhotos.filter((_, index) => index % 2 === 1).map(photoCard)}
-     </div>
-    </>}
-   </>}
+  {photos.length ? <div className={`photo-wall-grid${primary.length === 1 && secondary.length > 0 ? ' is-aligned' : ''}`}>
+   {primary.length > 0 && <div className={`photo-wall-column photo-wall-primary${primary.length === 1 ? ' is-single' : ''}`}
+    role="region" tabIndex={primary.length > 1 ? 0 : undefined} aria-label={t('主照片','Main photos')}>
+    {primary.map(photoCard)}
+   </div>}
+   {secondary.length > 0 && <div className={`photo-wall-column photo-wall-secondary${secondary.length > 1 ? ' has-paired-rows' : ''}`} role="region"
+    tabIndex={secondary.length > 1 ? 0 : undefined} aria-label={t('普通照片','Other photos')}>
+    {secondary.map(photoCard)}
+   </div>}
   </div> : <button type="button" className="photo-wall-upload" onClick={() => onEdit()}>
    <ImagePlus size={24} aria-hidden="true" />{t('添加照片', 'Add photos')}
   </button>}
